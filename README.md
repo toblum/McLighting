@@ -11,14 +11,14 @@
 
 ## Todos
 - [x] Fix issue with websockets connection problems
-- [ ] Switch to teh NeoPixelBus library (https://github.com/Makuna/NeoPixelBus/wiki)
+- [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
 - [ ] Use the led strip for status information in connection phase
 - [ ] Enhance the documentation
 - [ ] Stability improvements
 - [ ] Additional clients
 
 ## Licence
-GNU LGPLv3 (http://www.gnu.org/licenses/lgpl-3.0.txt)
+[GNU LGPLv3](http://www.gnu.org/licenses/lgpl-3.0.txt)
 
 
 
