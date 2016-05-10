@@ -9,8 +9,16 @@
 - A WS2811 or WS2812 led strip that you can get in many sizes and forms. I'm using a ring of 12 leds. When you use more than about 15-20 leds you may have to use a dedicated 5V power source.
 - Power via USB
 
+## Todos
+- [x] Fix issue with websockets connection problems
+- [ ] Switch to teh NeoPixelBus library (https://github.com/Makuna/NeoPixelBus/wiki)
+- [ ] Use the led strip for status information in connection phase
+- [ ] Enhance the documentation
+- [ ] Stability improvements
+- [ ] Additional clients
+
 ## Licence
-MIT
+GNU LGPLv3 (http://www.gnu.org/licenses/lgpl-3.0.txt)
 
 
 
