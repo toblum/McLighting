@@ -1,0 +1,15 @@
+{
+  "name": "mc_lighting",
+  "version": "1.0.0",
+  "description": "Web client for Mc Lighting",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tobias Blum",
+  "license": "MIT",
+  "dependencies": {
+    "gulp-connect": "^4.0.0",
+    "materialize-css": "^0.97.6"
+  }
+}
