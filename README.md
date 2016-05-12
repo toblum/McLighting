@@ -5,13 +5,14 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ## The Hardware
-- A NodeMCU development board, based on the ESP8266 ESP-12E, (that you can get for under 5 USD from eBay). A standalone ESP8266 or a Adafruit Huzzah should work too.
+- A NodeMCU development board, based on the ESP8266 ESP-12E, (that you can get for under $5 from eBay). A standalone ESP8266 or a Adafruit Huzzah should work too.
 - A WS2811 or WS2812 led strip that you can get in many sizes and forms. I'm using a ring of 12 leds. When you use more than about 15-20 leds you may have to use a dedicated 5V power source.
 - Power via USB
 
 ## Wiring
 
 Fritzing: 
+![Wiring schema](https://raw.githubusercontent.com/toblum/McLighting/master/documentation/pics/McLighting-NodeMCU_Board.png)
 
 Parts via:
 - https://github.com/squix78/esp8266-fritzing-parts
@@ -26,15 +27,15 @@ Download and install the arduino software (IDE) at https://www.arduino.cc/en/Mai
 ### ESP8266 board support for arduino IDE
 In the Arduino IDE open the preferences dialog and enter the following URL as "Additional Boards Manger URL":\
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
---> arduino_preferences.png
+![Preferences](https://raw.githubusercontent.com/toblum/McLighting/master/documentation/pics/arduino_preferences.png)
 
 Go to "Tools" > "Board: <some board>" > "Boards Manager ...", search for "esp" and install the "esp8266 by ESP8266 Community" in version 2.2.0 (https://github.com/esp8266/Arduino):
---> arduino_boards_manager.png
+![Preferences](https://raw.githubusercontent.com/toblum/McLighting/master/documentation/pics/arduino_boards_manager.png)
 
 Now go to "Tools" > "Board: <some board>" and choose "NodeMCU 1.0 (ESP-12E Module)", set CPU frequency to 80 MHz, and Flash size to "4M (1M SPIFFS)"leave upload spped at 115200. Select the right COM port.
 
 ### Used Libraries
-Go to "Sketch" > "Include Library" > "Manage LIbraries ..." and install the following libraries by searching for them and installing:
+Go to "Sketch" > "Include Library" > "Manage Libraries ..." and install the following libraries by searching for them and installing:
 - WiFiManager by @tzapu (tested with version 0.11.0)
   https://github.com/tzapu/WiFiManager
 - WebSockets by @Links2004 (tested with version 2.0.2)
