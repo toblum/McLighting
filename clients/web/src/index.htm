@@ -8,6 +8,7 @@
 
 		<!--Let browser know website is optimized for mobile-->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+		<meta charset="utf-8"/>
 	</head>
 
 	<body>
@@ -46,7 +47,7 @@
 				</div>
 				<div class="row hide" id="mc-wserror">
 					<div class="col">
-						<div>Fehler beim Herstellen der WebSocket-Verbindung.</div>
+						<div>Error on websocket connect.</div>
 					</div>
 				</div>
 			</div>
@@ -127,29 +128,29 @@
 						<div class="row">
 							<div class="input-field col s12 l4">
 								<label for="txt_red">Red</label><br/>
-								<p class="range-field"><input type="range" id="rng_red" min="0" max="255" class="update_changes" /></p>
+								<p class="range-field"><input type="range" id="rng_red" min="0" max="255" class="update_colors" /></p>
 							</div>
 							<div class="input-field col s12 l4">
 								<label for="txt_green">Green</label><br/>
-								<p class="range-field"><input type="range" id="rng_green" min="0" max="255" class="update_changes" /></p>
+								<p class="range-field"><input type="range" id="rng_green" min="0" max="255" class="update_colors" /></p>
 							</div>
 							<div class="input-field col s12 l4">
 								<label for="txt_blue">Blue</label><br/>
-								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_changes" /></p>
+								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_colors" /></p>
 							</div>
 						</div>
 						
 						<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_delay">Delay</label><br/>
-								<p class="range-field"><input type="range" id="rng_delay" min="0" max="500" value="50" class="update_changes" /></p>
+								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="50" class="update_delay" /></p>
 							</div>
 						</div>
 						
 						<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_delay">Brightness</label><br/>
-								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="255" /></p>
+								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="255" class="update_brightness" /></p>
 							</div>
 						</div>
 					</form>
@@ -159,9 +160,8 @@
 		
 		<footer class="page-footer">
 			<div class="footer-copyright">
-				<div class="container">
-				© 2016 Copyright Tobias Blum
-				<a class="grey-text text-lighten-4 right" href="#!">More Links</a>
+				<div class="container">© 2016
+				<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project home</a>
 				</div>
 			</div>
 		</footer>
@@ -175,6 +175,6 @@
 		<!--Import jQuery before materialize.js-->
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
-		<script src="js/script.js"></script>
+		<script type="text/javascript">@@include('js/script.js')</script>
 	</body>
 </html>

@@ -9,7 +9,11 @@
   "author": "Tobias Blum",
   "license": "MIT",
   "dependencies": {
+    "fs": "0.0.2",
+    "gulp": "^3.9.1",
     "gulp-connect": "^4.0.0",
-    "materialize-css": "^0.97.6"
+    "gulp-file-include": "^0.13.7",
+    "materialize-css": "^0.97.6",
+    "request": "^2.72.0"
   }
 }

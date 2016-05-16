@@ -1,14 +1,22 @@
 (function($){
-  $(function(){
+$(function(){
 	  
-	var host = "192.168.0.24";
+	// Settings
+	var host = window.location.hostname;
+	//host = "192.168.0.24";
 
+	var ws_url = 'ws://' + host + ':81';
+	var connection;
+	var ws_waiting = 0;
+
+	// ******************************************************************
+	// Side navigation
+	// ******************************************************************
     $('.button-collapse').sideNav();
-	
 	
 	// Navlinks
 	$('#mc-nav').on('click', '.mc-navlink', function(){
-		console.log("Nav to: ", $(this).data("pane"));
+		console.log("Navigate to pane: ", $(this).data("pane"));
 		showPane($(this).data("pane"));
 	});
 	
@@ -16,32 +24,45 @@
 		$('.mc_pane').addClass('hide');
 		$('#' + pane).removeClass('hide');
 		$('.button-collapse').sideNav('hide');
+		
+		if (pane == "pane2") {
+			setMainColor();
+		}
 	}
 	
 	
 	// ******************************************************************
 	// init()
 	// ******************************************************************
-	var connection = new WebSocket('ws://' + host + ':81', ['arduino']);
-			
-	// When the connection is open, send some data to the server
-	connection.onopen = function () {
-		//connection.send('Ping'); // Send the message 'Ping' to the server
-		console.log('WebSocket Open');
-		showPane('pane1');
-	};
+	function init() {
+		console.log("Connection websockets to:", ws_url);
+		connection = new WebSocket(ws_url, ['arduino']);
+				
+		// When the connection is open, send some data to the server
+		connection.onopen = function () {
+			//connection.send('Ping'); // Send the message 'Ping' to the server
+			console.log('WebSocket Open');
+			showPane('pane1');
+		};
 
-	// Log errors
-	connection.onerror = function (error) {
-		console.log('WebSocket Error ' + error);
-		$('#mc-wsloader').addClass('hide');
-		$('#mc-wserror').removeClass('hide');
-	};
+		// Log errors
+		connection.onerror = function (error) {
+			console.log('WebSocket Error ' + error);
+			$('#mc-wsloader').addClass('hide');
+			$('#mc-wserror').removeClass('hide');
+		};
 
-	// Log messages from the server
-	connection.onmessage = function (e) {
-		console.log('Server: ' + e.data);
-	};
+		// Log messages from the server
+		connection.onmessage = function (e) {
+			console.log('WebSocket from server: ' + e.data);
+			ws_waiting = 0;
+		};
+	}
+	
+	// ******************************************************************
+	// Helper
+	// ******************************************************************	
+
 	
 	
 	// ******************************************************************
@@ -55,33 +76,65 @@
 			$(".btn_mode").removeClass("blue");
 			btn.addClass("blue");
 		});
+		
+	});
+	
+	$("#pane2").on("change", ".update_colors", setMainColor);	
+	
+	$("#pane2").on("change", ".update_delay", function() {
+		var delay = $("#rng_delay").val();		
+		
+		wsSendCommand("?" + delay);
+	});
+	
+	$("#pane2").on("change", ".update_brightness", function() {
+		var brightness = $("#rng_brightness").val();		
+		
+		wsSendCommand("%" + brightness);
 	});
 	
 	function setMode(mode, finish_funtion) {
 		var url = "http://" + host + "/" + mode;
 		console.log("Mode: ", mode);
-		
-		var red = $("#rng_red").val();
-		var green = $("#rng_green").val();
-		var blue = $("#rng_blue").val();
-		var delay = $("#rng_delay").val();
-		
-		var params = {"r":red, "g":green, "b":blue, "d":delay};
-		connection.send("=" + mode);
-		
-		/*
-		$.getJSON(url, params, function(data) {
-			updateStatus(data);
-			finish_funtion();
-		});
-		*/
+
+		wsSendCommand("=" + mode);
+		finish_funtion();
 	}
 	
-	function updateStatus(data) {
-		console.log("Returned: ", data);
-		$("#result").val("Mode: " + data.mode + "\nColor: "+ data.color[0] + "," + data.color[1] + "," + data.color[2] + "\nDelay:" + data.delay_ms + "\nBrightness:" + data.brightness);
-		$('#result').trigger('autoresize');
+	function setMainColor() {
+		var red = $("#rng_red").val();
+		var green = $("#rng_green").val();
+		var blue = $("#rng_blue").val();		
+		
+		var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		wsSetMainColor(mainColorHex);
 	}
+	
+	
+	// ******************************************************************
+	// WebSocket commands
+	// ******************************************************************
+	function wsSendCommand(cmd) {
+		console.log("Send WebSocket command:", cmd);
+		if (ws_waiting == 0)  {
+			connection.send(cmd);
+			ws_waiting++;
+		} else {
+			console.log("++++++++ WS call waiting, skip")
+		}
+	}	
+	
+	
+	function wsSetAll(hexColor) {
+		console.log("wsSetAll() Set all colors to:", hexColor);
+		wsSendCommand("*" + hexColor);
+	}
+	
+	function wsSetMainColor(hexColor) {
+		console.log("wsSetMainColor() Set main colors to:", hexColor);
+		wsSendCommand("#" + hexColor);
+	}
+	
 	
 	
 	// ******************************************************************
@@ -97,6 +150,8 @@
 	// canvas.addEventListener("touchend", function(e) { e.preventDefault(); }, false);
 	canvas.addEventListener("touchmove", doTouch, false);
 	canvas.addEventListener("click", doClick, false);
+	//canvas.addEventListener("mousemove", doClick, false);
+
 	
 	var context = canvas.getContext('2d');
 	var centerX = canvas.width / 2;
@@ -158,25 +213,26 @@
 
 	//comp to Hex
 	function componentToHex(c) {
-		var hex = c.toString(16);
-		return hex.length == 1 ? "0" + hex : hex;
+		//var hex = c.toString(16);
+		//return hex.length == 1 ? "0" + hex : hex;
+		return  ("0"+(Number(c).toString(16))).slice(-2).toUpperCase();
 	}
 
 	//rgb/rgba to Hex
 	function rgbToHex(rgb) {
-		return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+		return componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
 	}
 
 	//display the touch/click position and color info
-	function showStatus(pos, color) {
+	function updateStatus(pos, color) {
 		var hexColor = rgbToHex(color);
+		wsSetAll(hexColor);
 		
-		connection.send("*" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]));
-			
+		hexColor = "#" + hexColor;
+		
 		$('#status').css("backgroundColor", hexColor);
 		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
-		document.getElementById('status').style.backgroundColor=hexColor;
 	}
 
 	//handle the touch event
@@ -191,7 +247,7 @@
 		//color
 		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
 
-		showStatus(pos, color);
+		updateStatus(pos, color);
 	}
 
 	function doClick(event) {   
@@ -200,12 +256,18 @@
 		//color
 		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
 		
-		console.log("click", pos.x, pos.y, color);
-		showStatus(pos, color);
+		//console.log("click", pos.x, pos.y, color);
+		updateStatus(pos, color);
 		
 		//now do sth with the color rgbToHex(color);
 		//don't do stuff when #000000 (outside circle and lines
 	}
+
+
+	// ******************************************************************
+	// main
+	// ******************************************************************
+	init();
 	
-  }); // end of document ready
+}); // end of document ready
 })(jQuery); // end of jQuery name space
