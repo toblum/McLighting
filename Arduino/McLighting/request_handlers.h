@@ -120,15 +120,27 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 main_color.green = ((rgb >> 8) & 0xFF);
                 main_color.blue = ((rgb >> 0) & 0xFF);
                 DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+                webSocket.sendTXT(num, "OK");
             }
 
             // # ==> Set delay
             if(payload[0] == '?') {
-                // decode rgb data
-                uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 16);
+                // decode delay data
+                uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
                 delay_ms = ((d >> 0) & 0xFF);
                 DBG_OUTPUT_PORT.printf("WS: Set delay to: [%u]\n", delay_ms);
+                webSocket.sendTXT(num, "OK");
             }
+
+            // # ==> Set brightness
+            if(payload[0] == '%') {
+                uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+                brightness = ((b >> 0) & 0xFF);
+                DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
+                strip.setBrightness(brightness);
+                webSocket.sendTXT(num, "OK");
+            }
+
 
             // * ==> Set main color and light all LEDs (Shortcut)
             if(payload[0] == '*') {
@@ -145,6 +157,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 strip.show();
                 DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
                 mode = HOLD;
+                webSocket.sendTXT(num, "OK");
             }
 
             // ! ==> Set single LED in given color
@@ -166,6 +179,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                   strip.show();
                 }
                 mode = HOLD;
+                webSocket.sendTXT(num, "OK");
             }
 
             // ! ==> Activate mode
@@ -174,6 +188,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 String str_mode = String((char *) &payload[0]);
 
                 exit_func = true;
+                if (str_mode.startsWith("=off")) {
+                   mode = OFF;
+                }
+                if (str_mode.startsWith("=all")) {
+                   mode = ALL;
+                }
                 if (str_mode.startsWith("=wipe")) {
                    mode = WIPE;
                 }
@@ -194,6 +214,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 }
 
                 DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
+                webSocket.sendTXT(num, "OK");
             }
         break;
     }

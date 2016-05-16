@@ -299,7 +299,12 @@ void loop() {
 	
 	// Simple statemachine that handles the different modes
 	if (mode == OFF) {
-		colorWipe(strip.Color(0, 0, 0), 50);
+		//colorWipe(strip.Color(0, 0, 0), 50);
+    uint16_t i;
+    for (i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, 0, 0, 0);
+    }
+    strip.show();
 		mode = HOLD;
 	}
 	if (mode == ALL) {
@@ -308,7 +313,7 @@ void loop() {
 			strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
 		}
 		strip.show();
-		mode = HOLD;
+		//mode = HOLD;
 	}
 	if (mode == WIPE) {
 		colorWipe(strip.Color(main_color.red, main_color.green, main_color.blue), delay_ms);
