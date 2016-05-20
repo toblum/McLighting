@@ -214,7 +214,11 @@ void setup() {
 	// Setup: SPIFFS Webserver handler
 	// ***************************************************************************
 	server.on("/brightness", []() {
-		brightness = server.arg("p").toInt();
+    if (server.arg("c").toInt() > 0) {
+      brightness = (int) server.arg("c").toInt() * 2.55;
+    } else {
+      brightness = server.arg("p").toInt();
+    }
 		if (brightness > 255) {
 			brightness = 255;
 		}
@@ -229,6 +233,18 @@ void setup() {
 		
 		getStatusJSON();
 	});
+
+  server.on("/get_brightness", []() {
+    server.send(200, "text/plain", String((int) (brightness / 2.55)) );
+  });
+
+  server.on("/get_switch", []() {
+    server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
+  });
+
+  server.on("/get_color", []() {
+    server.send(200, "text/plain", String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX) );
+  });
 	
 	server.on("/status", []() {
 		getStatusJSON();

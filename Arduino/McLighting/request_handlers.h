@@ -2,9 +2,16 @@
 // Request handlers
 // ***************************************************************************
 void getArgs() {
-	main_color.red = server.arg("r").toInt();
-	main_color.green = server.arg("g").toInt();
-	main_color.blue = server.arg("b").toInt();
+  if (server.arg("rgb") != "") {
+     uint32_t rgb = (uint32_t) strtol(server.arg("rgb").c_str(), NULL, 16);
+     main_color.red = ((rgb >> 16) & 0xFF);
+     main_color.green = ((rgb >> 8) & 0xFF);
+     main_color.blue = ((rgb >> 0) & 0xFF);
+  } else {
+    main_color.red = server.arg("r").toInt();
+    main_color.green = server.arg("g").toInt();
+    main_color.blue = server.arg("b").toInt();
+  }
 	delay_ms = server.arg("d").toInt();
 	
 	if (main_color.red > 255) {
