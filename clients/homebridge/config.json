@@ -1,0 +1,39 @@
+{
+    "bridge": {
+        "name": "Homebridge",
+        "username": "AA:BB:CC:DD:EE:FF",
+        "port": 51826,
+        "pin": "012-34-567"
+    },
+
+    "description": "This is an example configuration file with one fake accessory and one fake platform. You can use this as a template for creating your own configuration file containing devices you actually own.",
+
+    "accessories": [
+       {
+                        "accessory": "HTTP-RGB",
+                        "name": "Wohnzimmerlampe",
+
+                        "switch": {
+                                "status": "http://<ESP_HOST>/get_switch",
+                                "powerOn": "http://<ESP_HOST>/all?r=255&g=1255&b=255",
+                                "powerOff": "http://<ESP_HOST>/off"
+                        },
+
+                        "brightness": {
+                                "status": "http://<ESP_HOST>/get_brightness",
+                                "url": "http://<ESP_HOST>/set_brightness?p=%s"
+                        },
+
+                        "color": {
+                                "status": "http://<ESP_HOST>/get_color",
+                                "url": "http://<ESP_HOST>/all?rgb=%s",
+                                "brightness": true
+                        }
+                }
+
+    ],
+
+    "platforms": [
+
+    ]
+}
