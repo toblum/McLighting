@@ -7,6 +7,8 @@
 
 [![Demo video WebClient](https://j.gifs.com/kRPrzN.gif)](https://youtu.be/rc6QVHKAXBs)
 
+[![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
+
 ## The Hardware
 
 The project ist based on the famous ESP8266 microcontroller and WD2811/WS2812 LED strips. There are many variations of the ESP chip out there, but I chose the NodeMCU dev board, because it's powered by micro USB and has a voltage converter included to power the ESP which uses 3.3V.
