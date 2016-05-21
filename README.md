@@ -4,6 +4,9 @@
 
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
+
+[![Demo video WebClient](https://j.gifs.com/kRPrzN.gif)](https://youtu.be/rc6QVHKAXBs)
+
 ## The Hardware
 - A NodeMCU development board, based on the ESP8266 ESP-12E, (that you can get for under $5 from eBay). A standalone ESP8266 or a Adafruit Huzzah should work too.
 - A WS2811 or WS2812 led strip that you can get in many sizes and forms. I'm using a ring of 12 leds. When you use more than about 15-20 leds you may have to use a dedicated 5V power source.
