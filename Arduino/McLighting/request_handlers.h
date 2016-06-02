@@ -95,10 +95,15 @@ void handleNotFound() {
   server.send ( 404, "text/plain", message );
 }
 
-void getStatusJSON() {
+char* listStatusJSON() {
   char json[255];
   snprintf(json, sizeof(json), "{\"mode\":%d, \"delay_ms\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}", mode, delay_ms, brightness, main_color.red, main_color.green, main_color.blue);
-  server.send ( 200, "application/json", json );
+  return json;
+}
+
+
+void getStatusJSON() {
+  server.send ( 200, "application/json", listStatusJSON() );
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
@@ -222,6 +227,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
         DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
         webSocket.sendTXT(num, "OK");
+      }
+
+      // $ ==> Get status Info.
+      if (payload[0] == '$') {
+        DBG_OUTPUT_PORT.printf("Get status info.");
+        
+        String json = listStatusJSON();
+        DBG_OUTPUT_PORT.println(json);
+        webSocket.sendTXT(num, json);
       }
       break;
   }
