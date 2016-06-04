@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<title>McLighting Pebble Configuration</title>
+	<link rel='stylesheet' type='text/css' href='css/slate.min.css'>
+	<script src='js/slate.min.js'></script>
+	<style>
+		.title {
+			padding: 15px 10px;
+			text-transform: uppercase;
+			font-family: 'PT Sans', sans-serif;
+			font-size: 1.2em;
+			font-weight: 500;
+			color: #888888;
+			text-align: center;
+		}
+	</style>
+	</head>
+
+	<body>
+		<h1 class='title'>McLighting Pebble Configuration</h1>
+
+		<div class='item-container'>
+			<div class='item-container-content'>
+				<div class='item'>
+					Use this configuration page to set the URL of your McLighting smart light.
+				</div>
+			</div>
+		</div>
+
+		<div class="item-container">
+			<div class="item-container-header">McLighting URL</div>
+			<div class="item-container-content">
+				<label class="item">
+					<div class="item-input-wrapper">
+						<input type="text" class="item-input" name="esp_url" id="esp_url" placeholder="ws://esp8266_01.local:81" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+					</div>
+				</label>
+			</div>
+		</div>
+
+		<!-- div class='item-container'>
+		<div class='item-container-header'>Customizability</div>
+		<div class='item-container-content'>
+		<label class='item'>
+		Background Color
+		<input id='background_color_picker' type='text' class='item-color item-color-sunny' value='#000000'>
+		</label>
+		</div>
+		<div class='item-container-footer'>
+		Choose the app's background color. Used if High Contrast Mode is not selected. Note: Only available on Basalt watches that support many colors.
+		</div>
+		</div>
+
+		<div class='item-container'>
+		<div class='item-container-header'>Accessibility</div>
+		<div class='item-container-content'>
+		<label class='item'>
+		High Contrast Mode
+		<input id='high_contrast_checkbox' type='checkbox' class='item-toggle'>
+		</label>
+		</div>
+		<div class='item-container-footer'>
+		This switches the app colors to a higher contrast set that promotes readability in low light.
+		</div>
+		</div -->
+
+		<div class='item-container'>
+			<div class='button-container'>
+				<input id='submit_button' type='button' class='item-button' value='SAVE'>
+			</div>
+		</div>
+	</body>
+	
+	<script>
+		function getConfigData() {
+			//var backgroundColorPicker = document.getElementById('background_color_picker');
+			//var highContrastCheckbox = document.getElementById('high_contrast_checkbox');
+			var urlTextfield = document.getElementById('esp_url');
+
+			var options = {
+				//      'background_color': backgroundColorPicker.value,
+				//      'high_contrast': highContrastCheckbox.checked
+				'esp_url': urlTextfield.value
+			};
+
+			// Save for next launch
+			//localStorage['background_color'] = options['background_color'];
+			//localStorage['high_contrast'] = options['high_contrast'];
+			localStorage['esp_url'] = options['esp_url'];
+
+			console.log('Got options: ' + JSON.stringify(options));
+			return options;
+		}
+
+		function getQueryParam(variable, defaultValue) {
+			var query = location.search.substring(1);
+			var vars = query.split('&');
+			for (var i = 0; i < vars.length; i++) {
+				var pair = vars[i].split('=');
+				if (pair[0] === variable) {
+					return decodeURIComponent(pair[1]);
+				}
+			}
+			return defaultValue || false;
+		}
+
+		var submitButton = document.getElementById('submit_button');
+		submitButton.addEventListener('click', function() {
+		console.log('Submit');
+
+		// Set the return URL depending on the runtime environment
+		var return_to = getQueryParam('return_to', 'pebblejs://close#');
+			document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
+		});
+
+		(function() {
+			//var backgroundColorPicker = document.getElementById('background_color_picker');
+			//var highContrastCheckbox = document.getElementById('high_contrast_checkbox');
+			var urlTextfield = document.getElementById('esp_url');
+
+			// Load any previously saved configuration, if available
+			if(localStorage['esp_url']) {
+				//highContrastCheckbox.checked = JSON.parse(localStorage['high_contrast']);
+				//backgroundColorPicker.value = localStorage['background_color'];
+				urlTextfield.value = localStorage['esp_url'];
+			}
+		})();
+	</script>
+</html>
