@@ -168,7 +168,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         }
         strip.show();
         DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-        mode = HOLD;
+        exit_func = true;
+        mode = ALL;
         webSocket.sendTXT(num, "OK");
       }
 
@@ -190,7 +191,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           }
           strip.show();
         }
-        mode = HOLD;
+        exit_func = true;
+        mode = ALL;
         webSocket.sendTXT(num, "OK");
       }
 
