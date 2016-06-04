@@ -217,6 +217,14 @@ void setup() {
     ESP.restart();
   });
 
+  server.on("/reset_wlan", []() {
+    DBG_OUTPUT_PORT.printf("/reset_wlan:\n");
+    server.send(200, "text/plain", "Resetting WLAN and restarting..." );
+    WiFiManager wifiManager;
+    wifiManager.resetSettings();
+    ESP.restart();
+  });
+
 
   // ***************************************************************************
   // Setup: SPIFFS Webserver handler
