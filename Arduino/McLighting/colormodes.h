@@ -15,7 +15,7 @@ int twitch = 50;
 int dipCount = 0;
 int analogLevel = 100;
 boolean timeToDip = false;
-int ledStates[12];
+int ledStates[NUMLEDS];
 
 void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
     // Source: https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/
@@ -31,7 +31,7 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
 void updateLed (int led, int brightness) {
 	ledStates[led] = brightness;
 	
-	for (int i=0;i<12;i++)
+	for (int i=0; i<NUMLEDS; i++)
 	{
 		uint16_t index = (i%3 == 0) ? 400 : random(0,767);
 		hsb2rgbAN1(index, 200, ledStates[i], i);
@@ -76,7 +76,7 @@ void tv() {
 		}
 		if(currentMillis-previousMillis<twitch)
 		{
-			led=random(0,11);
+			led=random(0, (strip.numPixels()-1));
 			analogLevel=random(50,255);// set the range of the 3 pwm leds
 			ledState = ledState == LOW ? HIGH: LOW; // if the LED is off turn it on and vice-versa:
 			
@@ -100,9 +100,9 @@ void tv() {
 		currentDipTime = millis();
 		if (currentDipTime - dipStartTime < darkTime)
 		{
-			for (int i=3;i<9;i++)
+			for (int i=3; i<strip.numPixels(); i++)
 			{
-				updateLed (i, 0);
+				updateLed(i, 0);
 			}
 		}
 		else
@@ -116,6 +116,12 @@ void tv() {
 
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
+  uint16_t i;
+  for (i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, 0, 0, 0);
+  }
+  strip.show();
+    
 	for (uint16_t i = 0; i < strip.numPixels(); i++) {
 		strip.setPixelColor(i, c);
 		strip.show();
