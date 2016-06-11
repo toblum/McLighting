@@ -5,9 +5,16 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 
+___
+Update 11.06.2016:  
+Today I presented the project at [Pi and More 9](https://piandmore.de/) and got some good feedback, even though my presentation was not perfect and time was too short to present everything I prepared. So I uploaded the [slides (german)](documentation/slides/Ein%20SmartLight%20im%20Selbstbau%20für%20unter%2015%20€_Pi%20and%20More%209.pdf) to this repository for your reference.
+___
+
+
 [![Demo video WebClient](https://j.gifs.com/kRPrzN.gif)](https://youtu.be/rc6QVHKAXBs)
 
 [![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
+
 
 ## The Hardware
 
@@ -16,11 +23,12 @@ A standalone ESP8266 or a Adafruit Huzzah should work too.
 
 The RGB LED strips are also available in many different flavours as strip or as standalone LEDs and can easily be chained.
 
-See wiki [Hardware](wiki/Hardware)
+See wiki [Hardware](../../wiki/Hardware)
 
 
 ## Software installation
-See wiki [Software installation](wiki/Software-installation)
+See wiki [Software installation](../../wiki/Software-installation)
+
 
 ### Used Libraries
 This project uses libraries and code by different authors:
@@ -55,8 +63,13 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Stability improvements
 - [ ] Additional clients
 
+
 ## Licence
 [GNU LGPLv3](http://www.gnu.org/licenses/lgpl-3.0.txt)
+
+
+## Disclaimer
+You use this project at your own risk. This is not a solution that should be used in productive environments, but this code and guide could give you a quick start for your own experiments. Please keep also in mind that there are currently some security features missing.
 
 
 *More information will be added as soon as I clean up the code and complete documentation.*
