@@ -1,11 +1,16 @@
 # McLighting - The ESP8266 based multi-client lighting gadget
 
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 > Mc Lighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features a self-hosted responsive web-interface, a REST-API and a websocket connector.
 
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 
 ___
+Update 12.08.2016:
+There is now a [gitter.im](https://gitter.im/mclighting/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link) chat room for this project.
+
 Update 11.06.2016:  
 Today I presented the project at [Pi and More 9](https://piandmore.de/) and got some good feedback, even though my presentation was not perfect and time was too short to present everything I prepared. So I uploaded the [slides (german)](documentation/slides/Ein%20SmartLight%20im%20Selbstbau%20für%20unter%2015%20€_Pi%20and%20More%209.pdf) to this repository for your reference.
 ___
