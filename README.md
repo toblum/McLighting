@@ -8,6 +8,11 @@
 
 
 ___
+Update 04.01.2017:
+Now, there are two forks of McLighting (using the famous FastLED library). I did not notice it first, because I currently do not receive notification e-mails by Github (I have no idea why). Maybe you want to give them also a try, I will definitely do so as soon as I find time.  
+https://github.com/russp81/LEDLAMP_FASTLEDs  
+And this one was also forked: https://github.com/jake-b/Griswold-LED-Controller
+
 Update 12.08.2016:
 There is now a [gitter.im](https://gitter.im/mclighting/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link) chat room for this project.
 
