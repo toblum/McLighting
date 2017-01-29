@@ -73,6 +73,12 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   DBG_OUTPUT_PORT.println(myWiFiManager->getConfigPortalSSID());
   //entered config mode, make led toggle faster
   ticker.attach(0.2, tick);
+
+  uint16_t i;
+  for (i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, 0, 255, 0);
+  }
+  strip.show();
 }
 
 
@@ -106,6 +112,13 @@ void setup() {
   ticker.attach(0.6, tick);
 
   // ***************************************************************************
+  // Setup: Neopixel
+  // ***************************************************************************
+  strip.begin();
+  strip.setBrightness(brightness);
+  strip.show(); // Initialize all pixels to 'off'
+
+  // ***************************************************************************
   // Setup: WiFiManager
   // ***************************************************************************
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -132,14 +145,6 @@ void setup() {
   ticker.detach();
   //keep LED on
   digitalWrite(BUILTIN_LED, LOW);
-
-
-  // ***************************************************************************
-  // Setup: Neopixel
-  // ***************************************************************************
-  strip.begin();
-  strip.setBrightness(brightness);
-  strip.show(); // Initialize all pixels to 'off'
 
 
   // ***************************************************************************
