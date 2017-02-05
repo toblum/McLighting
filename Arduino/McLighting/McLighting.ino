@@ -341,6 +341,7 @@ void setup() {
   server.on("/set_mode", []() {
     getArgs();
     mode = SET_MODE;
+    getStatusJSON();
   });
 
   server.begin();
