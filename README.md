@@ -1,4 +1,4 @@
-# McLighting - The ESP8266 based multi-client lighting gadget
+# McLighting v2 - The ESP8266 based multi-client lighting gadget
 
 [![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
@@ -8,6 +8,10 @@
 
 
 ___
+Update 05.02.2017:
+After a long time I was able to work a bit on McLighting v2 and it's finally out now. The main difference, among minor improvements and library updates, is the usage of the great WS2812FX library for color animations. It brings a lot (almost 50!) of new animations.
+The API changed a little bit, because the speed can now be set as a value from 0 to 255, not the delay anymore. So the web inferface had to change accordingly. The new animation mode have to be set also by their number, instead of a dedicated url. The list of all animation modes can also be received by the API. All existing API endpoints are kept for downward compatibility. So you should be able to use the new version without big changes. The original version is kept as branch "mclighting_legacy". Documentation will be updated soon.
+
 Update 04.01.2017:
 Now, there are two forks of McLighting (using the famous FastLED library). I did not notice it first, because I currently do not receive notification e-mails by Github (I have no idea why). Maybe you want to give them also a try, I will definitely do so as soon as I find time.  
 https://github.com/russp81/LEDLAMP_FASTLEDs  
@@ -42,11 +46,13 @@ See wiki [Software installation](../../wiki/Software-installation)
 
 ### Used Libraries
 This project uses libraries and code by different authors:
-- WiFiManager by @tzapu (tested with version 0.11.0)
+- WiFiManager by @tzapu (tested with version 0.12.0)
   https://github.com/tzapu/WiFiManager
-- WebSockets by @Links2004 (tested with version 2.0.2)
+- WS2812FX by @kitesurfer1404 (tested with version downloaded 2017-02-05)
+  https://github.com/kitesurfer1404/WS2812FX
+- WebSockets by @Links2004 (tested with version 2.0.5)
   https://github.com/Links2004/arduinoWebSockets
-- Adafruit NeoPixel by @adafruit (tested with 1.0.5)
+- Adafruit NeoPixel by @adafruit (tested with 1.0.6)
   https://github.com/adafruit/Adafruit_NeoPixel
   
 The sketch also uses the following built-in library:
@@ -68,9 +74,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
 - [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
-- [ ] Use the led strip for status information in connection phase
+- [x] Use the led strip for status information in connection phase
 - [ ] Enhance the documentation
-- [ ] Stability improvements
+- [x] Stability improvements
 - [ ] Additional clients
 
 
