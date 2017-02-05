@@ -1,9 +1,9 @@
 // Neopixel
 #define PIN 5         // PIN where neopixel / WS2811 strip is attached
-#define NUMLEDS 12    // Number of leds in the strip
+#define NUMLEDS 24    // Number of leds in the strip
 
 
-#define HOSTNAME "ESP8266_01"   // Friedly hostname
+#define HOSTNAME "ESP8266_02"   // Friedly hostname
 
 
 // ***************************************************************************
@@ -12,12 +12,14 @@
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV };
+enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV };
 
-MODE mode = RAINBOWCYCLE;   // Standard mode that is active when software starts
+MODE mode = RAINBOW;   // Standard mode that is active when software starts
 
-int delay_ms = 50;          // Global variable for storing the delay between color changes --> smaller == faster
-int brightness = 128;       // Global variable for storing the brightness (255 == 100%)
+int ws2812fx_speed = 128;   // Global variable for storing the delay between color changes --> smaller == faster
+int brightness = 192;       // Global variable for storing the brightness (255 == 100%)
+
+int ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
 
 bool exit_func = false;     // Global helper variable to get out of the color modes when mode changes
 
