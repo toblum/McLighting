@@ -3,7 +3,7 @@ $(function(){
 	  
 	// Settings
 	var host = window.location.hostname;
-	//host = "192.168.0.24";
+	//host = "esp8266_02.local";
 
 	var ws_url = 'ws://' + host + ':81';
 	var connection;
@@ -37,6 +37,24 @@ $(function(){
 	function init() {
 		console.log("Connection websockets to:", ws_url);
 		connection = new WebSocket(ws_url, ['arduino']);
+		
+		// Load modes async
+		$.getJSON("http://" + host + "/get_modes", function(data) {
+			//console.log("modes", data);
+			
+			var modes_html = "";
+			data.forEach(function(current_mode){
+				if (current_mode.mode !== undefined) {
+					modes_html += '<div class="col s12 m6 l4 btn_grid">';
+					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">' + current_mode.name + '';
+					modes_html += '<i class="material-icons right">send</i>';
+					modes_html += '</a>';
+					modes_html += '</div>';
+				}
+			});
+			
+			$('#modes').html(modes_html);
+		});
 				
 		// When the connection is open, send some data to the server
 		connection.onopen = function () {
@@ -58,12 +76,7 @@ $(function(){
 			ws_waiting = 0;
 		};
 	}
-	
-	// ******************************************************************
-	// Helper
-	// ******************************************************************	
 
-	
 	
 	// ******************************************************************
 	// Modes
@@ -73,10 +86,18 @@ $(function(){
 		last_mode = mode;
 		var btn = $(this);
 		setMode(mode, function() {
-			$(".btn_mode").removeClass("blue");
-			btn.addClass("blue");
+			$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
+			btn.removeClass("blue").addClass("red");
 		});
+	});	
+	
+	$("#pane2").on("click", ".btn_mode_static", function() {
+		var mode = $(this).attr("data-mode");
+		var btn = $(this);
 		
+		wsSendCommand("=" + mode);
+		$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
+		btn.removeClass("blue").addClass("red");
 	});
 	
 	$("#pane2").on("change", ".update_colors", setMainColor);	
@@ -94,10 +115,9 @@ $(function(){
 	});
 	
 	function setMode(mode, finish_funtion) {
-		var url = "http://" + host + "/" + mode;
 		console.log("Mode: ", mode);
 
-		wsSendCommand("=" + mode);
+		wsSendCommand("/" + mode);
 		finish_funtion();
 	}
 	
@@ -233,6 +253,10 @@ $(function(){
 		$('#status').css("backgroundColor", hexColor);
 		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
+		
+		$("#rng_red").val(color[0]);
+		$("#rng_green").val(color[1]);
+		$("#rng_blue").val(color[2]);
 	}
 
 	//handle the touch event

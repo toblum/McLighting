@@ -26,12 +26,11 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 
 // ***************************************************************************
-// Load libraries / Instanciate Neopixel
+// Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
-#include <Adafruit_NeoPixel.h>
-#ifdef __AVR__
-#include <avr/power.h>
-#endif
+// https://github.com/kitesurfer1404/WS2812FX
+#include <WS2812FX.h>
+WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -40,7 +39,6 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -76,7 +74,7 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 
   uint16_t i;
   for (i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, 0, 255, 0);
+    strip.setPixelColor(i, 0, 0, 255);
   }
   strip.show();
 }
@@ -114,9 +112,11 @@ void setup() {
   // ***************************************************************************
   // Setup: Neopixel
   // ***************************************************************************
-  strip.begin();
+  strip.init();
   strip.setBrightness(brightness);
-  strip.show(); // Initialize all pixels to 'off'
+  strip.setSpeed(ws2812fx_speed);
+  //strip.setMode(FX_MODE_RAINBOW_CYCLE);
+  strip.start();
 
   // ***************************************************************************
   // Setup: WiFiManager
@@ -334,6 +334,15 @@ void setup() {
     getStatusJSON();
   });
 
+  server.on("/get_modes", []() {
+    getModesJSON();
+  });
+
+  server.on("/set_mode", []() {
+    getArgs();
+    mode = SET_MODE;
+  });
+
   server.begin();
 }
 
@@ -342,37 +351,42 @@ void loop() {
   webSocket.loop();
 
   // Simple statemachine that handles the different modes
+  if (mode == SET_MODE) {
+    DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
+    strip.setMode(ws2812fx_mode);
+    mode = HOLD;
+  }
   if (mode == OFF) {
-    //colorWipe(strip.Color(0, 0, 0), 50);
-    uint16_t i;
-    for (i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, 0, 0, 0);
-    }
-    strip.show();
-    //mode = HOLD;
+    strip.setColor(0,0,0);
+    strip.setMode(FX_MODE_STATIC);
+    mode = HOLD;
   }
   if (mode == ALL) {
-    uint16_t i;
-    for (i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
-    }
-    strip.show();
-    //mode = HOLD;
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setMode(FX_MODE_STATIC);
+    mode = HOLD;
   }
   if (mode == WIPE) {
-    colorWipe(strip.Color(main_color.red, main_color.green, main_color.blue), delay_ms);
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setMode(FX_MODE_COLOR_WIPE);
+    mode = HOLD;
   }
   if (mode == RAINBOW) {
-    rainbow(delay_ms);
+    strip.setMode(FX_MODE_RAINBOW);
+    mode = HOLD;
   }
   if (mode == RAINBOWCYCLE) {
-    rainbowCycle(delay_ms);
+    strip.setMode(FX_MODE_RAINBOW_CYCLE);
+    mode = HOLD;
   }
   if (mode == THEATERCHASE) {
-    theaterChase(strip.Color(main_color.red, main_color.green, main_color.blue), delay_ms);
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setMode(FX_MODE_THEATER_CHASE);
+    mode = HOLD;
   }
   if (mode == THEATERCHASERAINBOW) {
-    theaterChaseRainbow(delay_ms);
+    strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+    mode = HOLD;
   }
   if (mode == HOLD) {
     if (exit_func) {
@@ -381,5 +395,9 @@ void loop() {
   }
   if (mode == TV) {
     tv();
+  }
+
+  if (mode != TV) {
+    strip.service();
   }
 }

@@ -12,31 +12,16 @@ void getArgs() {
     main_color.green = server.arg("g").toInt();
     main_color.blue = server.arg("b").toInt();
   }
-  delay_ms = server.arg("d").toInt();
-
-  if (main_color.red > 255) {
-    main_color.red = 255;
-  }
-  if (main_color.green > 255) {
-    main_color.green = 255;
-  }
-  if (main_color.blue > 255) {
-    main_color.blue = 255;
+  ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
+  if (server.arg("s") == "") {
+    ws2812fx_speed = 128;
   }
 
-  if (main_color.red < 0) {
-    main_color.red = 0;
-  }
-  if (main_color.green < 0) {
-    main_color.green = 0;
-  }
-  if (main_color.blue < 0) {
-    main_color.blue = 0;
-  }
-
-  if (server.arg("d") == "") {
-    delay_ms = 20;
-  }
+  ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount()-1);
+  
+  main_color.red = constrain(main_color.red, 0, 255);
+  main_color.green = constrain(main_color.green, 0, 255);
+  main_color.blue = constrain(main_color.blue, 0, 255);
 
   DBG_OUTPUT_PORT.print("Mode: ");
   DBG_OUTPUT_PORT.print(mode);
@@ -46,8 +31,8 @@ void getArgs() {
   DBG_OUTPUT_PORT.print(main_color.green);
   DBG_OUTPUT_PORT.print(", ");
   DBG_OUTPUT_PORT.print(main_color.blue);
-  DBG_OUTPUT_PORT.print(", Delay:");
-  DBG_OUTPUT_PORT.print(delay_ms);
+  DBG_OUTPUT_PORT.print(", Speed:");
+  DBG_OUTPUT_PORT.print(ws2812fx_speed);
   DBG_OUTPUT_PORT.print(", Brightness:");
   DBG_OUTPUT_PORT.println(brightness);
 }
@@ -97,13 +82,29 @@ void handleNotFound() {
 
 char* listStatusJSON() {
   char json[255];
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"delay_ms\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}", mode, delay_ms, brightness, main_color.red, main_color.green, main_color.blue);
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}", mode, strip.getMode(), strip.getModeName(strip.getMode()), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   return json;
 }
 
-
 void getStatusJSON() {
   server.send ( 200, "application/json", listStatusJSON() );
+}
+
+String listModesJSON() {
+  String modes = "[";
+  for(uint8_t i=0; i < strip.getModeCount(); i++) {
+    modes += "{\"mode\":";
+    modes += i;
+    modes += ", \"name\":\"";
+    modes += strip.getModeName(i);
+    modes += "\"},";
+  }
+  modes += "{}]";
+  return modes;
+}
+
+void getModesJSON() {
+  server.send ( 200, "application/json", listModesJSON() );
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
@@ -131,16 +132,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         main_color.red = ((rgb >> 16) & 0xFF);
         main_color.green = ((rgb >> 8) & 0xFF);
         main_color.blue = ((rgb >> 0) & 0xFF);
+        strip.setColor(main_color.red, main_color.green, main_color.blue);
         DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
         webSocket.sendTXT(num, "OK");
       }
 
-      // # ==> Set delay
+      // # ==> Set speed
       if (payload[0] == '?') {
-        // decode delay data
         uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        delay_ms = ((d >> 0) & 0xFF);
-        DBG_OUTPUT_PORT.printf("WS: Set delay to: [%u]\n", delay_ms);
+        ws2812fx_speed = constrain(d, 0, 255);
+        strip.setSpeed(ws2812fx_speed);
+        DBG_OUTPUT_PORT.printf("WS: Set speed to: [%u]\n", ws2812fx_speed);
         webSocket.sendTXT(num, "OK");
       }
 
@@ -238,6 +240,28 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         String json = listStatusJSON();
         DBG_OUTPUT_PORT.println(json);
         webSocket.sendTXT(num, json);
+      }
+      
+      // $ ==> Get WS2812 modes.
+      if (payload[0] == '~') {
+        DBG_OUTPUT_PORT.printf("Get WS2812 modes.");
+        
+        String json = listModesJSON();
+        DBG_OUTPUT_PORT.println(json);
+        webSocket.sendTXT(num, json);
+      }
+      
+      // $ ==> Set WS2812 mode.
+      if (payload[0] == '/') {
+        mode = HOLD;
+        uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
+        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        strip.setMode(ws2812fx_mode);
+        
+        //String json = listStatusJSON();
+        //DBG_OUTPUT_PORT.println(json);
+        webSocket.sendTXT(num, "OK");
       }
       break;
   }
