@@ -4,16 +4,17 @@
 		<!--Import Google Icon Font-->
 		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		<!--Import materialize.css-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css" media="screen,projection" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css" media="screen,projection" />
 
 		<!--Let browser know website is optimized for mobile-->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 		<meta charset="utf-8"/>
+		<title>McLighting v2</title>
 	</head>
 
-	<body class="">
+	<body>
 		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
-			<div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Mc Lighting</a>
+			<div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
 				<ul class="right hide-on-med-and-down">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
@@ -150,7 +151,7 @@ $(function(){
 	  
 	// Settings
 	var host = window.location.hostname;
-	host = "esp8266_02.local";
+	//host = "esp8266_02.local";
 
 	var ws_url = 'ws://' + host + ':81';
 	var connection;
