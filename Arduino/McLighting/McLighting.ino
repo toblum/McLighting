@@ -360,7 +360,7 @@ void loop() {
   if (mode == OFF) {
     strip.setColor(0,0,0);
     strip.setMode(FX_MODE_STATIC);
-    mode = HOLD;
+    // mode = HOLD;
   }
   if (mode == ALL) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
