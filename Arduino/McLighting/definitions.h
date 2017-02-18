@@ -5,6 +5,8 @@
 
 #define HOSTNAME "ESP8266_02"   // Friedly hostname
 
+// #define ENABLE_OTA    // If defined, enable Arduino OTA code.
+
 
 // ***************************************************************************
 // Global variables / definitions
