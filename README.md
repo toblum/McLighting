@@ -8,6 +8,9 @@
 
 
 ___
+Update 19.02.2017:
+Added OTA support as promised by @markbajaj. Minor other improvements.
+
 Update 05.02.2017:
 After a long time I was able to work a bit on McLighting v2 and it's finally out now. The main difference, among minor improvements and library updates, is the usage of the great WS2812FX library for color animations. It brings a lot (almost 50!) of new animations.
 The API changed a little bit, because the speed can now be set as a value from 0 to 255, not the delay anymore. So the web inferface had to change accordingly. The new animation mode have to be set also by their number, instead of a dedicated url. The list of all animation modes can also be received by the API. All existing API endpoints are kept for downward compatibility. So you should be able to use the new version without big changes. The original version is kept as branch "mclighting_legacy". Documentation will be updated soon.
