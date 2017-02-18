@@ -152,9 +152,18 @@ void setup() {
   // ***************************************************************************
   MDNS.begin(HOSTNAME);
   DBG_OUTPUT_PORT.print("Open http://");
-  DBG_OUTPUT_PORT.print(HOSTNAME);
-  DBG_OUTPUT_PORT.println(".local/edit to see the file browser");
+  DBG_OUTPUT_PORT.print(WiFi.localIP());
+  DBG_OUTPUT_PORT.println("/ to open McLighting.");
 
+  DBG_OUTPUT_PORT.print("Use http://");
+  DBG_OUTPUT_PORT.print(HOSTNAME);
+  DBG_OUTPUT_PORT.println(".local/ when you have Bobjour installed.");
+
+  DBG_OUTPUT_PORT.print("New users: Open http://");
+  DBG_OUTPUT_PORT.print(WiFi.localIP());
+  DBG_OUTPUT_PORT.println("/upload to upload the webpages first.");  
+
+  DBG_OUTPUT_PORT.println("");
 
   // ***************************************************************************
   // Setup: WebSocket server
