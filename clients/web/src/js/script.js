@@ -45,8 +45,10 @@ $(function(){
 			var modes_html = "";
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
+					var str_class = (current_mode.type !== undefined && current_mode.type === "direct") ? "btn_mode_static" : "btn_mode";
+					
 					modes_html += '<div class="col s12 m6 l4 btn_grid">';
-					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">' + current_mode.name + '';
+					modes_html += '<a class="btn waves-effect waves-light ' + str_class + ' blue" name="action" data-mode="' + current_mode.mode + '">' + current_mode.name + '';
 					modes_html += '<i class="material-icons right">send</i>';
 					modes_html += '</a>';
 					modes_html += '</div>';

@@ -92,6 +92,11 @@ void getStatusJSON() {
 
 String listModesJSON() {
   String modes = "[";
+  modes += "{\"mode\":\"off\", \"name\":\"Off\",\"type\":\"direct\"},";
+  modes += "{\"mode\":\"tv\", \"name\":\"TV\",\"type\":\"direct\"},";
+  #ifdef ENABLE_ARTNET
+    modes += "{\"mode\":\"artnet\", \"name\":\"Artnet\",\"type\":\"direct\"},";
+  #endif
   for(uint8_t i=0; i < strip.getModeCount(); i++) {
     modes += "{\"mode\":";
     modes += i;
@@ -228,6 +233,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (str_mode.startsWith("=tv")) {
           mode = TV;
         }
+        #ifdef ENABLE_ARTNET
+        if (str_mode.startsWith("=artnet")) {
+          mode = ARTNET;
+        }
+        #endif
 
         DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
         webSocket.sendTXT(num, "OK");
@@ -270,4 +280,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 void checkForRequests() {
   webSocket.loop();
   server.handleClient();
+
+  #ifdef ENABLE_OTA
+    ArduinoOTA.handle();
+  #endif
 }

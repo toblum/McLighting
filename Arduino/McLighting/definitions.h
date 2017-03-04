@@ -5,8 +5,10 @@
 
 #define HOSTNAME "ESP8266_02"   // Friedly hostname
 
-// #define ENABLE_OTA    // If defined, enable Arduino OTA code.
+// #define ENABLE_OTA        // If defined, enable Arduino OTA code.
 
+#define ENABLE_ARTNET     // If defined, enable ARTNET support.
+#define ARTNET_PORT 6454
 
 // ***************************************************************************
 // Global variables / definitions
@@ -14,7 +16,7 @@
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV };
+enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV, ARTNET };
 
 MODE mode = RAINBOW;   // Standard mode that is active when software starts
 

@@ -30,6 +30,31 @@ ESP8266WebServer server ( 80 );
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 
+//*************************************
+// Instanciate Artnet source : http://forum.arduino.cc/index.php?action=profile;u=130243
+// http://forum.arduino.cc/index.php?topic=434498.0
+//************************************
+#ifdef ENABLE_ARTNET
+  #include <WiFiUdp.h>
+  
+  #define WSbit (1<<PIN)
+  
+  // ARTNET CODES
+  #define ARTNET_DATA 0x50
+  #define ARTNET_POLL 0x20
+  #define ARTNET_POLL_REPLY 0x21
+  #define ARTNET_HEADER 17
+  
+  WiFiUDP udp;
+  
+  uint8_t uniData[514];
+  uint16_t uniSize;
+  uint8_t hData[ARTNET_HEADER + 1];
+  uint8_t net = 0;
+  uint8_t universe = 0;
+  uint8_t subnet = 0;
+#endif
+
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
@@ -85,7 +110,6 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 }
 
 
-
 // ***************************************************************************
 // Include: Webserver
 // ***************************************************************************
@@ -100,7 +124,6 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 // Include: Color modes
 // ***************************************************************************
 #include "colormodes.h"
-
 
 
 // ***************************************************************************
@@ -218,6 +241,13 @@ void setup() {
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
 
+  // ***************************************************************************
+  // Setup: Artnet server
+  // ***************************************************************************
+  #ifdef ENABLE_ARTNET
+    udp.begin(ARTNET_PORT); // Open ArtNet port
+  #endif
+  delay (1000);
 
   // ***************************************************************************
   // Setup: SPIFFS
@@ -261,7 +291,6 @@ void setup() {
     server.send(200, "text/json", json);
     json = String();
   });
-
 
   //called when the url is not defined here
   //use it to load content from SPIFFS
@@ -390,6 +419,15 @@ void setup() {
     getStatusJSON();
   });
 
+  #ifdef ENABLE_ARTNET
+    server.on("/artnet", []() {
+      exit_func = true;
+      mode = ARTNET;
+      getArgs();
+      getStatusJSON();
+    });
+  #endif
+
   server.on("/get_modes", []() {
     getModesJSON();
   });
@@ -405,11 +443,7 @@ void setup() {
 
 
 void loop() {
-  server.handleClient();
-  webSocket.loop();
-  #ifdef ENABLE_OTA
-    ArduinoOTA.handle();
-  #endif
+  checkForRequests();
 
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
@@ -457,8 +491,15 @@ void loop() {
   if (mode == TV) {
     tv();
   }
-
   if (mode != TV) {
-    strip.service();
+    #ifdef ENABLE_ARTNET
+      if (mode == ARTNET) {
+        artnet();
+      } else {
+        strip.service();
+      }
+    #else
+      strip.service();
+    #endif
   }
 }
