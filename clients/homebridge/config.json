@@ -21,7 +21,7 @@
 
                         "brightness": {
                                 "status": "http://<ESP_HOST>/get_brightness",
-                                "url": "http://<ESP_HOST>/set_brightness?p=%s"
+                                "url": "http://<ESP_HOST>/set_brightness?c=%s"
                         },
 
                         "color": {
