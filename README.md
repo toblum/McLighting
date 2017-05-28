@@ -74,11 +74,13 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Todos
+- [ ] MQTT support
+- [ ] Support multiple strips and control them separatley or together
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
 - [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
 - [x] Use the led strip for status information in connection phase
-- [ ] Enhance the documentation
+- [x] Enhance the documentation
 - [x] Stability improvements
 - [ ] Additional clients
 
