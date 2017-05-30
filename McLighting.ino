@@ -22,11 +22,6 @@
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
 
-// OTA
-#ifdef ENABLE_OTA
-  #include <WiFiUdp.h>
-  #include <ArduinoOTA.h>
-#endif
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -160,64 +155,13 @@ void setup() {
 
 
   // ***************************************************************************
-  // Configure OTA
-  // ***************************************************************************
-  #ifdef ENABLE_OTA
-    DBG_OUTPUT_PORT.println("Arduino OTA activated.");
-    
-    // Port defaults to 8266
-    ArduinoOTA.setPort(8266);
-  
-    // Hostname defaults to esp8266-[ChipID]
-    ArduinoOTA.setHostname(HOSTNAME);
-  
-    // No authentication by default
-    // ArduinoOTA.setPassword("admin");
-  
-    // Password can be set with it's md5 value as well
-    // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-    // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-  
-    ArduinoOTA.onStart([]() {
-      DBG_OUTPUT_PORT.println("Arduino OTA: Start updating");
-    });
-    ArduinoOTA.onEnd([]() {
-      DBG_OUTPUT_PORT.println("Arduino OTA: End");
-    });
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-      DBG_OUTPUT_PORT.printf("Arduino OTA Progress: %u%%\r", (progress / (total / 100)));
-    });
-    ArduinoOTA.onError([](ota_error_t error) {
-      DBG_OUTPUT_PORT.printf("Arduino OTA Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: Receive Failed");
-      else if (error == OTA_END_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: End Failed");
-    });
-  
-    ArduinoOTA.begin();
-    DBG_OUTPUT_PORT.println("");
-  #endif
-
-
-  // ***************************************************************************
   // Setup: MDNS responder
   // ***************************************************************************
   MDNS.begin(HOSTNAME);
   DBG_OUTPUT_PORT.print("Open http://");
-  DBG_OUTPUT_PORT.print(WiFi.localIP());
-  DBG_OUTPUT_PORT.println("/ to open McLighting.");
-
-  DBG_OUTPUT_PORT.print("Use http://");
   DBG_OUTPUT_PORT.print(HOSTNAME);
-  DBG_OUTPUT_PORT.println(".local/ when you have Bobjour installed.");
+  DBG_OUTPUT_PORT.println(".local/edit to see the file browser");
 
-  DBG_OUTPUT_PORT.print("New users: Open http://");
-  DBG_OUTPUT_PORT.print(WiFi.localIP());
-  DBG_OUTPUT_PORT.println("/upload to upload the webpages first.");  
-
-  DBG_OUTPUT_PORT.println("");
 
   // ***************************************************************************
   // Setup: WebSocket server
@@ -447,7 +391,6 @@ void setup() {
   
 }
 
-
 void loop() {
 
 // OTA Bit ************************
@@ -456,9 +399,6 @@ void loop() {
   
   server.handleClient();
   webSocket.loop();
-  #ifdef ENABLE_OTA
-    ArduinoOTA.handle();
-  #endif
 
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
