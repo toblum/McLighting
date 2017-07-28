@@ -121,6 +121,7 @@ void setup() {
   strip.setBrightness(brightness);
   strip.setSpeed(ws2812fx_speed);
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
+  strip.setColor(main_color.red, main_color.green, main_color.blue);
   strip.start();
 
   // ***************************************************************************
