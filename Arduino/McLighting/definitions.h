@@ -32,6 +32,6 @@ struct ledstate             // Data structure to store a state of a single led
    uint8_t blue;
 };
 
-typedef struct ledstate LEDState;   // Define the datatype LEDState
-LEDState ledstates[NUMLEDS];        // Get an array of led states to store the state of the whole strip
-LEDState main_color;                // Store the "main color" of the strip used in single color modes 
+typedef struct ledstate LEDState;    // Define the datatype LEDState
+LEDState ledstates[NUMLEDS];         // Get an array of led states to store the state of the whole strip
+LEDState main_color = { 255, 0, 0 }; // Store the "main color" of the strip used in single color modes 
