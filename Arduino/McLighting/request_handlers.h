@@ -37,6 +37,101 @@ void getArgs() {
   DBG_OUTPUT_PORT.println(brightness);
 }
 
+
+
+
+void handleSetMainColor(uint8_t * payload) {
+  // decode rgb data
+  uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
+  main_color.red = ((rgb >> 16) & 0xFF);
+  main_color.green = ((rgb >> 8) & 0xFF);
+  main_color.blue = ((rgb >> 0) & 0xFF);
+  strip.setColor(main_color.red, main_color.green, main_color.blue);
+}
+
+void handleSetAllMode(uint8_t * payload) {
+  // decode rgb data
+  uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
+
+  main_color.red = ((rgb >> 16) & 0xFF);
+  main_color.green = ((rgb >> 8) & 0xFF);
+  main_color.blue = ((rgb >> 0) & 0xFF);
+
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
+  }
+  strip.show();
+  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+  exit_func = true;
+  mode = ALL;
+}
+
+void handleSetSingleLED(uint8_t * payload) {
+  // decode led index
+  uint64_t rgb = (uint64_t) strtol((const char *) &payload[1], NULL, 16);
+
+  uint8_t led =          ((rgb >> 24) & 0xFF);
+  if (led < strip.numPixels()) {
+    ledstates[led].red =   ((rgb >> 16) & 0xFF);
+    ledstates[led].green = ((rgb >> 8)  & 0xFF);
+    ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
+    DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u]!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
+
+    for (uint8_t i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
+      //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
+    }
+    strip.show();
+  }
+  exit_func = true;
+  mode = ALL;
+}
+
+void handleSetNamedMode(String str_mode) {
+  exit_func = true;
+  
+  if (str_mode.startsWith("=off")) {
+    mode = OFF;
+  }
+  if (str_mode.startsWith("=all")) {
+    mode = ALL;
+  }
+  if (str_mode.startsWith("=wipe")) {
+    mode = WIPE;
+  }
+  if (str_mode.startsWith("=rainbow")) {
+    mode = RAINBOW;
+  }
+  if (str_mode.startsWith("=rainbowCycle")) {
+    mode = RAINBOWCYCLE;
+  }
+  if (str_mode.startsWith("=theaterchase")) {
+    mode = THEATERCHASE;
+  }
+  if (str_mode.startsWith("=theaterchaseRainbow")) {
+    mode = THEATERCHASERAINBOW;
+  }
+  if (str_mode.startsWith("=tv")) {
+    mode = TV;
+  }
+}
+
+void handleSetWS2812FXMode(uint8_t * payload) {
+  mode = HOLD;
+  uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+  ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
+  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.setMode(ws2812fx_mode);
+}
+
+
+
+
+
+
+
+
+
 void handleMinimalUpload() {
   char temp[1500];
   int sec = millis() / 1000;
@@ -127,17 +222,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       // # ==> Set main color
       if (payload[0] == '#') {
-        // decode rgb data
-        uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
-        main_color.red = ((rgb >> 16) & 0xFF);
-        main_color.green = ((rgb >> 8) & 0xFF);
-        main_color.blue = ((rgb >> 0) & 0xFF);
-        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        handleSetMainColor(payload);
         DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
         webSocket.sendTXT(num, "OK");
       }
 
-      // # ==> Set speed
+      // ? ==> Set speed
       if (payload[0] == '?') {
         uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         ws2812fx_speed = constrain(d, 0, 255);
@@ -146,7 +236,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, "OK");
       }
 
-      // # ==> Set brightness
+      // % ==> Set brightness
       if (payload[0] == '%') {
         uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         brightness = ((b >> 0) & 0xFF);
@@ -155,79 +245,24 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, "OK");
       }
 
-
       // * ==> Set main color and light all LEDs (Shortcut)
       if (payload[0] == '*') {
-        // decode rgb data
-        uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
-
-        main_color.red = ((rgb >> 16) & 0xFF);
-        main_color.green = ((rgb >> 8) & 0xFF);
-        main_color.blue = ((rgb >> 0) & 0xFF);
-
-        for (int i = 0; i < strip.numPixels(); i++) {
-          strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
-        }
-        strip.show();
-        DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-        exit_func = true;
-        mode = ALL;
+        handleSetAllMode(payload);
         webSocket.sendTXT(num, "OK");
       }
 
       // ! ==> Set single LED in given color
       if (payload[0] == '!') {
-        // decode led index
-        uint64_t rgb = (uint64_t) strtol((const char *) &payload[1], NULL, 16);
-
-        uint8_t led =          ((rgb >> 24) & 0xFF);
-        if (led < strip.numPixels()) {
-          ledstates[led].red =   ((rgb >> 16) & 0xFF);
-          ledstates[led].green = ((rgb >> 8)  & 0xFF);
-          ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
-          DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u]!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
-
-          for (uint8_t i = 0; i < strip.numPixels(); i++) {
-            strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
-            //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
-          }
-          strip.show();
-        }
-        exit_func = true;
-        mode = ALL;
+        handleSetSingleLED(payload);
         webSocket.sendTXT(num, "OK");
       }
 
-      // ! ==> Activate mode
+      // = ==> Activate named mode
       if (payload[0] == '=') {
         // we get mode data
         String str_mode = String((char *) &payload[0]);
 
-        exit_func = true;
-        if (str_mode.startsWith("=off")) {
-          mode = OFF;
-        }
-        if (str_mode.startsWith("=all")) {
-          mode = ALL;
-        }
-        if (str_mode.startsWith("=wipe")) {
-          mode = WIPE;
-        }
-        if (str_mode.startsWith("=rainbow")) {
-          mode = RAINBOW;
-        }
-        if (str_mode.startsWith("=rainbowCycle")) {
-          mode = RAINBOWCYCLE;
-        }
-        if (str_mode.startsWith("=theaterchase")) {
-          mode = THEATERCHASE;
-        }
-        if (str_mode.startsWith("=theaterchaseRainbow")) {
-          mode = THEATERCHASERAINBOW;
-        }
-        if (str_mode.startsWith("=tv")) {
-          mode = TV;
-        }
+        handleSetNamedMode(str_mode);
 
         DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
         webSocket.sendTXT(num, "OK");
@@ -242,7 +277,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, json);
       }
       
-      // $ ==> Get WS2812 modes.
+      // ~ ==> Get WS2812 modes.
       if (payload[0] == '~') {
         DBG_OUTPUT_PORT.printf("Get WS2812 modes.");
         
@@ -251,16 +286,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, json);
       }
       
-      // $ ==> Set WS2812 mode.
+      // / ==> Set WS2812 mode.
       if (payload[0] == '/') {
-        mode = HOLD;
-        uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
-        strip.setColor(main_color.red, main_color.green, main_color.blue);
-        strip.setMode(ws2812fx_mode);
-        
-        //String json = listStatusJSON();
-        //DBG_OUTPUT_PORT.println(json);
+        handleSetWS2812FXMode(payload);
         webSocket.sendTXT(num, "OK");
       }
       break;
@@ -271,3 +299,113 @@ void checkForRequests() {
   webSocket.loop();
   server.handleClient();
 }
+
+
+// ***************************************************************************
+// MQTT callback / connection handler
+// ***************************************************************************
+#ifdef ENABLE_MQTT
+  void mqtt_callback(char* topic, byte* payload, unsigned int length) {
+    DBG_OUTPUT_PORT.print("Message arrived [");
+    DBG_OUTPUT_PORT.print(topic);
+    DBG_OUTPUT_PORT.print("] ");
+    for (int i = 0; i < length; i++) {
+      DBG_OUTPUT_PORT.print((char)payload[i]);
+    }
+    DBG_OUTPUT_PORT.println();
+
+    // # ==> Set main color
+    if (payload[0] == '#') {
+      handleSetMainColor(payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+
+    // ? ==> Set speed
+    if (payload[0] == '?') {
+      uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+      ws2812fx_speed = constrain(d, 0, 255);
+      strip.setSpeed(ws2812fx_speed);
+      DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+
+    // % ==> Set brightness
+    if (payload[0] == '%') {
+      uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+      brightness = constrain(b, 0, 255);
+      strip.setBrightness(brightness);
+      DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+
+    // * ==> Set main color and light all LEDs (Shortcut)
+    if (payload[0] == '*') {
+      handleSetAllMode(payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%u]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+
+    // ! ==> Set single LED in given color
+    if (payload[0] == '!') {
+      handleSetSingleLED(payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%u]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+    
+    // = ==> Activate named mode
+    if (payload[0] == '=') {
+      String str_mode = String((char *) &payload[0]);
+      handleSetNamedMode(str_mode);
+      DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%u]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+
+    // $ ==> Get status Info.
+    if (payload[0] == '$') {
+      DBG_OUTPUT_PORT.printf("MQTT: Get status info.");
+      mqtt_client.publish(mqtt_outtopic, listStatusJSON());
+    }
+
+    // ~ ==> Get WS2812 modes.
+    // TODO: Fix this, doesn't return anything. Too long?
+    if (payload[0] == '~') {
+      DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.");
+      String json_modes = listModesJSON();
+      DBG_OUTPUT_PORT.printf(json_modes.c_str());
+      
+      mqtt_client.publish(mqtt_outtopic, json_modes.c_str());
+    }
+    
+    // / ==> Set WS2812 mode.
+    if ((char)payload[0] == '/') {
+      handleSetWS2812FXMode(payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%u]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, "OK");
+    }
+  }
+  
+  void mqtt_reconnect() {
+    // Loop until we're reconnected
+    while (!mqtt_client.connected()) {
+      DBG_OUTPUT_PORT.print("Attempting MQTT connection...");
+      // Attempt to connect
+      if (mqtt_client.connect("ESP8266Client")) {
+        DBG_OUTPUT_PORT.println("connected");
+        // Once connected, publish an announcement...
+        char * message = new char[18 + strlen(HOSTNAME) + 1];
+        strcpy(message, "McLighting ready: ");
+        strcat(message, HOSTNAME);
+        mqtt_client.publish(mqtt_outtopic, message);
+        // ... and resubscribe
+        mqtt_client.subscribe(mqtt_intopic);
+      } else {
+        DBG_OUTPUT_PORT.print("failed, rc=");
+        DBG_OUTPUT_PORT.print(mqtt_client.state());
+        DBG_OUTPUT_PORT.println(" try again in 5 seconds");
+        // Wait 5 seconds before retrying
+        delay(5000);
+      }
+    }
+  }  
+#endif

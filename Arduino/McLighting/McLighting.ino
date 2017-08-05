@@ -23,6 +23,14 @@
   #include <ArduinoOTA.h>
 #endif
 
+// MQTT
+#ifdef ENABLE_MQTT
+  #include <PubSubClient.h>
+
+  WiFiClient espClient;
+  PubSubClient mqtt_client(espClient);
+#endif
+
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
 // ***************************************************************************
@@ -192,6 +200,15 @@ void setup() {
   
     ArduinoOTA.begin();
     DBG_OUTPUT_PORT.println("");
+  #endif
+
+
+  // ***************************************************************************
+  // Configure MQTT
+  // ***************************************************************************
+  #ifdef ENABLE_MQTT
+    mqtt_client.setServer(mqtt_server, 1883);
+    mqtt_client.setCallback(mqtt_callback);
   #endif
 
 
@@ -412,6 +429,13 @@ void loop() {
     ArduinoOTA.handle();
   #endif
 
+  #ifdef ENABLE_MQTT
+    if (!mqtt_client.connected()) {
+      mqtt_reconnect();
+    }
+    mqtt_client.loop();
+  #endif
+  
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
