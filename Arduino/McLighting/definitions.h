@@ -10,9 +10,10 @@ const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
 #ifdef ENABLE_MQTT
   #define MQTT_MAX_PACKET_SIZE 256
-  char mqtt_intopic[strlen(HOSTNAME) + 3];    // Topic in will be: <HOSTNAME>/in
-  char mqtt_outtopic[strlen(HOSTNAME) + 4];   // Topic out will be: <HOSTNAME>/out
-  const char mqtt_server[] = "raspberrypi2";  // Hostname of the MQTT broker
+  char mqtt_intopic[strlen(HOSTNAME) + 3];      // Topic in will be: <HOSTNAME>/in
+  char mqtt_outtopic[strlen(HOSTNAME) + 4];     // Topic out will be: <HOSTNAME>/out
+  const char mqtt_server[] = "raspberrypi2";    // Hostname of the MQTT broker
+  const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID 
 #endif
 
 // ***************************************************************************

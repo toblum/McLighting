@@ -306,20 +306,17 @@ void checkForRequests() {
 // MQTT callback / connection handler
 // ***************************************************************************
 #ifdef ENABLE_MQTT
-  void mqtt_callback(char* topic, byte* payload, unsigned int length) {
-    DBG_OUTPUT_PORT.print("Message arrived [");
-    DBG_OUTPUT_PORT.print(topic);
-    DBG_OUTPUT_PORT.print("] ");
-    for (int i = 0; i < length; i++) {
-      DBG_OUTPUT_PORT.print((char)payload[i]);
-    }
-    DBG_OUTPUT_PORT.println();
+  void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
+    uint8_t * payload = (uint8_t *)malloc(length + 1);
+    memcpy(payload, payload_in, length);
+    payload[length] = NULL;
+    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
 
     // # ==> Set main color
     if (payload[0] == '#') {
       handleSetMainColor(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
     // ? ==> Set speed
@@ -328,7 +325,7 @@ void checkForRequests() {
       ws2812fx_speed = constrain(d, 0, 255);
       strip.setSpeed(ws2812fx_speed);
       DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
     // % ==> Set brightness
@@ -337,21 +334,21 @@ void checkForRequests() {
       brightness = constrain(b, 0, 255);
       strip.setBrightness(brightness);
       DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
     // * ==> Set main color and light all LEDs (Shortcut)
     if (payload[0] == '*') {
       handleSetAllMode(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
     // ! ==> Set single LED in given color
     if (payload[0] == '!') {
       handleSetSingleLED(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
     
     // = ==> Activate named mode
@@ -359,7 +356,7 @@ void checkForRequests() {
       String str_mode = String((char *) &payload[0]);
       handleSetNamedMode(str_mode);
       DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
     // $ ==> Get status Info.
@@ -385,17 +382,17 @@ void checkForRequests() {
     if (payload[0] == '/') {
       handleSetWS2812FXMode(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
-      mqtt_client.publish(mqtt_outtopic, "OK");
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
   }
   
   void mqtt_reconnect() {
     // Loop until we're reconnected
     while (!mqtt_client.connected()) {
-      DBG_OUTPUT_PORT.print("Attempting MQTT connection...");
+      DBG_OUTPUT_PORT.print("Attempting MQTT connection... ");
       // Attempt to connect
-      if (mqtt_client.connect("ESP8266Client")) {
-        DBG_OUTPUT_PORT.println("connected");
+      if (mqtt_client.connect(mqtt_clientid)) {
+        DBG_OUTPUT_PORT.println("connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
