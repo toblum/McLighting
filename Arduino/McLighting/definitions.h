@@ -3,16 +3,16 @@
 #define NUMLEDS 24    // Number of leds in the strip
 
 
-#define HOSTNAME "ESP8266_VORONOI"   // Friedly hostname
+const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
-#define MQTT_MAX_PACKET_SIZE 4096
 #ifdef ENABLE_MQTT
-  const char mqtt_intopic[] = "inTopic";
-  const char mqtt_outtopic[] = "outTopic";
-  const char mqtt_server[] = "raspberrypi2";
+  #define MQTT_MAX_PACKET_SIZE 256
+  char mqtt_intopic[strlen(HOSTNAME) + 3];    // Topic in will be: <HOSTNAME>/in
+  char mqtt_outtopic[strlen(HOSTNAME) + 4];   // Topic out will be: <HOSTNAME>/out
+  const char mqtt_server[] = "raspberrypi2";  // Hostname of the MQTT broker
 #endif
 
 // ***************************************************************************

@@ -38,20 +38,21 @@ void getArgs() {
 }
 
 
-
-
-void handleSetMainColor(uint8_t * payload) {
+// ***************************************************************************
+// Handler functions for WS and MQTT
+// ***************************************************************************
+void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
-  uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
+  uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
 }
 
-void handleSetAllMode(uint8_t * payload) {
+void handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
-  uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);
+  uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
 
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
@@ -66,9 +67,9 @@ void handleSetAllMode(uint8_t * payload) {
   mode = ALL;
 }
 
-void handleSetSingleLED(uint8_t * payload) {
+void handleSetSingleLED(uint8_t * mypayload) {
   // decode led index
-  uint64_t rgb = (uint64_t) strtol((const char *) &payload[1], NULL, 16);
+  uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[1], NULL, 16);
 
   uint8_t led =          ((rgb >> 24) & 0xFF);
   if (led < strip.numPixels()) {
@@ -116,63 +117,12 @@ void handleSetNamedMode(String str_mode) {
   }
 }
 
-void handleSetWS2812FXMode(uint8_t * payload) {
+void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = HOLD;
-  uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+  uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
   ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
   strip.setMode(ws2812fx_mode);
-}
-
-
-
-
-
-
-
-
-
-void handleMinimalUpload() {
-  char temp[1500];
-  int sec = millis() / 1000;
-  int min = sec / 60;
-  int hr = min / 60;
-
-  snprintf ( temp, 1500,
-       "<!DOCTYPE html>\
-				<html>\
-					<head>\
-						<title>ESP8266 Upload</title>\
-						<meta charset=\"utf-8\">\
-						<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\
-						<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
-					</head>\
-					<body>\
-						<form action=\"/edit\" method=\"post\" enctype=\"multipart/form-data\">\
-							<input type=\"file\" name=\"data\">\
-							<input type=\"text\" name=\"path\" value=\"/\">\
-							<button>Upload</button>\
-						</form>\
-					</body>\
-				</html>",
-             hr, min % 60, sec % 60
-           );
-  server.send ( 200, "text/html", temp );
-}
-
-void handleNotFound() {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += ( server.method() == HTTP_GET ) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for ( uint8_t i = 0; i < server.args(); i++ ) {
-    message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";
-  }
-  server.send ( 404, "text/plain", message );
 }
 
 char* listStatusJSON() {
@@ -202,6 +152,57 @@ void getModesJSON() {
   server.send ( 200, "application/json", listModesJSON() );
 }
 
+
+// ***************************************************************************
+// HTTP request handlers
+// ***************************************************************************
+void handleMinimalUpload() {
+  char temp[1500];
+  int sec = millis() / 1000;
+  int min = sec / 60;
+  int hr = min / 60;
+
+  snprintf ( temp, 1500,
+       "<!DOCTYPE html>\
+        <html>\
+          <head>\
+            <title>ESP8266 Upload</title>\
+            <meta charset=\"utf-8\">\
+            <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\
+            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
+          </head>\
+          <body>\
+            <form action=\"/edit\" method=\"post\" enctype=\"multipart/form-data\">\
+              <input type=\"file\" name=\"data\">\
+              <input type=\"text\" name=\"path\" value=\"/\">\
+              <button>Upload</button>\
+            </form>\
+          </body>\
+        </html>",
+             hr, min % 60, sec % 60
+           );
+  server.send ( 200, "text/html", temp );
+}
+
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += ( server.method() == HTTP_GET ) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for ( uint8_t i = 0; i < server.args(); i++ ) {
+    message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";
+  }
+  server.send ( 404, "text/plain", message );
+}
+
+
+// ***************************************************************************
+// WS request handlers
+// ***************************************************************************
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
   switch (type) {
     case WStype_DISCONNECTED:
@@ -381,7 +382,7 @@ void checkForRequests() {
     }
     
     // / ==> Set WS2812 mode.
-    if ((char)payload[0] == '/') {
+    if (payload[0] == '/') {
       handleSetWS2812FXMode(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, "OK");
@@ -402,6 +403,9 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, message);
         // ... and resubscribe
         mqtt_client.subscribe(mqtt_intopic);
+
+        DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
+        DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
       } else {
         DBG_OUTPUT_PORT.print("failed, rc=");
         DBG_OUTPUT_PORT.print(mqtt_client.state());

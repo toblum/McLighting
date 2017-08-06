@@ -120,7 +120,7 @@ void setup() {
   // set builtin led pin as output
   pinMode(BUILTIN_LED, OUTPUT);
   // start ticker with 0.5 because we start in AP mode and try to connect
-  ticker.attach(0.6, tick);
+  ticker.attach(0.5, tick);
 
   // ***************************************************************************
   // Setup: Neopixel
@@ -207,6 +207,9 @@ void setup() {
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT
+    String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, 32);
+    String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, 32);
+  
     mqtt_client.setServer(mqtt_server, 1883);
     mqtt_client.setCallback(mqtt_callback);
   #endif
