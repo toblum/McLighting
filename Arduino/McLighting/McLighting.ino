@@ -31,10 +31,11 @@
   PubSubClient mqtt_client(espClient);
 #endif
 
+
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
 // ***************************************************************************
-ESP8266WebServer server ( 80 );
+ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 
@@ -91,7 +92,6 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   }
   strip.show();
 }
-
 
 
 // ***************************************************************************
@@ -207,8 +207,8 @@ void setup() {
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT
-    String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, 32);
-    String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, 32);
+    String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 3);
+    String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 4);
   
     mqtt_client.setServer(mqtt_server, 1883);
     mqtt_client.setCallback(mqtt_callback);
@@ -232,6 +232,7 @@ void setup() {
   DBG_OUTPUT_PORT.println("/upload to upload the webpages first.");  
 
   DBG_OUTPUT_PORT.println("");
+  
 
   // ***************************************************************************
   // Setup: WebSocket server
