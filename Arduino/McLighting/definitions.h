@@ -8,6 +8,7 @@
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
+#define MQTT_MAX_PACKET_SIZE 4096
 #ifdef ENABLE_MQTT
   const char mqtt_intopic[] = "inTopic";
   const char mqtt_outtopic[] = "outTopic";

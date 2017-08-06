@@ -342,14 +342,14 @@ void checkForRequests() {
     // * ==> Set main color and light all LEDs (Shortcut)
     if (payload[0] == '*') {
       handleSetAllMode(payload);
-      DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%u]\n", payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, "OK");
     }
 
     // ! ==> Set single LED in given color
     if (payload[0] == '!') {
       handleSetSingleLED(payload);
-      DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%u]\n", payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, "OK");
     }
     
@@ -357,30 +357,33 @@ void checkForRequests() {
     if (payload[0] == '=') {
       String str_mode = String((char *) &payload[0]);
       handleSetNamedMode(str_mode);
-      DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%u]\n", payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, "OK");
     }
 
     // $ ==> Get status Info.
     if (payload[0] == '$') {
-      DBG_OUTPUT_PORT.printf("MQTT: Get status info.");
+      DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
       mqtt_client.publish(mqtt_outtopic, listStatusJSON());
     }
 
     // ~ ==> Get WS2812 modes.
     // TODO: Fix this, doesn't return anything. Too long?
     if (payload[0] == '~') {
-      DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.");
-      String json_modes = listModesJSON();
-      DBG_OUTPUT_PORT.printf(json_modes.c_str());
+      DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
+      DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
+      mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
+      //String json_modes = listModesJSON();
+      //DBG_OUTPUT_PORT.printf(json_modes.c_str());
       
-      mqtt_client.publish(mqtt_outtopic, json_modes.c_str());
+      //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
+      //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
     }
     
     // / ==> Set WS2812 mode.
     if ((char)payload[0] == '/') {
       handleSetWS2812FXMode(payload);
-      DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%u]\n", payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, "OK");
     }
   }
