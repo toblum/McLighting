@@ -86,9 +86,9 @@ String readEEPROM(int offset, int len) {
     //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
   }
   
-  DBG_OUTPUT_PORT.print("Read EEPROM: [");
-  DBG_OUTPUT_PORT.print(res); 
-  DBG_OUTPUT_PORT.println("]");
+  //DBG_OUTPUT_PORT.print("Read EEPROM: [");
+  //DBG_OUTPUT_PORT.print(res); 
+  //DBG_OUTPUT_PORT.println("]");
   return res;
 }
 
