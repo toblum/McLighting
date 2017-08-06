@@ -391,7 +391,7 @@ void checkForRequests() {
     while (!mqtt_client.connected()) {
       DBG_OUTPUT_PORT.print("Attempting MQTT connection... ");
       // Attempt to connect
-      if (mqtt_client.connect(mqtt_clientid, mqtt_username, mqtt_password)) {
+      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
         DBG_OUTPUT_PORT.println("connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];

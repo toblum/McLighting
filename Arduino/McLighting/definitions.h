@@ -14,10 +14,13 @@ const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
   char mqtt_outtopic[strlen(HOSTNAME) + 4];     // Topic out will be: <HOSTNAME>/out
   
   const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID 
-  const char mqtt_server[] = "raspberrypi2";    // Hostname of the MQTT broker
-  const char mqtt_username[] = "";              // MQTT Username 
-  const char mqtt_password[] = "";              // MQTT Password 
+
+  char mqtt_host[64] = "";
+  char mqtt_port[6] = "";
+  char mqtt_user[32] = "";
+  char mqtt_pass[32] = "";
 #endif
+
 
 // ***************************************************************************
 // Global variables / definitions
@@ -35,6 +38,8 @@ int brightness = 192;       // Global variable for storing the brightness (255 =
 int ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
 
 bool exit_func = false;     // Global helper variable to get out of the color modes when mode changes
+
+bool shouldSaveConfig = false;  // For WiFiManger custom config
 
 struct ledstate             // Data structure to store a state of a single led
 {
