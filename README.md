@@ -6,8 +6,13 @@
 
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
-
 ___
+Update 07.08.2017:
+As requested by many of you, McLighting now also features MQTT support. Thanks at @LeonVos for his attempts on this. I implemented the same API as used in WebSockets now for MQTT. Please have a look here for details: https://github.com/toblum/McLighting/wiki/MQTT-API I will try to add a new instruction video soon.
+
+Many of you also took McLighting and adapted the software according your needs. This is great. I found some videos on YouTube that show these projects. I collected them here: https://goo.gl/yG7M4h
+If you have done something similar with McLighting, please drop me a note. I'm always interested in what you've done with it.
+
 Update 19.02.2017:
 Added OTA support as promised by @markbajaj. Minor other improvements.
 
@@ -53,10 +58,13 @@ This project uses libraries and code by different authors:
   https://github.com/tzapu/WiFiManager
 - WS2812FX by @kitesurfer1404 (tested with version downloaded 2017-02-05)
   https://github.com/kitesurfer1404/WS2812FX
-- WebSockets by @Links2004 (tested with version 2.0.5)
+- WebSockets by @Links2004 (tested with version 2.0.6)
   https://github.com/Links2004/arduinoWebSockets
-- Adafruit NeoPixel by @adafruit (tested with 1.0.6)
+- Adafruit NeoPixel by @adafruit (tested with 1.1.2)
   https://github.com/adafruit/Adafruit_NeoPixel
+- Optional: PubSubClient by @knolleary (tested with 2.6.0)
+  Only when you have activated MQTT in definitions.h.
+  https://github.com/knolleary/pubsubclient/
   
 The sketch also uses the following built-in library:
 - Ticker by @igrr
@@ -66,7 +74,7 @@ Parts of the code were taken or inspired by the following sources:
   https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/
 - TV simulator logic inspired by @BulldogLowell
   https://github.com/BulldogLowell/PhoneyTV
-- SPIFS Webserver by Hristo Gochkov
+- SPIFFS Webserver by Hristo Gochkov
   https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer/examples/FSBrowser
 
 Thank you to all the authors for distributing their software that way.
@@ -74,7 +82,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Todos
-- [ ] MQTT support
+- [x] MQTT support
 - [ ] Support multiple strips and control them separatley or together
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
