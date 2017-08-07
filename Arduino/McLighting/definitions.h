@@ -1,11 +1,25 @@
 // Neopixel
 #define PIN 5         // PIN where neopixel / WS2811 strip is attached
-#define NUMLEDS 60    // Number of leds in the strip
+#define NUMLEDS 24    // Number of leds in the strip
 
 
-#define HOSTNAME "ESP8266_02"   // Friedly hostname
+const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
 
-// #define ENABLE_OTA    // If defined, enable Arduino OTA code.
+#define ENABLE_OTA    // If defined, enable Arduino OTA code.
+
+#define ENABLE_MQTT   // If defined, enable MQTT client code.
+#ifdef ENABLE_MQTT
+  #define MQTT_MAX_PACKET_SIZE 256
+  char mqtt_intopic[strlen(HOSTNAME) + 3];      // Topic in will be: <HOSTNAME>/in
+  char mqtt_outtopic[strlen(HOSTNAME) + 4];     // Topic out will be: <HOSTNAME>/out
+  
+  const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID 
+
+  char mqtt_host[64] = "";
+  char mqtt_port[6] = "";
+  char mqtt_user[32] = "";
+  char mqtt_pass[32] = "";
+#endif
 
 
 // ***************************************************************************
@@ -16,14 +30,16 @@
 // List of all color modes
 enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV };
 
-MODE mode = RAINBOW;   // Standard mode that is active when software starts
+MODE mode = RAINBOW;        // Standard mode that is active when software starts
 
-int ws2812fx_speed = 10;   // Global variable for storing the delay between color changes --> smaller == faster
+int ws2812fx_speed = 10;    // Global variable for storing the delay between color changes --> smaller == faster
 int brightness = 192;       // Global variable for storing the brightness (255 == 100%)
 
 int ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
 
 bool exit_func = false;     // Global helper variable to get out of the color modes when mode changes
+
+bool shouldSaveConfig = false;  // For WiFiManger custom config
 
 struct ledstate             // Data structure to store a state of a single led
 {

@@ -13,6 +13,7 @@
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
+#include <EEPROM.h>
 
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
@@ -23,10 +24,19 @@
   #include <ArduinoOTA.h>
 #endif
 
+// MQTT
+#ifdef ENABLE_MQTT
+  #include <PubSubClient.h>
+
+  WiFiClient espClient;
+  PubSubClient mqtt_client(espClient);
+#endif
+
+
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
 // ***************************************************************************
-ESP8266WebServer server ( 80 );
+ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 
@@ -66,6 +76,38 @@ void tick()
 
 
 // ***************************************************************************
+// EEPROM helper
+// ***************************************************************************
+String readEEPROM(int offset, int len) {
+  String res = "";
+  for (int i = 0; i < len; ++i)
+  {
+    res += char(EEPROM.read(i + offset));
+    //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
+  }
+  
+  //DBG_OUTPUT_PORT.print("Read EEPROM: [");
+  //DBG_OUTPUT_PORT.print(res); 
+  //DBG_OUTPUT_PORT.println("]");
+  return res;
+}
+
+void writeEEPROM(int offset, int len, String value) {
+  for (int i = 0; i < len; ++i)
+  {
+    if (i < value.length()) {
+      EEPROM.write(i + offset, value[i]);
+    } else {
+      EEPROM.write(i + offset, NULL);
+    }
+    
+    DBG_OUTPUT_PORT.print("Wrote EEPROM: ");
+    DBG_OUTPUT_PORT.println(value[i]); 
+  }
+}
+
+
+// ***************************************************************************
 // Callback for WiFiManager library when config mode is entered
 // ***************************************************************************
 //gets called when WiFiManager enters configuration mode
@@ -84,7 +126,11 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   strip.show();
 }
 
-
+//callback notifying us of the need to save config
+void saveConfigCallback () {
+  DBG_OUTPUT_PORT.println("Should save config");
+  shouldSaveConfig = true;
+}
 
 // ***************************************************************************
 // Include: Webserver
@@ -108,11 +154,12 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 // ***************************************************************************
 void setup() {
   DBG_OUTPUT_PORT.begin(115200);
+  EEPROM.begin(512);
 
   // set builtin led pin as output
   pinMode(BUILTIN_LED, OUTPUT);
   // start ticker with 0.5 because we start in AP mode and try to connect
-  ticker.attach(0.6, tick);
+  ticker.attach(0.5, tick);
 
   // ***************************************************************************
   // Setup: Neopixel
@@ -127,6 +174,28 @@ void setup() {
   // ***************************************************************************
   // Setup: WiFiManager
   // ***************************************************************************
+  // The extra parameters to be configured (can be either global or just in the setup)
+  // After connecting, parameter.getValue() will get you the configured value
+  // id/name placeholder/prompt default length
+  #ifdef ENABLE_MQTT
+    String settings_available = readEEPROM(134, 1);
+    if (settings_available == "1") {
+      readEEPROM(0, 64).toCharArray(mqtt_host, 64);   // 0-63
+      readEEPROM(64, 6).toCharArray(mqtt_port, 6);    // 64-69
+      readEEPROM(70, 32).toCharArray(mqtt_user, 32);  // 70-101
+      readEEPROM(102, 32).toCharArray(mqtt_pass, 32); // 102-133
+      DBG_OUTPUT_PORT.printf("MQTT host: %s\n", mqtt_host);
+      DBG_OUTPUT_PORT.printf("MQTT port: %s\n", mqtt_port);
+      DBG_OUTPUT_PORT.printf("MQTT user: %s\n", mqtt_user);
+      DBG_OUTPUT_PORT.printf("MQTT pass: %s\n", mqtt_pass);
+    }
+  
+    WiFiManagerParameter custom_mqtt_host("host", "MQTT hostname", mqtt_host, 64);
+    WiFiManagerParameter custom_mqtt_port("port", "MQTT port", mqtt_port, 6);
+    WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32);
+    WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32);
+  #endif
+  
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
   //reset settings - for testing
@@ -134,6 +203,17 @@ void setup() {
 
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback(configModeCallback);
+
+  #ifdef ENABLE_MQTT
+    //set config save notify callback
+    wifiManager.setSaveConfigCallback(saveConfigCallback);
+  
+    //add all your parameters here
+    wifiManager.addParameter(&custom_mqtt_host);
+    wifiManager.addParameter(&custom_mqtt_port);
+    wifiManager.addParameter(&custom_mqtt_user);
+    wifiManager.addParameter(&custom_mqtt_pass);
+  #endif
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
@@ -145,6 +225,26 @@ void setup() {
     ESP.reset();
     delay(1000);
   }
+
+  #ifdef ENABLE_MQTT
+    //read updated parameters
+    strcpy(mqtt_host, custom_mqtt_host.getValue());
+    strcpy(mqtt_port, custom_mqtt_port.getValue());
+    strcpy(mqtt_user, custom_mqtt_user.getValue());
+    strcpy(mqtt_pass, custom_mqtt_pass.getValue());
+
+    //save the custom parameters to FS
+    if (shouldSaveConfig) {
+      DBG_OUTPUT_PORT.println("Saving WiFiManager config");
+
+      writeEEPROM(0, 64, mqtt_host);   // 0-63
+      writeEEPROM(64, 6, mqtt_port);   // 64-69
+      writeEEPROM(70, 32, mqtt_user);  // 70-101
+      writeEEPROM(102, 32, mqtt_pass); // 102-133
+      writeEEPROM(134, 1, "1"); // 134 --> alwasy "1"
+      EEPROM.commit();
+    }
+  #endif
 
   //if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
@@ -196,6 +296,20 @@ void setup() {
 
 
   // ***************************************************************************
+  // Configure MQTT
+  // ***************************************************************************
+  #ifdef ENABLE_MQTT
+    String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 3);
+    String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 4);
+
+    DBG_OUTPUT_PORT.printf("Connect %s %d\n", mqtt_host, String(mqtt_port).toInt());
+  
+    mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
+    mqtt_client.setCallback(mqtt_callback);
+  #endif
+
+
+  // ***************************************************************************
   // Setup: MDNS responder
   // ***************************************************************************
   MDNS.begin(HOSTNAME);
@@ -205,13 +319,14 @@ void setup() {
 
   DBG_OUTPUT_PORT.print("Use http://");
   DBG_OUTPUT_PORT.print(HOSTNAME);
-  DBG_OUTPUT_PORT.println(".local/ when you have Bobjour installed.");
+  DBG_OUTPUT_PORT.println(".local/ when you have Bonjour installed.");
 
   DBG_OUTPUT_PORT.print("New users: Open http://");
   DBG_OUTPUT_PORT.print(WiFi.localIP());
   DBG_OUTPUT_PORT.println("/upload to upload the webpages first.");  
 
   DBG_OUTPUT_PORT.println("");
+  
 
   // ***************************************************************************
   // Setup: WebSocket server
@@ -412,6 +527,13 @@ void loop() {
     ArduinoOTA.handle();
   #endif
 
+  #ifdef ENABLE_MQTT
+    if (!mqtt_client.connected()) {
+      mqtt_reconnect();
+    }
+    mqtt_client.loop();
+  #endif
+  
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
