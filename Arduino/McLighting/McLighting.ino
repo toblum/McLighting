@@ -219,7 +219,7 @@ void setup() {
   //if it does not connect it starts an access point with the specified name
   //here  "AutoConnectAP"
   //and goes into a blocking loop awaiting configuration
-  if (!wifiManager.autoConnect()) {
+  if (!wifiManager.autoConnect(HOSTNAME)) {
     DBG_OUTPUT_PORT.println("failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
     ESP.reset();
@@ -241,7 +241,7 @@ void setup() {
       writeEEPROM(64, 6, mqtt_port);   // 64-69
       writeEEPROM(70, 32, mqtt_user);  // 70-101
       writeEEPROM(102, 32, mqtt_pass); // 102-133
-      writeEEPROM(134, 1, "1"); // 134 --> alwasy "1"
+      writeEEPROM(134, 1, "1");        // 134 --> always "1"
       EEPROM.commit();
     }
   #endif
@@ -299,13 +299,15 @@ void setup() {
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT
-    String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 3);
-    String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 4);
-
-    DBG_OUTPUT_PORT.printf("Connect %s %d\n", mqtt_host, String(mqtt_port).toInt());
+    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+      String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 4);
+      String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 5);
   
-    mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
-    mqtt_client.setCallback(mqtt_callback);
+      DBG_OUTPUT_PORT.printf("Connect %s %d\n", mqtt_host, String(mqtt_port).toInt());
+      
+      mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
+      mqtt_client.setCallback(mqtt_callback);
+    }
   #endif
 
 
@@ -389,17 +391,24 @@ void setup() {
   server.on("/upload", handleMinimalUpload);
 
   server.on("/restart", []() {
-    DBG_OUTPUT_PORT.printf("/restart:\n");
+    DBG_OUTPUT_PORT.printf("/restart\n");
     server.send(200, "text/plain", "restarting..." );
     ESP.restart();
   });
 
   server.on("/reset_wlan", []() {
-    DBG_OUTPUT_PORT.printf("/reset_wlan:\n");
+    DBG_OUTPUT_PORT.printf("/reset_wlan\n");
     server.send(200, "text/plain", "Resetting WLAN and restarting..." );
     WiFiManager wifiManager;
     wifiManager.resetSettings();
     ESP.restart();
+  });
+
+  server.on("/start_config_ap", []() {
+    DBG_OUTPUT_PORT.printf("/start_config_ap\n");
+    server.send(200, "text/plain", "Starting config AP ..." );
+    WiFiManager wifiManager;
+    wifiManager.startConfigPortal(HOSTNAME);
   });
 
 
@@ -528,10 +537,12 @@ void loop() {
   #endif
 
   #ifdef ENABLE_MQTT
-    if (!mqtt_client.connected()) {
-      mqtt_reconnect();
+    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+      if (!mqtt_client.connected()) {
+        mqtt_reconnect();
+      }
+      mqtt_client.loop();
     }
-    mqtt_client.loop();
   #endif
   
   // Simple statemachine that handles the different modes

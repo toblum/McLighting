@@ -2,8 +2,7 @@
 #define PIN 5         // PIN where neopixel / WS2811 strip is attached
 #define NUMLEDS 24    // Number of leds in the strip
 
-
-const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
+const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 
