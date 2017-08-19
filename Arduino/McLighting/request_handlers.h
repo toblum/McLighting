@@ -384,6 +384,8 @@ void checkForRequests() {
       DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
+
+    free(payload);
   }
   
   void mqtt_reconnect() {
