@@ -367,6 +367,7 @@ void checkForRequests() {
 
     // ~ ==> Get WS2812 modes.
     // TODO: Fix this, doesn't return anything. Too long?
+    // Hint: https://github.com/knolleary/pubsubclient/issues/110
     if (payload[0] == '~') {
       DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
       DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
