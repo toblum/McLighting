@@ -390,11 +390,12 @@ void checkForRequests() {
   
   void mqtt_reconnect() {
     // Loop until we're reconnected
-    while (!mqtt_client.connected()) {
-      DBG_OUTPUT_PORT.print("Attempting MQTT connection... ");
+    while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+      mqtt_reconnect_retries++;
+      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
       if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
-        DBG_OUTPUT_PORT.println("connected!");
+        DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
@@ -412,6 +413,9 @@ void checkForRequests() {
         // Wait 5 seconds before retrying
         delay(5000);
       }
+    }
+    if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
+      DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
     }
   }  
 #endif

@@ -303,7 +303,7 @@ void setup() {
       String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 4);
       String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 5);
   
-      DBG_OUTPUT_PORT.printf("Connect %s %d\n", mqtt_host, String(mqtt_port).toInt());
+      DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\n", mqtt_host, String(mqtt_port).toInt());
       
       mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
       mqtt_client.setCallback(mqtt_callback);
@@ -532,16 +532,18 @@ void setup() {
 void loop() {
   server.handleClient();
   webSocket.loop();
+  
   #ifdef ENABLE_OTA
     ArduinoOTA.handle();
   #endif
 
   #ifdef ENABLE_MQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+    if (mqtt_host != "" && String(mqtt_port).toInt() > 0 && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
       if (!mqtt_client.connected()) {
-        mqtt_reconnect();
+        mqtt_reconnect(); 
+      } else {
+        mqtt_client.loop();
       }
-      mqtt_client.loop();
     }
   #endif
   
