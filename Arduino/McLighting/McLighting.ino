@@ -585,7 +585,7 @@ void loop() {
     strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
     mode = HOLD;
   }
-  if (mode == HOLD) {
+  if (mode == HOLD || mode == CUSTOM) {
     if (exit_func) {
       exit_func = false;
     }
@@ -594,7 +594,8 @@ void loop() {
     tv();
   }
 
-  if (mode != TV) {
+  // Only for modes with WS2812FX functionality
+  if (mode != TV && mode != CUSTOM) {
     strip.service();
   }
 }

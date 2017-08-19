@@ -31,7 +31,7 @@ const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV };
+enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV, CUSTOM };
 
 MODE mode = RAINBOW;        // Standard mode that is active when software starts
 

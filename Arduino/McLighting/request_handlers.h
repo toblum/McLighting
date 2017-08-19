@@ -71,7 +71,7 @@ void handleSetSingleLED(uint8_t * mypayload) {
   // decode led index
   uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[1], NULL, 16);
 
-  uint8_t led =          ((rgb >> 24) & 0xFF);
+  uint8_t led =            ((rgb >> 24) & 0xFF);
   if (led < strip.numPixels()) {
     ledstates[led].red =   ((rgb >> 16) & 0xFF);
     ledstates[led].green = ((rgb >> 8)  & 0xFF);
@@ -85,7 +85,7 @@ void handleSetSingleLED(uint8_t * mypayload) {
     strip.show();
   }
   exit_func = true;
-  mode = ALL;
+  mode = CUSTOM;
 }
 
 void handleSetNamedMode(String str_mode) {
