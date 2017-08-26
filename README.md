@@ -84,12 +84,15 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 ## Todos
 - [x] MQTT support
 - [ ] Support multiple strips and control them separatley or together
+- [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
 - [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
 - [x] Use the led strip for status information in connection phase
 - [x] Enhance the documentation
 - [x] Stability improvements
+- [x] RGBW mode [Issue](https://github.com/toblum/McLighting/issues/24)
+- [x] Add called command to response [Issue](https://github.com/toblum/McLighting/issues/19)
 - [ ] Additional clients
 
 
