@@ -14,7 +14,8 @@
 
 	<body>
 		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
-			<div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
+			<div class="nav-wrapper container">
+				<a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
 				<ul class="right hide-on-med-and-down">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
@@ -23,7 +24,6 @@
 				<ul id="nav-mobile" class="side-nav">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-
 				</ul>
 				<a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
 			</div>
@@ -67,6 +67,11 @@
 							<div id="status_pos">pick a color</div>
 							<div id="status_color"></div>
 						</div>
+						<div class="right switch">Auto:<br>
+							<label>Off
+								<input id="autoSwitch" type="checkbox"><span class="lever"></span>On
+							</label>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -108,13 +113,13 @@
 				</div>
 				
 				<div class="row">
-					<div class="col s12 m6 l4 btn_grid">
+					<div class="col s12 m6 l6 btn_grid">
 						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF
 							<i class="material-icons right">send</i>
 						</a>
 					</div>
 					
-					<div class="col s12 m6 l4 btn_grid">
+					<div class="col s12 m6 l6 btn_grid">
 						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV
 							<i class="material-icons right">send</i>
 						</a>
@@ -193,8 +198,9 @@ $(function(){
 			var modes_html = "";
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
-					modes_html += '<div class="col s12 m6 l4 btn_grid">';
-					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">' + current_mode.name + '';
+					modes_html += '<div class="col s12 m6 l6 btn_grid">';
+					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' +
+						current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name;
 					modes_html += '<i class="material-icons right">send</i>';
 					modes_html += '</a>';
 					modes_html += '</div>';
@@ -261,7 +267,15 @@ $(function(){
 		
 		wsSendCommand("%" + brightness);
 	});
-	
+
+	$("#autoSwitch").on("change",function() {
+		if($(this).prop('checked')) {
+			wsSendCommand("start");
+		} else {
+			wsSendCommand("stop");
+		}
+	});
+		
 	function setMode(mode, finish_funtion) {
 		console.log("Mode: ", mode);
 
@@ -401,7 +415,7 @@ $(function(){
 		$('#status').css("backgroundColor", hexColor);
 		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
-		
+
 		$("#rng_red").val(color[0]);
 		$("#rng_green").val(color[1]);
 		$("#rng_blue").val(color[2]);

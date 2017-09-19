@@ -7,6 +7,14 @@ const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
+
+// parameters for automatically cycling favorite patterns
+uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
+    {0xff0000, 200,  1,  5.0}, // blink red for 5 seconds
+    {0x00ff00, 200,  3, 10.0}, // wipe green for 10 seconds
+    {0x0000ff, 200, 11,  5.0}  // dual scan blue for 5 seconds
+};
+
 #ifdef ENABLE_MQTT
   #define MQTT_MAX_PACKET_SIZE 256
   #define MQTT_MAX_RECONNECT_TRIES 4
