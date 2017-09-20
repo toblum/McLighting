@@ -348,7 +348,10 @@ void setup() {
       size_t fileSize = dir.fileSize();
       DBG_OUTPUT_PORT.printf("FS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
     }
-    DBG_OUTPUT_PORT.printf("\n");
+
+    FSInfo fs_info;
+    SPIFFS.info(fs_info);
+    DBG_OUTPUT_PORT.printf("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
 
   // ***************************************************************************

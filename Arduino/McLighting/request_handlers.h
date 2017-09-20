@@ -123,11 +123,17 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
   strip.setMode(ws2812fx_mode);
+  strip.start();
 }
 
 char* listStatusJSON() {
   char json[255];
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}", mode, strip.getMode(), strip.getModeName(strip.getMode()), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+
+  char modeName[30];
+  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+    mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   return json;
 }
 
@@ -158,29 +164,25 @@ void getModesJSON() {
 // ***************************************************************************
 void handleMinimalUpload() {
   char temp[1500];
-  int sec = millis() / 1000;
-  int min = sec / 60;
-  int hr = min / 60;
 
   snprintf ( temp, 1500,
-       "<!DOCTYPE html>\
-        <html>\
-          <head>\
-            <title>ESP8266 Upload</title>\
-            <meta charset=\"utf-8\">\
-            <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\
-            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
-          </head>\
-          <body>\
-            <form action=\"/edit\" method=\"post\" enctype=\"multipart/form-data\">\
-              <input type=\"file\" name=\"data\">\
-              <input type=\"text\" name=\"path\" value=\"/\">\
-              <button>Upload</button>\
-            </form>\
-          </body>\
-        </html>",
-             hr, min % 60, sec % 60
-           );
+    "<!DOCTYPE html>\
+    <html>\
+      <head>\
+        <title>ESP8266 Upload</title>\
+        <meta charset=\"utf-8\">\
+        <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
+      </head>\
+      <body>\
+        <form action=\"/edit\" method=\"post\" enctype=\"multipart/form-data\">\
+          <input type=\"file\" name=\"data\">\
+          <input type=\"text\" name=\"path\" value=\"/\">\
+          <button>Upload</button>\
+         </form>\
+      </body>\
+    </html>"
+  );
   server.send ( 200, "text/html", temp );
 }
 
@@ -199,6 +201,32 @@ void handleNotFound() {
   server.send ( 404, "text/plain", message );
 }
 
+// automatic cycling
+Ticker autoTicker;
+int autoCount = 0;
+
+void autoTick() {
+  strip.setColor(autoParams[autoCount][0]);
+  strip.setSpeed((uint8_t)autoParams[autoCount][1]);
+  strip.setMode((uint8_t)autoParams[autoCount][2]);
+  autoTicker.once((float)autoParams[autoCount][3], autoTick);
+  DBG_OUTPUT_PORT.print("autoTick ");
+  DBG_OUTPUT_PORT.println(autoCount);
+
+  autoCount++;
+  if(autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount=0;
+}
+
+void handleAutoStart() {
+  autoCount=0;
+  autoTick();
+  strip.start();
+}
+
+void handleAutoStop() {
+  autoTicker.detach();
+  strip.stop();
+}
 
 // ***************************************************************************
 // WS request handlers
@@ -290,6 +318,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       // / ==> Set WS2812 mode.
       if (payload[0] == '/') {
         handleSetWS2812FXMode(payload);
+        webSocket.sendTXT(num, "OK");
+      }
+
+      // start auto cycling
+      if (strcmp((char *)payload, "start") == 0 ) {
+        handleAutoStart();
+        webSocket.sendTXT(num, "OK");
+      }
+
+      // stop auto cycling
+      if (strcmp((char *)payload, "stop") == 0 ) {
+        handleAutoStop();
         webSocket.sendTXT(num, "OK");
       }
       break;
