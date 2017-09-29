@@ -7,6 +7,10 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 30.09.2017:
+Thanks to [@moose4lord](https://github.com/moose4lord) Mclighting works with the newest version of WS1812FX and has a possibility to define autocycle patterns [Wiki](https://github.com/toblum/McLighting/wiki/Autocycling). Thank for contributing to McLighting everyone!
+I was also informed of a new project that is loosely based on McLighting: [Responsive_LED_Control](https://github.com/doctormord/Responsive_LED_Control) That looks very promising.
+
 Update 07.08.2017:
 As requested by many of you, McLighting now also features MQTT support. Thanks at @LeonVos for his attempts on this. I implemented the same API as used in WebSockets now for MQTT. Please have a look here for details: https://github.com/toblum/McLighting/wiki/MQTT-API I will try to add a new instruction video soon.
 
