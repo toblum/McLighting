@@ -45,8 +45,8 @@ $(function(){
 			var modes_html = "";
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
-					modes_html += '<div class="col s12 m6 l4 btn_grid">';
-					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">' + current_mode.name + '';
+					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
+					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
 					modes_html += '<i class="material-icons right">send</i>';
 					modes_html += '</a>';
 					modes_html += '</div>';
@@ -113,6 +113,14 @@ $(function(){
 		
 		wsSendCommand("%" + brightness);
 	});
+
+	$("#autoSwitch").on("change", function () {
+		if ($(this).prop('checked')) {
+			wsSendCommand("start");
+		} else {
+			wsSendCommand("stop");
+		}
+	}); 
 	
 	function setMode(mode, finish_funtion) {
 		console.log("Mode: ", mode);
