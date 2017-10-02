@@ -67,9 +67,11 @@ void handleSetAllMode(uint8_t * mypayload) {
   mode = ALL;
 }
 
-void handleSetSingleLED(uint8_t * mypayload) {
+void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 1) {
+  // Use or lose first char of payload
   // decode led index
-  uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[1], NULL, 16);
+
+  uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[firstChar], NULL, 16);
 
   uint8_t led =            ((rgb >> 24) & 0xFF);
   if (led < strip.numPixels()) {
@@ -80,12 +82,24 @@ void handleSetSingleLED(uint8_t * mypayload) {
 
     for (uint8_t i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
-      //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
+      DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
     }
     strip.show();
   }
   exit_func = true;
   mode = CUSTOM;
+}
+
+void handleSetDifferentColors(uint8_t * mypayload) {
+  uint8_t* nextCommand = 0;
+  nextCommand = (uint8_t*) strtok((char*) mypayload, "+");
+  while (nextCommand) {
+    handleSetSingleLED(nextCommand, 0);
+    nextCommand = (uint8_t*) strtok(NULL, "+");
+    delay(50);
+    Serial.print("Next command: ");
+    Serial.println((char*) nextCommand);
+  }
 }
 
 void handleSetNamedMode(String str_mode) {
@@ -283,6 +297,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       // ! ==> Set single LED in given color
       if (payload[0] == '!') {
         handleSetSingleLED(payload);
+        webSocket.sendTXT(num, "OK");
+      }
+
+      if (payload[0] == '+') {
+        handleSetDifferentColors(payload);
         webSocket.sendTXT(num, "OK");
       }
 
