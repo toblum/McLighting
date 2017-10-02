@@ -96,9 +96,6 @@ void handleSetDifferentColors(uint8_t * mypayload) {
   while (nextCommand) {
     handleSetSingleLED(nextCommand, 0);
     nextCommand = (uint8_t*) strtok(NULL, "+");
-    delay(50);
-    Serial.print("Next command: ");
-    Serial.println((char*) nextCommand);
   }
 }
 
