@@ -445,6 +445,28 @@ void setup() {
     DBG_OUTPUT_PORT.print("/get_brightness: ");
     DBG_OUTPUT_PORT.println(str_brightness);
   });
+  
+  server.on("/set_delay", []() {
+    if (server.arg("d").toInt() >= 0) {
+      ws2812fx_speed = server.arg("d").toInt();
+    }
+    if (ws2812fx_speed > 255) {
+      ws2812fx_speed = 255;
+    }
+    if (ws2812fx_speed < 0) {
+      ws2812fx_speed = 0;
+    }
+    strip.setSpeed(ws2812fx_speed);
+    
+    getStatusJSON();
+  });
+
+  server.on("/get_delay", []() {
+    String str_delay = String(ws2812fx_speed);
+    server.send(200, "text/plain", str_delay );
+    DBG_OUTPUT_PORT.print("/get_delay: ");
+    DBG_OUTPUT_PORT.println(str_delay);
+  });
 
   server.on("/get_switch", []() {
     server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
