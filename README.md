@@ -99,6 +99,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Add called command to response [Issue](https://github.com/toblum/McLighting/issues/19)
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
+- [ ] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
 - [ ] Additional clients
 
 
