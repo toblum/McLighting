@@ -297,6 +297,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, "OK");
       }
 
+      // + ==> Set multiple LED in the given colors
       if (payload[0] == '+') {
         handleSetDifferentColors(payload);
         webSocket.sendTXT(num, "OK");
@@ -404,6 +405,12 @@ void checkForRequests() {
     if (payload[0] == '!') {
       handleSetSingleLED(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    }
+
+    // + ==> Set multiple LED in the given colors
+    if (payload[0] == '+') {
+      handleSetDifferentColors(payload);
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
     
