@@ -70,14 +70,16 @@ void handleSetAllMode(uint8_t * mypayload) {
 void handleSetSingleLED(uint8_t * mypayload) {
   // decode led index
   uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[1], NULL, 16);
+  char templed[3];
+  strncpy ( templed, (const char *) &mypayload[1], 2 );
+  uint8_t led = atoi(templed);
 
-  uint8_t led =            ((rgb >> 24) & 0xFF);
   if (led < strip.numPixels()) {
+    DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u]!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
     ledstates[led].red =   ((rgb >> 16) & 0xFF);
     ledstates[led].green = ((rgb >> 8)  & 0xFF);
     ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
-    DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u]!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
-
+    
     for (uint8_t i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
       //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
