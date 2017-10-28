@@ -446,26 +446,21 @@ void setup() {
     DBG_OUTPUT_PORT.println(str_brightness);
   });
   
-  server.on("/set_delay", []() {
+  server.on("/set_speed", []() {
     if (server.arg("d").toInt() >= 0) {
       ws2812fx_speed = server.arg("d").toInt();
+      ws2812fx_speed = constrain(ws2812fx_speed, 0, 255);
+      strip.setSpeed(ws2812fx_speed);
     }
-    if (ws2812fx_speed > 255) {
-      ws2812fx_speed = 255;
-    }
-    if (ws2812fx_speed < 0) {
-      ws2812fx_speed = 0;
-    }
-    strip.setSpeed(ws2812fx_speed);
     
     getStatusJSON();
   });
 
-  server.on("/get_delay", []() {
-    String str_delay = String(ws2812fx_speed);
-    server.send(200, "text/plain", str_delay );
-    DBG_OUTPUT_PORT.print("/get_delay: ");
-    DBG_OUTPUT_PORT.println(str_delay);
+  server.on("/get_speed", []() {
+    String str_speed = String(ws2812fx_speed);
+    server.send(200, "text/plain", str_speed );
+    DBG_OUTPUT_PORT.print("/get_speed: ");
+    DBG_OUTPUT_PORT.println(str_speed);
   });
 
   server.on("/get_switch", []() {
