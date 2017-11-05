@@ -300,8 +300,8 @@ void setup() {
   // ***************************************************************************
   #ifdef ENABLE_MQTT
     if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
-      String(String(HOSTNAME) + "/in").toCharArray(mqtt_intopic, strlen(HOSTNAME) + 4);
-      String(String(HOSTNAME) + "/out").toCharArray(mqtt_outtopic, strlen(HOSTNAME) + 5);
+      snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
+      snprintf(mqtt_outtopic, sizeof mqtt_outtopic, "%s/out", HOSTNAME);
   
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\n", mqtt_host, String(mqtt_port).toInt());
       

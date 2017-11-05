@@ -22,8 +22,8 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 
   int mqtt_reconnect_retries = 0;
   
-  char mqtt_intopic[strlen(HOSTNAME) + 3];      // Topic in will be: <HOSTNAME>/in
-  char mqtt_outtopic[strlen(HOSTNAME) + 4];     // Topic out will be: <HOSTNAME>/out
+  char mqtt_intopic[strlen(HOSTNAME) + 4];      // Topic in will be: <HOSTNAME>/in
+  char mqtt_outtopic[strlen(HOSTNAME) + 5];     // Topic out will be: <HOSTNAME>/out
   
   const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID 
 
