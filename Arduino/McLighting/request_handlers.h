@@ -18,7 +18,7 @@ void getArgs() {
   }
 
   ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount()-1);
-  
+
   main_color.red = constrain(main_color.red, 0, 255);
   main_color.green = constrain(main_color.green, 0, 255);
   main_color.blue = constrain(main_color.blue, 0, 255);
@@ -74,12 +74,12 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 1) {
   strncpy ( templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  if (led < strip.numPixels()) {
+  if (led <= strip.numPixels()) {
     ledstates[led].red =   ((rgb >> 16) & 0xFF);
     ledstates[led].green = ((rgb >> 8)  & 0xFF);
     ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
     DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
-    
+
     for (uint8_t i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
       //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
@@ -118,8 +118,14 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 
       while ( rangebegin <= rangeend ) {
           char rangeData[9] = { 0,0,0,0,0,0,0,0,0 };
-          //Create the valid 'nextCommand' structure
-          sprintf(rangeData, "%d%s", rangebegin, colorval);
+          if ( rangebegin < 10 ) {
+            //Create the valid 'nextCommand' structure
+            sprintf(rangeData, "0%d%s", rangebegin, colorval);
+          }
+          if ( rangebegin >= 10 ) {
+            //Create the valid 'nextCommand' structure
+            sprintf(rangeData, "%d%s", rangebegin, colorval);
+          }
           //Set one LED
           handleSetSingleLED((uint8_t*) rangeData, 0);
           rangebegin++;
@@ -132,7 +138,7 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 
 void handleSetNamedMode(String str_mode) {
   exit_func = true;
-  
+
   if (str_mode.startsWith("=off")) {
     mode = OFF;
   }
@@ -354,21 +360,21 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       // $ ==> Get status Info.
       if (payload[0] == '$') {
         DBG_OUTPUT_PORT.printf("Get status info.");
-        
+
         String json = listStatusJSON();
         DBG_OUTPUT_PORT.println(json);
         webSocket.sendTXT(num, json);
       }
-      
+
       // ~ ==> Get WS2812 modes.
       if (payload[0] == '~') {
         DBG_OUTPUT_PORT.printf("Get WS2812 modes.");
-        
+
         String json = listModesJSON();
         DBG_OUTPUT_PORT.println(json);
         webSocket.sendTXT(num, json);
       }
-      
+
       // / ==> Set WS2812 mode.
       if (payload[0] == '/') {
         handleSetWS2812FXMode(payload);
@@ -481,11 +487,11 @@ void checkForRequests() {
       mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
       //String json_modes = listModesJSON();
       //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-      
+
       //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
       //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
     }
-    
+
     // / ==> Set WS2812 mode.
     if (payload[0] == '/') {
       handleSetWS2812FXMode(payload);
@@ -495,7 +501,7 @@ void checkForRequests() {
 
     free(payload);
   }
-  
+
   void mqtt_reconnect() {
     // Loop until we're reconnected
     while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
@@ -525,5 +531,5 @@ void checkForRequests() {
     if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
       DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
     }
-  }  
+  }
 #endif
