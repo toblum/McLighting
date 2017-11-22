@@ -99,6 +99,37 @@ void handleSetDifferentColors(uint8_t * mypayload) {
   }
 }
 
+void handleRangeDifferentColors(uint8_t * mypayload) {
+  uint8_t* nextCommand = 0;
+  nextCommand = (uint8_t*) strtok((char*) mypayload, "R");
+  //While there is a range to process R0110<00ff00>
+
+  while (nextCommand) {
+      //Loop for each LED.
+      char startled[3] = { 0,0,0 };
+      char endled[3] = { 0,0,0 };
+      char colorval[7] = { 0,0,0,0,0,0,0 };
+      strncpy ( startled, (const char *) &nextCommand[0], 2 );
+      strncpy ( endled, (const char *) &nextCommand[2], 2 );
+      strncpy ( colorval, (const char *) &nextCommand[4], 6 );
+      int rangebegin = atoi(startled);
+      int rangeend = atoi(endled);
+      DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \n", rangebegin, rangeend, colorval);
+
+      while ( rangebegin <= rangeend ) {
+          char rangeData[9] = { 0,0,0,0,0,0,0,0,0 };
+          //Create the valid 'nextCommand' structure
+          sprintf(rangeData, "%d%s", rangebegin, colorval);
+          //Set one LED
+          handleSetSingleLED((uint8_t*) rangeData, 0);
+          rangebegin++;
+      }
+
+      //Next Range at R
+      nextCommand = (uint8_t*) strtok(NULL, "R");
+  }
+}
+
 void handleSetNamedMode(String str_mode) {
   exit_func = true;
   
@@ -303,6 +334,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, "OK");
       }
 
+      // + ==> Set range of LEDs in the given color
+      if (payload[0] == 'R') {
+        handleRangeDifferentColors(payload);
+        webSocket.sendTXT(num, "OK");
+      }
+
       // = ==> Activate named mode
       if (payload[0] == '=') {
         // we get mode data
@@ -413,7 +450,14 @@ void checkForRequests() {
       handleSetDifferentColors(payload);
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
-    
+
+    // + ==> Set range of LEDs in the given colors
+    if (payload[0] == 'R') {
+      handleRangeDifferentColors(payload);
+      DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    }
+
     // = ==> Activate named mode
     if (payload[0] == '=') {
       String str_mode = String((char *) &payload[0]);
