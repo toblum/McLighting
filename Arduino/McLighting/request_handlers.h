@@ -67,19 +67,30 @@ void handleSetAllMode(uint8_t * mypayload) {
   mode = ALL;
 }
 
-void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 1) {
+void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   // decode led index
-  uint64_t rgb = (uint64_t) strtol((const char *) &mypayload[firstChar], NULL, 16);
   char templed[3];
-  strncpy ( templed, (const char *) &mypayload[firstChar], 2 );
+  strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
-  
-  if (led <= strip.numPixels()) {
-    ledstates[led].red =   ((rgb >> 16) & 0xFF);
-    ledstates[led].green = ((rgb >> 8)  & 0xFF);
-    ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
+
+  //DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i]\n", led, strip.numPixels() );
+  if (led <= strip.numPixels()) { 
+    char redhex[3];
+    char greenhex[3];
+    char bluehex[3];
+    strncpy (redhex, (const char *) &mypayload[2], 2 );
+    strncpy (greenhex, (const char *) &mypayload[4], 2 );
+    strncpy (bluehex, (const char *) &mypayload[6], 2 );
+    ledstates[led].red = 0;
+    ledstates[led].green = 0;
+    ledstates[led].blue = 0;
+    ledstates[led].red =   strtol(redhex, NULL, 16);
+    ledstates[led].green = strtol(greenhex, NULL, 16);
+    ledstates[led].blue =  strtol(bluehex, NULL, 16);
+    //DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
     DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
+    
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
     strip.show();
   }
