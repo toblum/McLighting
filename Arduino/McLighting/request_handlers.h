@@ -79,11 +79,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 1) {
     ledstates[led].green = ((rgb >> 8)  & 0xFF);
     ledstates[led].blue =  ((rgb >> 0)  & 0xFF);
     DBG_OUTPUT_PORT.printf("WS: Set single led [%u] to [%u] [%u] [%u] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
-
-    for (uint8_t i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
-      //DBG_OUTPUT_PORT.printf("[%u]--[%u] [%u] [%u] [%u] LED index!\n", rgb, i, ledstates[i].red, ledstates[i].green, ledstates[i].blue);
-    }
+    
+    strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
     strip.show();
   }
   exit_func = true;
