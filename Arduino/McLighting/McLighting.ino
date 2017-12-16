@@ -166,7 +166,7 @@ void setup() {
   // ***************************************************************************
   strip.init();
   strip.setBrightness(brightness);
-  strip.setSpeed(ws2812fx_speed);
+  strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
   strip.start();
@@ -450,7 +450,7 @@ void setup() {
     if (server.arg("d").toInt() >= 0) {
       ws2812fx_speed = server.arg("d").toInt();
       ws2812fx_speed = constrain(ws2812fx_speed, 0, 255);
-      strip.setSpeed(ws2812fx_speed);
+      strip.setSpeed(convertSpeed(ws2812fx_speed));
     }
     
     getStatusJSON();

@@ -14,7 +14,7 @@ void getArgs() {
   }
   ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
   if (server.arg("s") == "") {
-    ws2812fx_speed = 128;
+    ws2812fx_speed = 196;
   }
 
   ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount()-1);
@@ -35,6 +35,19 @@ void getArgs() {
   DBG_OUTPUT_PORT.print(ws2812fx_speed);
   DBG_OUTPUT_PORT.print(", Brightness:");
   DBG_OUTPUT_PORT.println(brightness);
+}
+
+
+long convertSpeed(int mcl_speed) {
+  long ws2812_speed = mcl_speed * 256;
+  ws2812_speed = SPEED_MAX - ws2812_speed;
+  if (ws2812_speed < SPEED_MIN) {
+    ws2812_speed = SPEED_MIN;
+  }
+  if (ws2812_speed > SPEED_MAX) {
+    ws2812_speed = SPEED_MAX;
+  }
+  return ws2812_speed;
 }
 
 
@@ -260,7 +273,7 @@ int autoCount = 0;
 
 void autoTick() {
   strip.setColor(autoParams[autoCount][0]);
-  strip.setSpeed((uint8_t)autoParams[autoCount][1]);
+  strip.setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
   strip.setMode((uint8_t)autoParams[autoCount][2]);
   autoTicker.once((float)autoParams[autoCount][3], autoTick);
   DBG_OUTPUT_PORT.print("autoTick ");
@@ -313,7 +326,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == '?') {
         uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         ws2812fx_speed = constrain(d, 0, 255);
-        strip.setSpeed(ws2812fx_speed);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
         DBG_OUTPUT_PORT.printf("WS: Set speed to: [%u]\n", ws2812fx_speed);
         webSocket.sendTXT(num, "OK");
       }
@@ -428,7 +441,7 @@ void checkForRequests() {
     if (payload[0] == '?') {
       uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
       ws2812fx_speed = constrain(d, 0, 255);
-      strip.setSpeed(ws2812fx_speed);
+      strip.setSpeed(convertSpeed(ws2812fx_speed));
       DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
