@@ -7,6 +7,10 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 16.12.2017:
+There was a breaking change in the WS2812FX library: Speeds have a new format (65535-0 instead of 0-255). I released a new version that converts the speeds settings. Please use the latest [WS2812FX library](https://github.com/kitesurfer1404/WS2812FX) (14.12.2017 or later) if use have an existing version installed.
+I got many messages from people who use McLighting for own projects. User Brian Lough built a lighting system for his wedding and made a nice instruction video for his build: https://goo.gl/NbfKi8
+
 Update 30.09.2017:
 Thanks to [@moose4lord](https://github.com/moose4lord) Mclighting works with the newest version of WS1812FX and has a possibility to define autocycle patterns [Wiki](https://github.com/toblum/McLighting/wiki/Autocycling). Thank for contributing to McLighting everyone!
 I was also informed of a new project that is loosely based on McLighting: [Responsive_LED_Control](https://github.com/doctormord/Responsive_LED_Control) That looks very promising.
