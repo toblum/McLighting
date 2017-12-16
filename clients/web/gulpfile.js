@@ -18,12 +18,6 @@ gulp.task('html', function() {
     .pipe(connect.reload());
 });
  
-gulp.task('appcache', function() {
-  gulp.src(src_dir + '*.appcache')
-    .pipe(gulp.dest('build'))
-    .pipe(connect.reload());
-});
- 
  
 gulp.task('connect', function() {
     connect.server({
@@ -35,12 +29,11 @@ gulp.task('connect', function() {
 gulp.task('watch', function() {
     gulp.watch(src_dir + '*.htm', ['html']);
     gulp.watch(src_dir + 'js/*.js', ['html']);
-    gulp.watch(src_dir + '*.appcache', ['appcache']);
 });
 
 
-gulp.task('upload', ['html', 'appcache'], function() {
-	var url = 'http://192.168.0.40/edit';
+gulp.task('upload', ['html'], function() {
+	var url = 'http://192.168.0.49/edit';
 	var options = {
 		url: url,
 		headers: {
@@ -56,8 +49,7 @@ gulp.task('upload', ['html', 'appcache'], function() {
 		});
 	var form = r.form();
 	form.append('data', fs.createReadStream(__dirname + "/" + build_dir + '/index.htm'), {filename: '/index.htm', contentType: "application/octet-stream"});
-	form.append('data', fs.createReadStream(__dirname + "/" + build_dir + '/offline.appcache'), {filename: '/offline.appcache', contentType: "application/octet-stream"});
 });
 
-gulp.task('default', ['html', 'appcache']);
+gulp.task('default', ['html']);
 gulp.task('serve', ['watch', 'connect']);
