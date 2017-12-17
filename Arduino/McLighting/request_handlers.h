@@ -17,7 +17,9 @@ void getArgs() {
     ws2812fx_speed = 196;
   }
 
-  ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount()-1);
+  if (server.arg("m") != "") {
+    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount()-1);
+  }
 
   main_color.red = constrain(main_color.red, 0, 255);
   main_color.green = constrain(main_color.green, 0, 255);
