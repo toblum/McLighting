@@ -475,7 +475,7 @@ void checkForRequests() {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
 
-    // + ==> Set range of LEDs in the given colors
+    // R ==> Set range of LEDs in the given colors
     if (payload[0] == 'R') {
       handleRangeDifferentColors(payload);
       DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
