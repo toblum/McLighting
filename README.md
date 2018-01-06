@@ -7,6 +7,10 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 06.01.2018:
+After som etesting I merged the "feature/save_state" banch into master, so everybody should now be able to use this new functionality. Basically McLighting now saves the current mode to EEPROM and restores the setting on reboot. So you wont need to select your favorite mode again. If you don't want to use this, you can disablethis in definitions.h.
+Some people noticed that there are currently problems compiling McLighting whe using ESP8266 core in version 2.4.0. This is due to a [problem](https://github.com/kitesurfer1404/WS2812FX/issues/58) with WS2812FX when using this version. For the moment you can stick to the 2.4.0 RC2 (also easily available via the boards manager).
+
 Update 16.12.2017:
 There was a breaking change in the WS2812FX library: Speeds have a new format (65535-0 instead of 0-255). I released a new version that converts the speeds settings. Please use the latest [WS2812FX library](https://github.com/kitesurfer1404/WS2812FX) (14.12.2017 or later) if use have an existing version installed.
 I got many messages from people who use McLighting for own projects. User Brian Lough built a lighting system for his wedding and made a nice instruction video for his build: https://goo.gl/NbfKi8
