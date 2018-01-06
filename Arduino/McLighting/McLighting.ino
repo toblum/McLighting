@@ -85,14 +85,12 @@ String readEEPROM(int offset, int len) {
     res += char(EEPROM.read(i + offset));
     //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
   }
-  
-  //DBG_OUTPUT_PORT.print("Read EEPROM: [");
-  //DBG_OUTPUT_PORT.print(res); 
-  //DBG_OUTPUT_PORT.println("]");
+  DBG_OUTPUT_PORT.printf("readEEPROM(): %s\n", res.c_str());
   return res;
 }
 
 void writeEEPROM(int offset, int len, String value) {
+  DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\n", value.c_str());
   for (int i = 0; i < len; ++i)
   {
     if (i < value.length()) {
@@ -100,10 +98,29 @@ void writeEEPROM(int offset, int len, String value) {
     } else {
       EEPROM.write(i + offset, NULL);
     }
-    
-    DBG_OUTPUT_PORT.print("Wrote EEPROM: ");
-    DBG_OUTPUT_PORT.println(value[i]); 
   }
+}
+
+
+// ***************************************************************************
+// Saved state handling
+// ***************************************************************************
+// https://stackoverflow.com/questions/9072320/split-string-into-string-array
+String getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++){
+    if(data.charAt(i)==separator || i==maxIndex){
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 
@@ -546,6 +563,42 @@ void setup() {
   });
 
   server.begin();
+
+  #ifdef ENABLE_STATE_SAVE
+    // Load state string from EEPROM
+    String saved_state_string = readEEPROM(256, 32);
+    String chk = getValue(saved_state_string, '|', 0);
+    if (chk == "STA") {
+      DBG_OUTPUT_PORT.printf("Found saved state: %s\n", saved_state_string.c_str());
+      String str_mode = getValue(saved_state_string, '|', 1);
+      mode = static_cast<MODE>(str_mode.toInt());
+      String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
+      ws2812fx_mode = str_ws2812fx_mode.toInt();
+      String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
+      ws2812fx_speed = str_ws2812fx_speed.toInt();
+      String str_brightness = getValue(saved_state_string, '|', 4);
+      brightness = str_brightness.toInt();
+      String str_red = getValue(saved_state_string, '|', 5);
+      main_color.red = str_red.toInt();
+      String str_green = getValue(saved_state_string, '|', 6);
+      main_color.green = str_green.toInt();
+      String str_blue = getValue(saved_state_string, '|', 7);
+      main_color.blue = str_blue.toInt();
+  
+      DBG_OUTPUT_PORT.printf("ws2812fx_mode: %d\n", ws2812fx_mode);
+      DBG_OUTPUT_PORT.printf("ws2812fx_speed: %d\n", ws2812fx_speed);
+      DBG_OUTPUT_PORT.printf("brightness: %d\n", brightness);
+      DBG_OUTPUT_PORT.printf("main_color.red: %d\n", main_color.red);
+      DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
+      DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
+  
+      strip.setMode(ws2812fx_mode);
+      strip.setSpeed(convertSpeed(ws2812fx_speed));
+      strip.setBrightness(brightness);
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+    }
+    sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  #endif
 }
 
 
@@ -618,4 +671,23 @@ void loop() {
   if (mode != TV && mode != CUSTOM) {
     strip.service();
   }
+
+
+  #ifdef ENABLE_STATE_SAVE
+    // Check for state changes
+    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  
+    if (strcmp(current_state, last_state) != 0) {
+      // DBG_OUTPUT_PORT.printf("STATE CHANGED: %s / %s\n", last_state, current_state);
+      strcpy(last_state, current_state);
+      time_statechange = millis();
+      state_save_requested = true;
+    }
+    if (state_save_requested && time_statechange + timeout_statechange_save <= millis()) {
+      time_statechange = 0;
+      state_save_requested = false;
+      writeEEPROM(256, 32, last_state); // 256 --> last_state (reserved 32 bytes)
+      EEPROM.commit();
+    }
+  #endif
 }

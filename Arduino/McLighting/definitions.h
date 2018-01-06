@@ -60,6 +60,15 @@ struct ledstate             // Data structure to store a state of a single led
    uint8_t blue;
 };
 
-typedef struct ledstate LEDState;    // Define the datatype LEDState
-LEDState ledstates[NUMLEDS];         // Get an array of led states to store the state of the whole strip
-LEDState main_color = { 255, 0, 0 }; // Store the "main color" of the strip used in single color modes 
+typedef struct ledstate LEDState;     // Define the datatype LEDState
+LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
+LEDState main_color = { 255, 0, 0 };  // Store the "main color" of the strip used in single color modes 
+
+#define ENABLE_STATE_SAVE             // If defined, save state on reboot
+#ifdef ENABLE_STATE_SAVE
+  char current_state[32];               // Keeps the current state representation
+  char last_state[32];                  // Save the last state as string representation
+  unsigned long time_statechange = 0;   // Time when the state last changed
+  int timeout_statechange_save = 5000;  // Timeout in ms to wait before state is saved
+  bool state_save_requested = false;    // State has to be saved after timeout
+#endif
