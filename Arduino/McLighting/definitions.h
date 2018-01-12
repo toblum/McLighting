@@ -1,6 +1,7 @@
 // Neopixel
-#define PIN 5         // PIN where neopixel / WS2811 strip is attached
-#define NUMLEDS 24    // Number of leds in the strip
+#define PIN 5           // PIN where neopixel / WS2811 strip is attached
+#define NUMLEDS 24      // Number of leds in the strip
+//#define BUILTIN_LED 2   // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 
 const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 
