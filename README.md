@@ -8,7 +8,7 @@
 
 ___
 Update 06.01.2018:
-After som etesting I merged the "feature/save_state" banch into master, so everybody should now be able to use this new functionality. Basically McLighting now saves the current mode to EEPROM and restores the setting on reboot. So you wont need to select your favorite mode again. If you don't want to use this, you can disablethis in definitions.h.
+After som etesting I merged the "feature/save_state" banch into master, so everybody should now be able to use this new functionality. Basically McLighting now saves the current mode to EEPROM and restores the setting on reboot. So you wont need to select your favorite mode again. If you don't want to use this, you can disable it in definitions.h.  
 ~~Some people noticed that there are currently problems compiling McLighting whe using ESP8266 core in version 2.4.0. This is due to a [problem](https://github.com/kitesurfer1404/WS2812FX/issues/58) with WS2812FX when using this version. For the moment you can stick to the 2.4.0 RC2 (also easily available via the boards manager).~~ (fixed now )  
 Funny! McLighting was featured in the german radio show ["Netzbasteln"](https://www.deutschlandfunknova.de/beitrag/netzbasteln-wolkenlampe-mit-cloud-anschluss) on Deutschlandfunk Nova with a nice audio tutorial.
 
