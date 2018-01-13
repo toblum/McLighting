@@ -178,6 +178,8 @@ void setup() {
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
+  wifi_station_set_hostname(const_cast<char*>(HOSTNAME));
+
   // ***************************************************************************
   // Setup: Neopixel
   // ***************************************************************************
