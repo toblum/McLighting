@@ -88,17 +88,18 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  //DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i]\n", led, strip.numPixels() );
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
   if (led <= strip.numPixels()) { 
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
-    strncpy (redhex, (const char *) &mypayload[2], 2 );
-    strncpy (greenhex, (const char *) &mypayload[4], 2 );
-    strncpy (bluehex, (const char *) &mypayload[6], 2 );
+    strncpy (redhex, (const char *) &mypayload[2+firstChar], 2 );
+    strncpy (greenhex, (const char *) &mypayload[4+firstChar], 2 );
+    strncpy (bluehex, (const char *) &mypayload[6+firstChar], 2 );
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
+    DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s]\n", redhex, greenhex, bluehex);
     DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
@@ -350,7 +351,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       // ! ==> Set single LED in given color
       if (payload[0] == '!') {
-        handleSetSingleLED(payload);
+        handleSetSingleLED(payload, 1);
         webSocket.sendTXT(num, "OK");
       }
 
@@ -466,7 +467,7 @@ void checkForRequests() {
 
     // ! ==> Set single LED in given color
     if (payload[0] == '!') {
-      handleSetSingleLED(payload);
+      handleSetSingleLED(payload, 1);
       DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     }
