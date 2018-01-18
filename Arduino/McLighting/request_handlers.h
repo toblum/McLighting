@@ -1,6 +1,9 @@
 // ***************************************************************************
 // Request handlers
 // ***************************************************************************
+
+
+////////////////////////////
 void getArgs() {
   if (server.arg("rgb") != "") {
     uint32_t rgb = (uint32_t) strtol(server.arg("rgb").c_str(), NULL, 16);
@@ -177,6 +180,9 @@ void handleSetNamedMode(String str_mode) {
   }
   if (str_mode.startsWith("=theaterchase")) {
     mode = THEATERCHASE;
+  }
+  if (str_mode.startsWith("=twinkleRandom")) {
+    mode = TWINKLERANDOM;
   }
   if (str_mode.startsWith("=theaterchaseRainbow")) {
     mode = THEATERCHASERAINBOW;
@@ -553,4 +559,73 @@ void checkForRequests() {
       DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
     }
   }
+#endif
+
+/// Button management /////
+#ifdef ENABLE_BUTTON
+void shortKeyPress() {
+  if (buttonState == false) {
+    main_color.red = 255;
+    main_color.green = 255;
+    main_color.blue = 255;
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    mode = HOLD;
+    buttonState = true;
+  } else {
+    mode = OFF;
+    buttonState = false;
+  }
+}
+
+
+// called when button is kept pressed for more than 2 seconds
+void mediumKeyPress() {
+  mode = TWINKLERANDOM;
+}
+
+// called when button is kept pressed for 2 seconds or more
+void longKeyPress() {
+    //Serial.println("hosszu lenyomas");
+}
+
+// called when key goes from not pressed to pressed
+void keyPress() {
+    KeyPressCount = 0;
+}
+
+
+// called when key goes from pressed to not pressed
+void keyRelease() {
+    
+    if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
+        mediumKeyPress();
+    }
+    else {
+      if (KeyPressCount < mediumKeyPressCountMin) {
+        shortKeyPress();
+      }
+    }
+}
+
+void button() {
+  if (millis() - keyPrevMillis >= keySampleIntervalMs) {
+        keyPrevMillis = millis();
+        
+        byte currKeyState = digitalRead(BUTTON);
+        
+        if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
+            keyPress();
+        }
+        else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
+            keyRelease();
+        }
+        else if (currKeyState == LOW) {
+            KeyPressCount++;
+    if (KeyPressCount >= longKeyPressCountMax) {
+        longKeyPress();
+         }
+        }        
+        prevKeyState = currKeyState;
+    }
+}
 #endif

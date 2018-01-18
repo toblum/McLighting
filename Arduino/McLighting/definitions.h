@@ -1,13 +1,16 @@
 // Neopixel
-#define PIN 5           // PIN where neopixel / WS2811 strip is attached
-#define NUMLEDS 24      // Number of leds in the strip
-//#define BUILTIN_LED 2   // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
+#define PIN D2          // PIN where neopixel / WS2811 strip is attached
+#define NUMLEDS 68      // Number of leds in the strip
+#define BUILTIN_LED 2   // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
+#define BUTTON D1       // Input pin for switching the LED strip on / off
 
-const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
+const char HOSTNAME[] = "McLighting";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
+
+#define ENABLE_BUTTON  // If defined, enable button handling code.
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
@@ -26,7 +29,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   char mqtt_intopic[strlen(HOSTNAME) + 4];      // Topic in will be: <HOSTNAME>/in
   char mqtt_outtopic[strlen(HOSTNAME) + 5];     // Topic out will be: <HOSTNAME>/out
   
-  const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID 
+  const char mqtt_clientid[] = "McLighting"; // MQTT ClientID 
 
   char mqtt_host[64] = "";
   char mqtt_port[6] = "";
@@ -41,18 +44,18 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, THEATERCHASERAINBOW, TV, CUSTOM };
+enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
 
 MODE mode = RAINBOW;        // Standard mode that is active when software starts
 
 int ws2812fx_speed = 196;   // Global variable for storing the delay between color changes --> smaller == faster
-int brightness = 196;       // Global variable for storing the brightness (255 == 100%)
+int brightness = 255;       // Global variable for storing the brightness (255 == 100%)
 
 int ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
 
 bool exit_func = false;     // Global helper variable to get out of the color modes when mode changes
 
-bool shouldSaveConfig = false;  // For WiFiManger custom config
+bool shouldSaveConfig = true;  // For WiFiManger custom config
 
 struct ledstate             // Data structure to store a state of a single led
 {

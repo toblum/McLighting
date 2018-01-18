@@ -60,7 +60,16 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-
+/// Button ////
+#ifdef ENABLE_BUTTON
+  unsigned long keyPrevMillis = 0;
+  const unsigned long keySampleIntervalMs = 25;
+  byte longKeyPressCountMax = 80;    // 80 * 25 = 2000 ms
+  byte mediumKeyPressCountMin = 20;    // 20 * 25 = 500 ms
+  byte KeyPressCount = 0;
+  byte prevKeyState = HIGH;         // button is active low
+  boolean buttonState = false;
+#endif
 // ***************************************************************************
 // Load library "ticker" for blinking status led
 // ***************************************************************************
@@ -175,6 +184,10 @@ void setup() {
 
   // set builtin led pin as output
   pinMode(BUILTIN_LED, OUTPUT);
+  // button pin setup
+#ifdef ENABLE_BUTTON
+  pinMode(BUTTON,INPUT_PULLUP);
+#endif
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
@@ -184,7 +197,6 @@ void setup() {
   // Setup: Neopixel
   // ***************************************************************************
   strip.init();
-  strip.setBrightness(brightness);
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
@@ -605,6 +617,9 @@ void setup() {
 
 
 void loop() {
+  #ifdef ENABLE_BUTTON
+    button();
+  #endif  
   server.handleClient();
   webSocket.loop();
   
@@ -654,6 +669,11 @@ void loop() {
   if (mode == THEATERCHASE) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_THEATER_CHASE);
+    mode = HOLD;
+  }
+  if (mode == TWINKLERANDOM) {
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setMode(FX_MODE_TWINKLE_RANDOM);
     mode = HOLD;
   }
   if (mode == THEATERCHASERAINBOW) {
