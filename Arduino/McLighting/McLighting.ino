@@ -333,7 +333,8 @@ void setup() {
   // ***************************************************************************
   // Setup: MDNS responder
   // ***************************************************************************
-  MDNS.begin(HOSTNAME);
+  bool mdns_result = MDNS.begin(HOSTNAME);
+
   DBG_OUTPUT_PORT.print("Open http://");
   DBG_OUTPUT_PORT.print(WiFi.localIP());
   DBG_OUTPUT_PORT.println("/ to open McLighting.");
@@ -565,6 +566,11 @@ void setup() {
   });
 
   server.begin();
+
+  // Start MDNS service
+  if (mdns_result) {
+    MDNS.addService("http", "tcp", 80);
+  }
 
   #ifdef ENABLE_STATE_SAVE
     // Load state string from EEPROM
