@@ -8,7 +8,7 @@ const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
-#define ENABLE_BUTTON  // If defined, enable button handling code.
+// #define ENABLE_BUTTON  // If defined, enable button handling code.
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
