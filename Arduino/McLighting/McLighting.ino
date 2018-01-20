@@ -175,6 +175,10 @@ void setup() {
 
   // set builtin led pin as output
   pinMode(BUILTIN_LED, OUTPUT);
+  // button pin setup
+#ifdef ENABLE_BUTTON
+  pinMode(BUTTON,INPUT_PULLUP);
+#endif
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
@@ -184,7 +188,6 @@ void setup() {
   // Setup: Neopixel
   // ***************************************************************************
   strip.init();
-  strip.setBrightness(brightness);
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
   strip.setColor(main_color.red, main_color.green, main_color.blue);
@@ -578,32 +581,7 @@ void setup() {
     String chk = getValue(saved_state_string, '|', 0);
     if (chk == "STA") {
       DBG_OUTPUT_PORT.printf("Found saved state: %s\n", saved_state_string.c_str());
-      String str_mode = getValue(saved_state_string, '|', 1);
-      mode = static_cast<MODE>(str_mode.toInt());
-      String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
-      ws2812fx_mode = str_ws2812fx_mode.toInt();
-      String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
-      ws2812fx_speed = str_ws2812fx_speed.toInt();
-      String str_brightness = getValue(saved_state_string, '|', 4);
-      brightness = str_brightness.toInt();
-      String str_red = getValue(saved_state_string, '|', 5);
-      main_color.red = str_red.toInt();
-      String str_green = getValue(saved_state_string, '|', 6);
-      main_color.green = str_green.toInt();
-      String str_blue = getValue(saved_state_string, '|', 7);
-      main_color.blue = str_blue.toInt();
-  
-      DBG_OUTPUT_PORT.printf("ws2812fx_mode: %d\n", ws2812fx_mode);
-      DBG_OUTPUT_PORT.printf("ws2812fx_speed: %d\n", ws2812fx_speed);
-      DBG_OUTPUT_PORT.printf("brightness: %d\n", brightness);
-      DBG_OUTPUT_PORT.printf("main_color.red: %d\n", main_color.red);
-      DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
-      DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
-  
-      strip.setMode(ws2812fx_mode);
-      strip.setSpeed(convertSpeed(ws2812fx_speed));
-      strip.setBrightness(brightness);
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      setModeByStateString(saved_state_string);
     }
     sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   #endif
@@ -611,6 +589,9 @@ void setup() {
 
 
 void loop() {
+  #ifdef ENABLE_BUTTON
+    button();
+  #endif  
   server.handleClient();
   webSocket.loop();
   
@@ -660,6 +641,11 @@ void loop() {
   if (mode == THEATERCHASE) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_THEATER_CHASE);
+    mode = HOLD;
+  }
+  if (mode == TWINKLERANDOM) {
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setMode(FX_MODE_TWINKLE_RANDOM);
     mode = HOLD;
   }
   if (mode == THEATERCHASERAINBOW) {

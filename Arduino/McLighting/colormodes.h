@@ -2,6 +2,8 @@
 // Color modes
 // ***************************************************************************
 
+///////////////////////
+
 int dipInterval = 10;
 int darkTime = 250;
 unsigned long currentDipTime;
