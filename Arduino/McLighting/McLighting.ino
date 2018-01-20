@@ -60,16 +60,7 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-/// Button ////
-#ifdef ENABLE_BUTTON
-  unsigned long keyPrevMillis = 0;
-  const unsigned long keySampleIntervalMs = 25;
-  byte longKeyPressCountMax = 80;    // 80 * 25 = 2000 ms
-  byte mediumKeyPressCountMin = 20;    // 20 * 25 = 500 ms
-  byte KeyPressCount = 0;
-  byte prevKeyState = HIGH;         // button is active low
-  boolean buttonState = false;
-#endif
+
 // ***************************************************************************
 // Load library "ticker" for blinking status led
 // ***************************************************************************
@@ -584,32 +575,7 @@ void setup() {
     String chk = getValue(saved_state_string, '|', 0);
     if (chk == "STA") {
       DBG_OUTPUT_PORT.printf("Found saved state: %s\n", saved_state_string.c_str());
-      String str_mode = getValue(saved_state_string, '|', 1);
-      mode = static_cast<MODE>(str_mode.toInt());
-      String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
-      ws2812fx_mode = str_ws2812fx_mode.toInt();
-      String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
-      ws2812fx_speed = str_ws2812fx_speed.toInt();
-      String str_brightness = getValue(saved_state_string, '|', 4);
-      brightness = str_brightness.toInt();
-      String str_red = getValue(saved_state_string, '|', 5);
-      main_color.red = str_red.toInt();
-      String str_green = getValue(saved_state_string, '|', 6);
-      main_color.green = str_green.toInt();
-      String str_blue = getValue(saved_state_string, '|', 7);
-      main_color.blue = str_blue.toInt();
-  
-      DBG_OUTPUT_PORT.printf("ws2812fx_mode: %d\n", ws2812fx_mode);
-      DBG_OUTPUT_PORT.printf("ws2812fx_speed: %d\n", ws2812fx_speed);
-      DBG_OUTPUT_PORT.printf("brightness: %d\n", brightness);
-      DBG_OUTPUT_PORT.printf("main_color.red: %d\n", main_color.red);
-      DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
-      DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
-  
-      strip.setMode(ws2812fx_mode);
-      strip.setSpeed(convertSpeed(ws2812fx_speed));
-      strip.setBrightness(brightness);
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      setModeByStateString(saved_state_string);
     }
     sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   #endif
