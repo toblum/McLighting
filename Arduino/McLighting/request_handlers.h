@@ -1,7 +1,6 @@
 // ***************************************************************************
 // Request handlers
 // ***************************************************************************
-
 void getArgs() {
   if (server.arg("rgb") != "") {
     uint32_t rgb = (uint32_t) strtol(server.arg("rgb").c_str(), NULL, 16);
@@ -124,10 +123,10 @@ void handleSetDifferentColors(uint8_t * mypayload) {
 void handleRangeDifferentColors(uint8_t * mypayload) {
   uint8_t* nextCommand = 0;
   nextCommand = (uint8_t*) strtok((char*) mypayload, "R");
-  //While there is a range to process R0110<00ff00>
+  // While there is a range to process R0110<00ff00>
 
   while (nextCommand) {
-    //Loop for each LED.
+    // Loop for each LED.
     char startled[3] = { 0, 0, 0 };
     char endled[3] = { 0, 0, 0 };
     char colorval[7] = { 0, 0, 0, 0, 0, 0, 0 };
@@ -141,19 +140,19 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
     while ( rangebegin <= rangeend ) {
       char rangeData[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
       if ( rangebegin < 10 ) {
-        //Create the valid 'nextCommand' structure
+        // Create the valid 'nextCommand' structure
         sprintf(rangeData, "0%d%s", rangebegin, colorval);
       }
       if ( rangebegin >= 10 ) {
-        //Create the valid 'nextCommand' structure
+        // Create the valid 'nextCommand' structure
         sprintf(rangeData, "%d%s", rangebegin, colorval);
       }
-      //Set one LED
+      // Set one LED
       handleSetSingleLED((uint8_t*) rangeData, 0);
       rangebegin++;
     }
 
-    //Next Range at R
+    // Next Range at R
     nextCommand = (uint8_t*) strtok(NULL, "R");
   }
 }

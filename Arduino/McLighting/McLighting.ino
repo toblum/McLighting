@@ -188,6 +188,7 @@ void setup() {
   // Setup: Neopixel
   // ***************************************************************************
   strip.init();
+  strip.setBrightness(brightness); 
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
   strip.setColor(main_color.red, main_color.green, main_color.blue);

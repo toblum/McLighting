@@ -1,10 +1,10 @@
 // Neopixel
-#define PIN D1          // PIN where neopixel / WS2811 strip is attached
-#define NUMLEDS 7      // Number of leds in the strip
+#define PIN 5           // PIN (5 / D1) where neopixel / WS2811 strip is attached 
+#define NUMLEDS 24      // Number of leds in the strip 
 //#define BUILTIN_LED 2   // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
-#define BUTTON D2       // Input pin for switching the LED strip on / off, connect this PIN to ground to trigger button.
+#define BUTTON 4        // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
-const char HOSTNAME[] = "ESP8266_VORONOI";   // Friedly hostname
+const char HOSTNAME[] = "ESP8266_01";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 #define ENABLE_MQTT   // If defined, enable MQTT client code.
@@ -26,7 +26,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   char mqtt_intopic[strlen(HOSTNAME) + 4];      // Topic in will be: <HOSTNAME>/in
   char mqtt_outtopic[strlen(HOSTNAME) + 5];     // Topic out will be: <HOSTNAME>/out
   
-  const char mqtt_clientid[] = "McLighting"; // MQTT ClientID
+  const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID
   
   char mqtt_host[64] = "";
   char mqtt_port[6] = "";

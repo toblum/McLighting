@@ -155,4 +155,3 @@ void handleFileList() {
 	output += "]";
 	server.send(200, "text/json", output);
 }
-
