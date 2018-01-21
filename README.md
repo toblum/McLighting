@@ -7,6 +7,9 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 21.01.2018:
+User @szepnorbee contributed code for button control. Thank you! It's merged into the master branch now. There is a short manual for configuration [here](https://github.com/toblum/McLighting/wiki/Button-control).
+
 Update 06.01.2018:
 After som etesting I merged the "feature/save_state" banch into master, so everybody should now be able to use this new functionality. Basically McLighting now saves the current mode to EEPROM and restores the setting on reboot. So you wont need to select your favorite mode again. If you don't want to use this, you can disable it in definitions.h.  
 ~~Some people noticed that there are currently problems compiling McLighting whe using ESP8266 core in version 2.4.0. This is due to a [problem](https://github.com/kitesurfer1404/WS2812FX/issues/58) with WS2812FX when using this version. For the moment you can stick to the 2.4.0 RC2 (also easily available via the boards manager).~~ (fixed now )  
@@ -107,8 +110,8 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] RGBW mode [Issue](https://github.com/toblum/McLighting/issues/24)
 - [x] Add called command to response [Issue](https://github.com/toblum/McLighting/issues/19)
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
-- [ ] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
-- [ ] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
+- [x] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
+- [x] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
 - [ ] Additional clients
 
 
