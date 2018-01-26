@@ -99,7 +99,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [x] MQTT support
-- [ ] Support multiple strips and control them separatley or together
+- [ ] Support multiple strips and control them separately or together
 - [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
@@ -113,6 +113,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
 - [x] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
 - [ ] Additional clients
+- [ ] If no wifi, at leat enable button mode. [Issue](https://github.com/toblum/McLighting/issues/88)
+- [ ] Also enable McLighting in Wifi AP mode.
+- [ ] Make a set of NodeRed nodes.
 
 
 ## Licence
