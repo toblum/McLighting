@@ -7,6 +7,9 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 27.01.2018:
+Many people asked if it's possible to connect more than one strip (currently not) or at least "sync" multiple McLighting nodes. Although it may be possible to connect more then one WS2812 strip to the same data pin (works in many cases, you just have to try), syncing many McLighting instances would be a benefit. This could easily be achieved done by software like [NodeRed](https://nodered.org/). I added a example flow to demonstrate that [here](https://github.com/toblum/McLighting/blob/master/clients/node_red/websocket_proxy.json). Have a look at the short video [here](https://youtu.be/g3CHtG9c520).
+
 Update 21.01.2018:
 User @szepnorbee contributed code for button control. Thank you! It's merged into the master branch now. There is a short manual for configuration [here](https://github.com/toblum/McLighting/wiki/Button-control).
 
