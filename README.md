@@ -107,6 +107,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] MQTT support
 - [ ] Support multiple strips and control them separately or together
 - [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93)
+- [ ] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
+- [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
 - [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
