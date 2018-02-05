@@ -110,6 +110,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
+- [ ] Remove old / wrong EEPROM settings completely (https://github.com/toblum/McLighting/issues/92)
 - [x] Fix issue with websockets connection problems
 - [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
 - [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
