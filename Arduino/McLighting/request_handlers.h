@@ -4,10 +4,12 @@
 void getArgs() {
   if (server.arg("rgb") != "") {
     uint32_t rgb = (uint32_t) strtol(server.arg("rgb").c_str(), NULL, 16);
+    main_color.white = ((rgb >> 24) & 0xFF);
     main_color.red = ((rgb >> 16) & 0xFF);
     main_color.green = ((rgb >> 8) & 0xFF);
     main_color.blue = ((rgb >> 0) & 0xFF);
   } else {
+    main_color.white = server.arg("w").toInt();
     main_color.red = server.arg("r").toInt();
     main_color.green = server.arg("g").toInt();
     main_color.blue = server.arg("b").toInt();
@@ -21,6 +23,7 @@ void getArgs() {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
 
+  main_color.white = constrain(main_color.white, 0, 255);
   main_color.red = constrain(main_color.red, 0, 255);
   main_color.green = constrain(main_color.green, 0, 255);
   main_color.blue = constrain(main_color.blue, 0, 255);
@@ -28,6 +31,8 @@ void getArgs() {
   DBG_OUTPUT_PORT.print("Mode: ");
   DBG_OUTPUT_PORT.print(mode);
   DBG_OUTPUT_PORT.print(", Color: ");
+  DBG_OUTPUT_PORT.print(main_color.white);
+  DBG_OUTPUT_PORT.print(", ");
   DBG_OUTPUT_PORT.print(main_color.red);
   DBG_OUTPUT_PORT.print(", ");
   DBG_OUTPUT_PORT.print(main_color.green);
@@ -59,25 +64,27 @@ long convertSpeed(int mcl_speed) {
 void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
+  main_color.white = ((rgb >> 24) & 0xFF);
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
 }
 
 void handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
 
+  main_color.white = ((rgb >> 24) & 0xFF);
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 
   for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
+    strip.setPixelColor(i, main_color.white, main_color.red, main_color.green, main_color.blue);
   }
   strip.show();
-  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.white, main_color.red, main_color.green, main_color.blue);
   exit_func = true;
   mode = ALL;
 }
@@ -90,21 +97,24 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
 
   DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
   if (led <= strip.numPixels()) {
+    char whitehex[3];
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
-    strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
-    strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
-    strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
+    strncpy (whitehex, (const char *) &mypayload[2 + firstChar], 2 );
+    strncpy (redhex, (const char *) &mypayload[4 + firstChar], 2 );
+    strncpy (greenhex, (const char *) &mypayload[6 + firstChar], 2 );
+    strncpy (bluehex, (const char *) &mypayload[8 + firstChar], 2 );
+    ledstates[led].white =  strtol(whitehex, NULL, 16);
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
-    DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s]\n", redhex, greenhex, bluehex);
-    DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
-    DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
+    DBG_OUTPUT_PORT.printf(" rgb.white: [%s] rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s]\n", whitehex, redhex, greenhex, bluehex);
+    DBG_OUTPUT_PORT.printf(" rgb.white: [%i] rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(whitehex, NULL, 16), strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
+    DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\n", led, ledstates[led].white, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
 
-    strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
+    strip.setPixelColor(led, ledstates[led].white, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
     strip.show();
   }
   exit_func = true;
@@ -129,10 +139,10 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
     // Loop for each LED.
     char startled[3] = { 0, 0, 0 };
     char endled[3] = { 0, 0, 0 };
-    char colorval[7] = { 0, 0, 0, 0, 0, 0, 0 };
+    char colorval[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     strncpy ( startled, (const char *) &nextCommand[0], 2 );
     strncpy ( endled, (const char *) &nextCommand[2], 2 );
-    strncpy ( colorval, (const char *) &nextCommand[4], 6 );
+    strncpy ( colorval, (const char *) &nextCommand[4], 8 );
     int rangebegin = atoi(startled);
     int rangeend = atoi(endled);
     DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \n", rangebegin, rangeend, colorval);
@@ -166,24 +176,26 @@ void setModeByStateString(String saved_state_string) {
   ws2812fx_speed = str_ws2812fx_speed.toInt();
   String str_brightness = getValue(saved_state_string, '|', 4);
   brightness = str_brightness.toInt();
-  String str_red = getValue(saved_state_string, '|', 5);
+  String str_white = getValue(saved_state_string, '|', 5);
+  main_color.white = str_white.toInt();
+  String str_red = getValue(saved_state_string, '|', 6);
   main_color.red = str_red.toInt();
-  String str_green = getValue(saved_state_string, '|', 6);
+  String str_green = getValue(saved_state_string, '|', 7);
   main_color.green = str_green.toInt();
-  String str_blue = getValue(saved_state_string, '|', 7);
+  String str_blue = getValue(saved_state_string, '|', 8);
   main_color.blue = str_blue.toInt();
-
   DBG_OUTPUT_PORT.printf("ws2812fx_mode: %d\n", ws2812fx_mode);
   DBG_OUTPUT_PORT.printf("ws2812fx_speed: %d\n", ws2812fx_speed);
   DBG_OUTPUT_PORT.printf("brightness: %d\n", brightness);
+  DBG_OUTPUT_PORT.printf("main_color.white: %d\n", main_color.white);
   DBG_OUTPUT_PORT.printf("main_color.red: %d\n", main_color.red);
   DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
   DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
-
+  
   strip.setMode(ws2812fx_mode);
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   strip.setBrightness(brightness);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
 }
 
 void handleSetNamedMode(String str_mode) {
@@ -222,7 +234,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = HOLD;
   uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
   ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
   strip.setMode(ws2812fx_mode);
   strip.start();
 }
@@ -233,8 +245,8 @@ char* listStatusJSON() {
   char modeName[30];
   strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
 
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-           mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d, %d]}",
+           mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   return json;
 }
 
@@ -319,12 +331,14 @@ void autoTick() {
 }
 
 void handleAutoStart() {
+  mode = AUTO;
   autoCount = 0;
   autoTick();
   strip.start();
 }
 
 void handleAutoStop() {
+  mode = OFF;
   autoTicker.detach();
   strip.stop();
 }
@@ -353,7 +367,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       // # ==> Set main color
       if (payload[0] == '#') {
         handleSetMainColor(payload);
-        DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+        DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
         webSocket.sendTXT(num, "OK");
       }
 
@@ -468,7 +482,7 @@ void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
   // # ==> Set main color
   if (payload[0] == '#') {
     handleSetMainColor(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+    DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
   }
 

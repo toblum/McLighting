@@ -25,7 +25,7 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
     temp[1] = temp[4] = (uint8_t)((((( (index & 255)        * sat) / 255) + (sat ^ 255)) * bright) / 255);
     temp[2] =           (uint8_t)(((((((index & 255) ^ 255) * sat) / 255) + (sat ^ 255)) * bright) / 255);
 
-    strip.setPixelColor(myled, temp[n + 2], temp[n + 1], temp[n]);
+    strip.setPixelColor(myled, temp[n + 2], temp[n + 1], temp[n], 0);
 }
 
 

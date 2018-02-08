@@ -44,8 +44,8 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
 // https://github.com/kitesurfer1404/WS2812FX
-#include <WS2812FX.h>
-WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+#include "WS2812FX.h"
+WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -138,7 +138,7 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 
   uint16_t i;
   for (i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, 0, 0, 255);
+    strip.setPixelColor(i, 0, 0, 0, 255);
   }
   strip.show();
 }
@@ -191,7 +191,7 @@ void setup() {
   strip.setBrightness(brightness); 
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
   strip.start();
 
   // ***************************************************************************
@@ -493,7 +493,7 @@ void setup() {
   });
 
   server.on("/get_color", []() {
-    String rgbcolor = String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX);
+    String rgbcolor = String(main_color.white, HEX) + String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX);
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
     DBG_OUTPUT_PORT.println(rgbcolor);
@@ -578,13 +578,13 @@ void setup() {
 
   #ifdef ENABLE_STATE_SAVE
     // Load state string from EEPROM
-    String saved_state_string = readEEPROM(256, 32);
+    String saved_state_string = readEEPROM(256, 36);
     String chk = getValue(saved_state_string, '|', 0);
     if (chk == "STA") {
       DBG_OUTPUT_PORT.printf("Found saved state: %s\n", saved_state_string.c_str());
       setModeByStateString(saved_state_string);
     }
-    sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+    sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   #endif
 }
 
@@ -617,17 +617,17 @@ void loop() {
     mode = HOLD;
   }
   if (mode == OFF) {
-    strip.setColor(0,0,0);
+    strip.setColor(0,0,0,0);
     strip.setMode(FX_MODE_STATIC);
     // mode = HOLD;
   }
   if (mode == ALL) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_STATIC);
     mode = HOLD;
   }
   if (mode == WIPE) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_COLOR_WIPE);
     mode = HOLD;
   }
@@ -640,12 +640,12 @@ void loop() {
     mode = HOLD;
   }
   if (mode == THEATERCHASE) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_THEATER_CHASE);
     mode = HOLD;
   }
   if (mode == TWINKLERANDOM) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_TWINKLE_RANDOM);
     mode = HOLD;
   }
@@ -670,7 +670,7 @@ void loop() {
 
   #ifdef ENABLE_STATE_SAVE
     // Check for state changes
-    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   
     if (strcmp(current_state, last_state) != 0) {
       // DBG_OUTPUT_PORT.printf("STATE CHANGED: %s / %s\n", last_state, current_state);
@@ -681,7 +681,7 @@ void loop() {
     if (state_save_requested && time_statechange + timeout_statechange_save <= millis()) {
       time_statechange = 0;
       state_save_requested = false;
-      writeEEPROM(256, 32, last_state); // 256 --> last_state (reserved 32 bytes)
+      writeEEPROM(256, 36, last_state); // 256 --> last_state (reserved 32 bytes)
       EEPROM.commit();
     }
   #endif
