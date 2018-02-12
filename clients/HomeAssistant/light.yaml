@@ -1,0 +1,100 @@
+light:
+  - platform: mqtt
+    name: "NeoPixel LEDs"
+    state_topic: "home/ESP8266_01_ha/state/out"
+    command_topic: "home/ESP8266_01_ha/state/in"
+    brightness_command_topic: "home/ESP8266_01_ha/brightness/in"
+    brightness_state_topic: "home/ESP8266_01_ha/brightness/out"
+    effect_command_topic: "home/ESP8266_01_ha/effect/in"
+    effect_state_topic: "home/ESP8266_01_ha/effect/out"
+    rgb_command_topic: "home/ESP8266_01_ha/rgb/in"
+    rgb_state_topic: "home/ESP8266_01_ha/rgb/out"
+    rgb_value_template: "{{ value | join(',') }}"
+    payload_on: "true"
+    payload_off: "false"
+    effect: true
+    effect_list:
+    ######
+      - Blink
+      - Breath
+      - ColorWipe
+      - ColorWipeInverse
+      - ColorWipeReverse
+      - ColorWipeReverseInverse
+      - ColorWipeRandom
+      - RandomColor
+      - SingleDynamic
+      - MultiDynamic
+      - Rainbow
+      - RainbowCycle
+      - Scan
+      - DualScan
+      - Fade
+      - TheaterChase
+      - TheaterChaseRainbow
+      - RunningLights
+      - Twinkle
+      - TwinkleRandom
+      - TwinkleFade
+      - TwinkleFadeRandom
+      - Sparkle
+      - FlashSparkle
+      - HyperSparkle
+      - Strobe
+      - StrobeRainbow
+      - MultiStrobe
+      - BlinkRainbow
+      - ChaseWhite
+      - ChaseColor
+      - ChaseRandom
+      - ChaseRainbow
+      - ChaseFlash
+      - ChaseFlashRandom
+      - ChaseRainbowWhite
+      - ChaseBlackout
+      - ChaseBlackoutRainbow
+      - ColorSweepRandom
+      - RunningColor
+      - RunningRedBlue
+      - RunningRandom
+      - LarsonScanner
+      - Comet
+      - Fireworks
+      - FireworksRandom
+      - MerryChristmas
+      - FireFlicker
+      - FireFlickerSoft
+      - FireFlickerIntense
+      - CircusCombustus
+      - Halloween
+      - BicolorChase
+      - TricolorChase
+      - ICU
+    brightness: true
+    rgb: true
+    optimistic: false
+    qos: 0
+    retain: true
+    
+input_number:
+  neopixel_animation_speed:
+    name: NeoPixel Animation Speed
+    initial: 200
+    min: 0
+    max: 255
+    step: 5
+    
+automation:
+  - id: 71938579813759813757
+    alias: NeoPixel Animation Speed
+    initial_state: true
+    hide_entity: false
+    trigger:
+    - entity_id: input_number.neopixel_animation_speed
+      platform: state
+    action:
+    - data:
+        payload_template: '{{ trigger.to_state.state | int }}'
+        retain: true
+        topic: home/ESP8266_01_ha/speed
+      service: mqtt.publish
