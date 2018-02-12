@@ -25,6 +25,17 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   int mqtt_reconnect_retries = 0;
   char mqtt_intopic[strlen(HOSTNAME) + 4];      // Topic in will be: <HOSTNAME>/in
   char mqtt_outtopic[strlen(HOSTNAME) + 5];     // Topic out will be: <HOSTNAME>/out
+
+  String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
+  String mqtt_ha_state_in = mqtt_ha + "state/in";
+  String mqtt_ha_state_out = mqtt_ha + "state/out";
+  String mqtt_ha_effect_in = mqtt_ha + "effect/in";
+  String mqtt_ha_effect_out = mqtt_ha + "effect/out";
+  String mqtt_ha_brightness_in = mqtt_ha + "brightness/in";
+  String mqtt_ha_brightness_out = mqtt_ha + "brightness/out";
+  String mqtt_ha_rgb_in = mqtt_ha + "rgb/in";
+  String mqtt_ha_rgb_out = mqtt_ha + "rgb/out";
+  String mqtt_ha_speed = mqtt_ha + "speed";
   
   const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID
   
