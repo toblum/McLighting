@@ -732,6 +732,7 @@ void mqtt_reconnect() {
       mqtt_client.publish(mqtt_outtopic, message);
       // ... and resubscribe
       mqtt_client.subscribe(mqtt_intopic);
+      mqtt_client.subscribe(String(mqtt_ha + "#").c_str());
 
       DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
       DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
