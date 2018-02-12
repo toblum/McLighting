@@ -9,7 +9,8 @@ light:
     effect_state_topic: "home/ESP8266_01_ha/effect/out"
     rgb_command_topic: "home/ESP8266_01_ha/rgb/in"
     rgb_state_topic: "home/ESP8266_01_ha/rgb/out"
-    rgb_value_template: "{{ value | join(',') }}"
+    #rgb_value_template: "{{ value | join(',') }}"
+    rgb_value_template: "{{ value }}"
     payload_on: "true"
     payload_off: "false"
     effect: true
@@ -93,7 +94,7 @@ automation:
     - entity_id: input_number.neopixel_animation_speed
       platform: state
     action:
-    - data:
+    - data_template:
         payload_template: '{{ trigger.to_state.state | int }}'
         retain: true
         topic: home/ESP8266_01_ha/speed
