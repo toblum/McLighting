@@ -7,6 +7,9 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 12.02.2018:
+Added Home Assistant Support using MQTT Light. A better implementation would be using MQTT Light JSON.
+
 Update 31.01.2018:
 User @codmpm did a very professional McLighting installation and even designed his own PCBs. He has a great writeup for his project at: https://allgeek.de/2018/01/29/esp8266-neopixel-controller/ (in german).
 
