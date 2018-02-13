@@ -36,6 +36,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   String mqtt_ha_rgb_in = mqtt_ha + "rgb/in";
   String mqtt_ha_rgb_out = mqtt_ha + "rgb/out";
   String mqtt_ha_speed = mqtt_ha + "speed";
+  bool animation_on = false;
   
   const char mqtt_clientid[] = "ESP8266Client"; // MQTT ClientID
   
