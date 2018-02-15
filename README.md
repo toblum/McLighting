@@ -7,6 +7,9 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
+Update 15.02.2018:
+Replaced Home Assistant Support using MQTT Light to MQTT JSON Light.
+
 Update 12.02.2018:
 Added Home Assistant Support using MQTT Light. A better implementation would be using MQTT Light JSON.
 
