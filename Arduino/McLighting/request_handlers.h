@@ -459,175 +459,297 @@ void checkForRequests() {
 // MQTT callback / connection handler
 // ***************************************************************************
 #ifdef ENABLE_MQTT
+
+char* removeSpaces(char* input){
+    int i,j;
+    char *output=input;
+    for (i = 0, j = 0; i<strlen(input); i++,j++)
+    {
+        if (input[i]!=' ')
+            output[j]=input[i];
+        else
+            j--;
+    }
+    output[j]=0;
+    return output;
+}
+
+void temp2rgb(unsigned int kelvin) {
+  int tmp_internal = kelvin / 100.0;
+
+  // red
+  if (tmp_internal <= 66) {
+    main_color.red = 255;
+  } else {
+    float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
+    if (tmp_red < 0) {
+      main_color.red = 0;
+    } else if (tmp_red > 255) {
+      main_color.red = 255;
+    } else {
+      main_color.red = tmp_red;
+    }
+  }
+
+  // green
+  if (tmp_internal <= 66) {
+    float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
+    if (tmp_green < 0) {
+      main_color.green = 0;
+    } else if (tmp_green > 255) {
+      main_color.green = 255;
+    } else {
+      main_color.green = tmp_green;
+    }
+  } else {
+    float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
+    if (tmp_green < 0) {
+      main_color.green = 0;
+    } else if (tmp_green > 255) {
+      main_color.green = 255;
+    } else {
+      main_color.green = tmp_green;
+    }
+  }
+
+  // blue
+  if (tmp_internal >= 66) {
+    main_color.blue = 255;
+  } else if (tmp_internal <= 19) {
+    main_color.blue = 0;
+  } else {
+    float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
+    if (tmp_blue < 0) {
+      main_color.blue = 0;
+    } else if (tmp_blue > 255) {
+      main_color.blue = 255;
+    } else {
+      main_color.blue = tmp_blue;
+    }
+  }
+
+  //handleSetWS2812FXMode((uint8_t *) "/0");
+  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip.start();
+
+}
+
+bool processJson(char* message) {
+  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.parseObject(message);
+
+  if (!root.success()) {
+    Serial.println("parseObject() failed");
+    return false;
+  }
+
+  if (root.containsKey("state")) {
+    if (strcmp(root["state"], on_cmd) == 0 and !(animation_on)) {
+      stateOn = true;
+      mode = ALL;
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.start();
+    }
+    else if (strcmp(root["state"], off_cmd) == 0) {
+      stateOn = false;
+      mode = OFF;
+      animation_on = false;
+      strip.start();
+    }
+  }
+
+  if (root.containsKey("color")) {
+    main_color.red = root["color"]["r"];
+    main_color.green = root["color"]["g"];
+    main_color.blue = root["color"]["b"];
+    //handleSetWS2812FXMode((uint8_t *) "/0");
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.start();
+  }
+
+  if (root.containsKey("color_temp")) {
+    //temp comes in as mireds, need to convert to kelvin then to RGB
+    int color_temp = root["color_temp"];
+    unsigned int kelvin  = 1000000 / color_temp;
+
+    temp2rgb(kelvin);
+  }
+
+  if (root.containsKey("brightness")) {
+    const char * brightness_json = root["brightness"];
+    uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
+    brightness = constrain(b, 0, 255);
+    strip.setBrightness(brightness);
+  }
+
+  if (root.containsKey("effect")) {
+    effectString = String((const char *)root["effect"]);
+    char * effect_mqtt;
+    animation_on = true;
+    if (effectString=="Static"){
+      effect_mqtt = "/0";
+    } else if (effectString=="Blink"){
+      effect_mqtt = "/1";
+    } else if (effectString=="Breath"){
+      effect_mqtt = "/2";
+    } else if (effectString=="ColorWipe"){
+      effect_mqtt = "/3";
+    } else if (effectString=="ColorWipeInverse"){
+      effect_mqtt = "/4";
+    } else if (effectString=="ColorWipeReverse"){
+      effect_mqtt = "/5";
+    } else if (effectString=="ColorWipeReverseInverse"){
+      effect_mqtt = "/6";
+    } else if (effectString=="ColorWipeRandom"){
+      effect_mqtt = "/7";
+    } else if (effectString=="RandomColor"){
+      effect_mqtt = "/8";
+    } else if (effectString=="SingleDynamic"){
+      effect_mqtt = "/9";
+    } else if (effectString=="MultiDynamic"){
+      effect_mqtt = "/10";
+    } else if (effectString=="Rainbow"){
+      effect_mqtt = "/11";
+    } else if (effectString=="RainbowCycle"){
+      effect_mqtt = "/12";
+    } else if (effectString=="Scan"){
+      effect_mqtt = "/13";
+    } else if (effectString=="DualScan"){
+      effect_mqtt = "/14";
+    } else if (effectString=="Fade"){
+      effect_mqtt = "/15";
+    } else if (effectString=="TheaterChase"){
+      effect_mqtt = "/16";
+    } else if (effectString=="TheaterChaseRainbow"){
+      effect_mqtt = "/17";
+    } else if (effectString=="RunningLights"){
+      effect_mqtt = "/18";
+    } else if (effectString=="Twinkle"){
+      effect_mqtt = "/19";
+    } else if (effectString=="TwinkleRandom"){
+      effect_mqtt = "/20";
+    } else if (effectString=="TwinkleFade"){
+      effect_mqtt = "/21";
+    } else if (effectString=="TwinkleFadeRandom"){
+      effect_mqtt = "/22";
+    } else if (effectString=="Sparkle"){
+      effect_mqtt = "/23";
+    } else if (effectString=="FlashSparkle"){
+      effect_mqtt = "/24";
+    } else if (effectString=="HyperSparkle"){
+      effect_mqtt = "/25";
+    } else if (effectString=="Strobe"){
+      effect_mqtt = "/26";
+    } else if (effectString=="StrobeRainbow"){
+      effect_mqtt = "/27";
+    } else if (effectString=="MultiStrobe"){
+      effect_mqtt = "/28";
+    } else if (effectString=="BlinkRainbow"){
+      effect_mqtt = "/29";
+    } else if (effectString=="ChaseWhite"){
+      effect_mqtt = "/30";
+    } else if (effectString=="ChaseColor"){
+      effect_mqtt = "/31";
+    } else if (effectString=="ChaseRandom"){
+      effect_mqtt = "/32";
+    } else if (effectString=="ChaseRainbow"){
+      effect_mqtt = "/33";
+    } else if (effectString=="ChaseFlash"){
+      effect_mqtt = "/34";
+    } else if (effectString=="ChaseFlashRandom"){
+      effect_mqtt = "/35";
+    } else if (effectString=="ChaseRainbowWhite"){
+      effect_mqtt = "/36";
+    } else if (effectString=="ChaseBlackout"){
+      effect_mqtt = "/37";
+    } else if (effectString=="ChaseBlackoutRainbow"){
+      effect_mqtt = "/38";
+    } else if (effectString=="ColorSweepRandom"){
+      effect_mqtt = "/39";
+    } else if (effectString=="RunningColor"){
+      effect_mqtt = "/40";
+    } else if (effectString=="RunningRedBlue"){
+      effect_mqtt = "/41";
+    } else if (effectString=="RunningRandom"){
+      effect_mqtt = "/42";
+    } else if (effectString=="LarsonScanner"){
+      effect_mqtt = "/43";
+    } else if (effectString=="Comet"){
+      effect_mqtt = "/44";
+    } else if (effectString=="Fireworks"){
+      effect_mqtt = "/45";
+    } else if (effectString=="FireworksRandom"){
+      effect_mqtt = "/46";
+    } else if (effectString=="MerryChristmas"){
+      effect_mqtt = "/47";
+    } else if (effectString=="FireFlicker"){
+      effect_mqtt = "/48";
+    } else if (effectString=="FireFlickerSoft"){
+      effect_mqtt = "/49";
+    } else if (effectString=="FireFlickerIntense"){
+      effect_mqtt = "/50";
+    } else if (effectString=="CircusCombustus"){
+      effect_mqtt = "/51";
+    } else if (effectString=="Halloween"){
+      effect_mqtt = "/52";
+    } else if (effectString=="BicolorChase"){
+      effect_mqtt = "/53";
+    } else if (effectString=="TricolorChase"){
+      effect_mqtt = "/54";
+    } else if (effectString=="ICU"){
+      effect_mqtt = "/55";
+    }
+    handleSetWS2812FXMode((uint8_t *)effect_mqtt);
+  }
+
+  return true;
+}
+
+/********************************** START SEND STATE*****************************************/
+void sendState() {
+  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.createObject();
+
+  root["state"] = (stateOn) ? on_cmd : off_cmd;
+  JsonObject& color = root.createNestedObject("color");
+  color["r"] = main_color.red;
+  color["g"] = main_color.green;
+  color["b"] = main_color.blue;
+
+  root["brightness"] = brightness;
+
+  char modeName[30];
+  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+  root["effect"] = removeSpaces(modeName);
+
+
+  char buffer[root.measureLength() + 1];
+  root.printTo(buffer, sizeof(buffer));
+
+  mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
+}
+
 void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
   uint8_t * payload = (uint8_t *)malloc(length + 1);
   memcpy(payload, payload_in, length);
   payload[length] = NULL;
-  String payload_str = (char*)payload;
   DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
 
   if ((strcmp(topic,mqtt_ha_state_in.c_str())==0)){
-    if (payload_str=="true" and !(animation_on)){
-        mode = ALL;
-        strip.setColor(main_color.red, main_color.green, main_color.blue);
-        strip.start();
-        DBG_OUTPUT_PORT.printf("MQTT: ON\n");
-        mqtt_client.publish(mqtt_ha_state_out.c_str(), String("true").c_str());
-
-    } else if (payload_str=="false"){
-        mode = OFF;
-        animation_on = false;
-        strip.start();
-        DBG_OUTPUT_PORT.printf("MQTT: OFF\n");
-        mqtt_client.publish(mqtt_ha_state_out.c_str(), String("false").c_str());
+    if (!processJson((char*)payload)) {
+      return;
     }
+    sendState();
 
-  } else if (strcmp(topic,mqtt_ha_effect_in.c_str())==0){
-    char * effect_mqtt;
-    animation_on = true;
-    if (payload_str=="Static"){
-      effect_mqtt = "/0";
-    } else if (payload_str=="Blink"){
-      effect_mqtt = "/1";
-    } else if (payload_str=="Breath"){
-      effect_mqtt = "/2";
-    } else if (payload_str=="ColorWipe"){
-      effect_mqtt = "/3";
-    } else if (payload_str=="ColorWipeInverse"){
-      effect_mqtt = "/4";
-    } else if (payload_str=="ColorWipeReverse"){
-      effect_mqtt = "/5";
-    } else if (payload_str=="ColorWipeReverseInverse"){
-      effect_mqtt = "/6";
-    } else if (payload_str=="ColorWipeRandom"){
-      effect_mqtt = "/7";
-    } else if (payload_str=="RandomColor"){
-      effect_mqtt = "/8";
-    } else if (payload_str=="SingleDynamic"){
-      effect_mqtt = "/9";
-    } else if (payload_str=="MultiDynamic"){
-      effect_mqtt = "/10";
-    } else if (payload_str=="Rainbow"){
-      effect_mqtt = "/11";
-    } else if (payload_str=="RainbowCycle"){
-      effect_mqtt = "/12";
-    } else if (payload_str=="Scan"){
-      effect_mqtt = "/13";
-    } else if (payload_str=="DualScan"){
-      effect_mqtt = "/14";
-    } else if (payload_str=="Fade"){
-      effect_mqtt = "/15";
-    } else if (payload_str=="TheaterChase"){
-      effect_mqtt = "/16";
-    } else if (payload_str=="TheaterChaseRainbow"){
-      effect_mqtt = "/17";
-    } else if (payload_str=="RunningLights"){
-      effect_mqtt = "/18";
-    } else if (payload_str=="Twinkle"){
-      effect_mqtt = "/19";
-    } else if (payload_str=="TwinkleRandom"){
-      effect_mqtt = "/20";
-    } else if (payload_str=="TwinkleFade"){
-      effect_mqtt = "/21";
-    } else if (payload_str=="TwinkleFadeRandom"){
-      effect_mqtt = "/22";
-    } else if (payload_str=="Sparkle"){
-      effect_mqtt = "/23";
-    } else if (payload_str=="FlashSparkle"){
-      effect_mqtt = "/24";
-    } else if (payload_str=="HyperSparkle"){
-      effect_mqtt = "/25";
-    } else if (payload_str=="Strobe"){
-      effect_mqtt = "/26";
-    } else if (payload_str=="StrobeRainbow"){
-      effect_mqtt = "/27";
-    } else if (payload_str=="MultiStrobe"){
-      effect_mqtt = "/28";
-    } else if (payload_str=="BlinkRainbow"){
-      effect_mqtt = "/29";
-    } else if (payload_str=="ChaseWhite"){
-      effect_mqtt = "/30";
-    } else if (payload_str=="ChaseColor"){
-      effect_mqtt = "/31";
-    } else if (payload_str=="ChaseRandom"){
-      effect_mqtt = "/32";
-    } else if (payload_str=="ChaseRainbow"){
-      effect_mqtt = "/33";
-    } else if (payload_str=="ChaseFlash"){
-      effect_mqtt = "/34";
-    } else if (payload_str=="ChaseFlashRandom"){
-      effect_mqtt = "/35";
-    } else if (payload_str=="ChaseRainbowWhite"){
-      effect_mqtt = "/36";
-    } else if (payload_str=="ChaseBlackout"){
-      effect_mqtt = "/37";
-    } else if (payload_str=="ChaseBlackoutRainbow"){
-      effect_mqtt = "/38";
-    } else if (payload_str=="ColorSweepRandom"){
-      effect_mqtt = "/39";
-    } else if (payload_str=="RunningColor"){
-      effect_mqtt = "/40";
-    } else if (payload_str=="RunningRedBlue"){
-      effect_mqtt = "/41";
-    } else if (payload_str=="RunningRandom"){
-      effect_mqtt = "/42";
-    } else if (payload_str=="LarsonScanner"){
-      effect_mqtt = "/43";
-    } else if (payload_str=="Comet"){
-      effect_mqtt = "/44";
-    } else if (payload_str=="Fireworks"){
-      effect_mqtt = "/45";
-    } else if (payload_str=="FireworksRandom"){
-      effect_mqtt = "/46";
-    } else if (payload_str=="MerryChristmas"){
-      effect_mqtt = "/47";
-    } else if (payload_str=="FireFlicker"){
-      effect_mqtt = "/48";
-    } else if (payload_str=="FireFlickerSoft"){
-      effect_mqtt = "/49";
-    } else if (payload_str=="FireFlickerIntense"){
-      effect_mqtt = "/50";
-    } else if (payload_str=="CircusCombustus"){
-      effect_mqtt = "/51";
-    } else if (payload_str=="Halloween"){
-      effect_mqtt = "/52";
-    } else if (payload_str=="BicolorChase"){
-      effect_mqtt = "/53";
-    } else if (payload_str=="TricolorChase"){
-      effect_mqtt = "/54";
-    } else if (payload_str=="ICU"){
-      effect_mqtt = "/55";
-    }
-    handleSetWS2812FXMode((uint8_t *)effect_mqtt);
-    DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", effect_mqtt);
-    mqtt_client.publish(mqtt_ha_effect_out.c_str(), (char*)payload);
-    
-  } else if (strcmp(topic,mqtt_ha_brightness_in.c_str())==0){
-      uint8_t b = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
-      brightness = constrain(b, 0, 255);
-      strip.setBrightness(brightness);
-      DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
-      mqtt_client.publish(mqtt_ha_brightness_out.c_str(), String((char *)payload).c_str());
-
-  } else if (strcmp(topic,mqtt_ha_rgb_in.c_str())==0){
-      int firstCommaIndex = payload_str.indexOf(',');
-      int secondCommaIndex = payload_str.indexOf(',', firstCommaIndex+1);
-      int rm = payload_str.substring(0, firstCommaIndex).toInt();
-      int gm = payload_str.substring(firstCommaIndex+1, secondCommaIndex).toInt();
-      int bm = payload_str.substring(secondCommaIndex+1).toInt();
-
-      main_color.red = constrain(rm, 0, 255);
-      main_color.green = constrain(gm, 0, 255);
-      main_color.blue = constrain(bm, 0, 255);
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
-      strip.start();
-      mqtt_client.publish(mqtt_ha_rgb_out.c_str(), String((char *)payload).c_str());
   } else if (strcmp(topic,mqtt_ha_speed.c_str())==0){
       uint8_t d = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
       ws2812fx_speed = constrain(d, 0, 255);
       strip.setSpeed(convertSpeed(ws2812fx_speed));
+
   } else if (strcmp(topic,(char *)mqtt_intopic)==0){
-  
+
   // # ==> Set main color
   if (payload[0] == '#') {
     handleSetMainColor(payload);
