@@ -1,18 +1,8 @@
 light:
-  - platform: mqtt
+  - platform: mqtt_json
     name: "NeoPixel LEDs"
-    state_topic: "home/ESP8266_01_ha/state/out"
-    command_topic: "home/ESP8266_01_ha/state/in"
-    brightness_command_topic: "home/ESP8266_01_ha/brightness/in"
-    brightness_state_topic: "home/ESP8266_01_ha/brightness/out"
-    effect_command_topic: "home/ESP8266_01_ha/effect/in"
-    effect_state_topic: "home/ESP8266_01_ha/effect/out"
-    rgb_command_topic: "home/ESP8266_01_ha/rgb/in"
-    rgb_state_topic: "home/ESP8266_01_ha/rgb/out"
-    #rgb_value_template: "{{ value | join(',') }}"
-    rgb_value_template: "{{ value }}"
-    payload_on: "true"
-    payload_off: "false"
+    state_topic: "home/McLighting01_ha/state/out"
+    command_topic: "home/McLighting01_ha/state/in"
     effect: true
     effect_list:
     ######
@@ -97,5 +87,5 @@ automation:
     - data_template:
         payload_template: '{{ trigger.to_state.state | int }}'
         retain: true
-        topic: home/ESP8266_01_ha/speed
+        topic: home/McLighting01_ha/speed
       service: mqtt.publish
