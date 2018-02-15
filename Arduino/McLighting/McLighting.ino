@@ -27,6 +27,7 @@
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
+  #include <ArduinoJson.h>
 
   WiFiClient espClient;
   PubSubClient mqtt_client(espClient);
