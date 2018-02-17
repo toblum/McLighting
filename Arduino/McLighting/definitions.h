@@ -8,7 +8,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 #define ENABLE_MQTT   // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASISTANT // If defined, enable Homeassistant integration
+#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 // #define ENABLE_BUTTON  // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 
 // parameters for automatically cycling favorite patterns
@@ -27,7 +27,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   char mqtt_intopic[strlen(HOSTNAME) + 4 + 5];      // Topic in will be: <HOSTNAME>/in
   char mqtt_outtopic[strlen(HOSTNAME) + 5 + 5];     // Topic out will be: <HOSTNAME>/out
 
-  #ifdef ENABLE_HOMEASISTANT
+  #ifdef ENABLE_HOMEASSISTANT
     String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
     String mqtt_ha_state_in = mqtt_ha + "state/in";
     String mqtt_ha_state_out = mqtt_ha + "state/out";

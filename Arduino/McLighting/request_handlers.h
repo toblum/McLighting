@@ -460,7 +460,7 @@ void checkForRequests() {
 // ***************************************************************************
 #ifdef ENABLE_MQTT
 
-  #ifdef ENABLE_HOMEASISTANT
+  #ifdef ENABLE_HOMEASSISTANT
     char* removeSpaces(char* input) {
       int i, j;
       char *output = input;
@@ -739,7 +739,7 @@ void checkForRequests() {
     payload[length] = NULL;
     DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
 
-    #ifdef ENABLE_HOMEASISTANT
+    #ifdef ENABLE_HOMEASSISTANT
       if ((strcmp(topic, mqtt_ha_state_in.c_str()) == 0)) {
         if (!processJson((char*)payload)) {
           return;
@@ -842,7 +842,7 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
       }
 
-    #ifdef ENABLE_HOMEASISTANT
+    #ifdef ENABLE_HOMEASSISTANT
     }
     #endif
     free(payload);
@@ -863,7 +863,7 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, message);
         // ... and resubscribe
         mqtt_client.subscribe(mqtt_intopic);
-        #ifdef ENABLE_HOMEASISTANT
+        #ifdef ENABLE_HOMEASSISTANT
           mqtt_client.subscribe(String(mqtt_ha + "#").c_str());
         #endif
   

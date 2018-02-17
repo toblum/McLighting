@@ -27,7 +27,7 @@
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
-  #ifdef ENABLE_HOMEASISTANT
+  #ifdef ENABLE_HOMEASSISTANT
     #include <ArduinoJson.h>
   #endif
 
