@@ -1,6 +1,6 @@
 // Neopixel
-#define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
-#define NUMLEDS 300      // Number of leds in the strip
+#define PIN 5           // PIN (14 / D5) where neopixel / WS2811 strip is attached
+#define NUMLEDS 24      // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
@@ -8,6 +8,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 #define ENABLE_MQTT   // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
+#define ENABLE_HOMEASISTANT // If defined, enable Homeassistant integration
 // #define ENABLE_BUTTON  // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 
 // parameters for automatically cycling favorite patterns
@@ -26,16 +27,18 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   char mqtt_intopic[strlen(HOSTNAME) + 4 + 5];      // Topic in will be: <HOSTNAME>/in
   char mqtt_outtopic[strlen(HOSTNAME) + 5 + 5];     // Topic out will be: <HOSTNAME>/out
 
-  String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
-  String mqtt_ha_state_in = mqtt_ha + "state/in";
-  String mqtt_ha_state_out = mqtt_ha + "state/out";
-  String mqtt_ha_speed = mqtt_ha + "speed";
-
-  const char* on_cmd = "ON";
-  const char* off_cmd = "OFF";
-  bool stateOn = false;
-  bool animation_on = false;
-  String effectString = "Static";
+  #ifdef ENABLE_HOMEASISTANT
+    String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
+    String mqtt_ha_state_in = mqtt_ha + "state/in";
+    String mqtt_ha_state_out = mqtt_ha + "state/out";
+    String mqtt_ha_speed = mqtt_ha + "speed";
+  
+    const char* on_cmd = "ON";
+    const char* off_cmd = "OFF";
+    bool stateOn = false;
+    bool animation_on = false;
+    String effectString = "Static";
+  #endif
 
   const char mqtt_clientid[] = "NeoPixelsStrip"; // MQTT ClientID
 

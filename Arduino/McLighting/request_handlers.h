@@ -460,421 +460,427 @@ void checkForRequests() {
 // ***************************************************************************
 #ifdef ENABLE_MQTT
 
-char* removeSpaces(char* input){
-    int i,j;
-    char *output=input;
-    for (i = 0, j = 0; i<strlen(input); i++,j++)
-    {
-        if (input[i]!=' ')
-            output[j]=input[i];
+  #ifdef ENABLE_HOMEASISTANT
+    char* removeSpaces(char* input) {
+      int i, j;
+      char *output = input;
+      for (i = 0, j = 0; i < strlen(input); i++, j++)
+      {
+        if (input[i] != ' ')
+          output[j] = input[i];
         else
-            j--;
+          j--;
+      }
+      output[j] = 0;
+      return output;
     }
-    output[j]=0;
-    return output;
-}
-
-void temp2rgb(unsigned int kelvin) {
-  int tmp_internal = kelvin / 100.0;
-
-  // red
-  if (tmp_internal <= 66) {
-    main_color.red = 255;
-  } else {
-    float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
-    if (tmp_red < 0) {
-      main_color.red = 0;
-    } else if (tmp_red > 255) {
-      main_color.red = 255;
-    } else {
-      main_color.red = tmp_red;
-    }
-  }
-
-  // green
-  if (tmp_internal <= 66) {
-    float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
-    if (tmp_green < 0) {
-      main_color.green = 0;
-    } else if (tmp_green > 255) {
-      main_color.green = 255;
-    } else {
-      main_color.green = tmp_green;
-    }
-  } else {
-    float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
-    if (tmp_green < 0) {
-      main_color.green = 0;
-    } else if (tmp_green > 255) {
-      main_color.green = 255;
-    } else {
-      main_color.green = tmp_green;
-    }
-  }
-
-  // blue
-  if (tmp_internal >= 66) {
-    main_color.blue = 255;
-  } else if (tmp_internal <= 19) {
-    main_color.blue = 0;
-  } else {
-    float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
-    if (tmp_blue < 0) {
-      main_color.blue = 0;
-    } else if (tmp_blue > 255) {
-      main_color.blue = 255;
-    } else {
-      main_color.blue = tmp_blue;
-    }
-  }
-
-  //handleSetWS2812FXMode((uint8_t *) "/0");
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
-  strip.start();
-
-}
-
-bool processJson(char* message) {
-  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
-
-  JsonObject& root = jsonBuffer.parseObject(message);
-
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-    return false;
-  }
-
-  if (root.containsKey("state")) {
-    if (strcmp(root["state"], on_cmd) == 0 and !(animation_on)) {
-      stateOn = true;
-      mode = ALL;
+    
+    void temp2rgb(unsigned int kelvin) {
+      int tmp_internal = kelvin / 100.0;
+    
+      // red
+      if (tmp_internal <= 66) {
+        main_color.red = 255;
+      } else {
+        float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
+        if (tmp_red < 0) {
+          main_color.red = 0;
+        } else if (tmp_red > 255) {
+          main_color.red = 255;
+        } else {
+          main_color.red = tmp_red;
+        }
+      }
+    
+      // green
+      if (tmp_internal <= 66) {
+        float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
+        if (tmp_green < 0) {
+          main_color.green = 0;
+        } else if (tmp_green > 255) {
+          main_color.green = 255;
+        } else {
+          main_color.green = tmp_green;
+        }
+      } else {
+        float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
+        if (tmp_green < 0) {
+          main_color.green = 0;
+        } else if (tmp_green > 255) {
+          main_color.green = 255;
+        } else {
+          main_color.green = tmp_green;
+        }
+      }
+    
+      // blue
+      if (tmp_internal >= 66) {
+        main_color.blue = 255;
+      } else if (tmp_internal <= 19) {
+        main_color.blue = 0;
+      } else {
+        float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
+        if (tmp_blue < 0) {
+          main_color.blue = 0;
+        } else if (tmp_blue > 255) {
+          main_color.blue = 255;
+        } else {
+          main_color.blue = tmp_blue;
+        }
+      }
+    
+      //handleSetWS2812FXMode((uint8_t *) "/0");
       strip.setColor(main_color.red, main_color.green, main_color.blue);
       strip.start();
+    
     }
-    else if (strcmp(root["state"], off_cmd) == 0) {
-      stateOn = false;
-      mode = OFF;
-      animation_on = false;
-      strip.start();
+    
+    bool processJson(char* message) {
+      StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+    
+      JsonObject& root = jsonBuffer.parseObject(message);
+    
+      if (!root.success()) {
+        Serial.println("parseObject() failed");
+        return false;
+      }
+    
+      if (root.containsKey("state")) {
+        if (strcmp(root["state"], on_cmd) == 0 and !(animation_on)) {
+          stateOn = true;
+          mode = ALL;
+          strip.setColor(main_color.red, main_color.green, main_color.blue);
+          strip.start();
+        }
+        else if (strcmp(root["state"], off_cmd) == 0) {
+          stateOn = false;
+          mode = OFF;
+          animation_on = false;
+          strip.start();
+        }
+      }
+    
+      if (root.containsKey("color")) {
+        main_color.red = root["color"]["r"];
+        main_color.green = root["color"]["g"];
+        main_color.blue = root["color"]["b"];
+        //handleSetWS2812FXMode((uint8_t *) "/0");
+        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        strip.start();
+      }
+    
+      if (root.containsKey("color_temp")) {
+        //temp comes in as mireds, need to convert to kelvin then to RGB
+        int color_temp = root["color_temp"];
+        unsigned int kelvin  = 1000000 / color_temp;
+    
+        temp2rgb(kelvin);
+      }
+    
+      if (root.containsKey("brightness")) {
+        const char * brightness_json = root["brightness"];
+        uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
+        brightness = constrain(b, 0, 255);
+        strip.setBrightness(brightness);
+      }
+    
+      if (root.containsKey("effect")) {
+        effectString = String((const char *)root["effect"]);
+        char * effect_mqtt;
+        animation_on = true;
+        if (effectString == "Static") {
+          effect_mqtt = "/0";
+        } else if (effectString == "Blink") {
+          effect_mqtt = "/1";
+        } else if (effectString == "Breath") {
+          effect_mqtt = "/2";
+        } else if (effectString == "ColorWipe") {
+          effect_mqtt = "/3";
+        } else if (effectString == "ColorWipeInverse") {
+          effect_mqtt = "/4";
+        } else if (effectString == "ColorWipeReverse") {
+          effect_mqtt = "/5";
+        } else if (effectString == "ColorWipeReverseInverse") {
+          effect_mqtt = "/6";
+        } else if (effectString == "ColorWipeRandom") {
+          effect_mqtt = "/7";
+        } else if (effectString == "RandomColor") {
+          effect_mqtt = "/8";
+        } else if (effectString == "SingleDynamic") {
+          effect_mqtt = "/9";
+        } else if (effectString == "MultiDynamic") {
+          effect_mqtt = "/10";
+        } else if (effectString == "Rainbow") {
+          effect_mqtt = "/11";
+        } else if (effectString == "RainbowCycle") {
+          effect_mqtt = "/12";
+        } else if (effectString == "Scan") {
+          effect_mqtt = "/13";
+        } else if (effectString == "DualScan") {
+          effect_mqtt = "/14";
+        } else if (effectString == "Fade") {
+          effect_mqtt = "/15";
+        } else if (effectString == "TheaterChase") {
+          effect_mqtt = "/16";
+        } else if (effectString == "TheaterChaseRainbow") {
+          effect_mqtt = "/17";
+        } else if (effectString == "RunningLights") {
+          effect_mqtt = "/18";
+        } else if (effectString == "Twinkle") {
+          effect_mqtt = "/19";
+        } else if (effectString == "TwinkleRandom") {
+          effect_mqtt = "/20";
+        } else if (effectString == "TwinkleFade") {
+          effect_mqtt = "/21";
+        } else if (effectString == "TwinkleFadeRandom") {
+          effect_mqtt = "/22";
+        } else if (effectString == "Sparkle") {
+          effect_mqtt = "/23";
+        } else if (effectString == "FlashSparkle") {
+          effect_mqtt = "/24";
+        } else if (effectString == "HyperSparkle") {
+          effect_mqtt = "/25";
+        } else if (effectString == "Strobe") {
+          effect_mqtt = "/26";
+        } else if (effectString == "StrobeRainbow") {
+          effect_mqtt = "/27";
+        } else if (effectString == "MultiStrobe") {
+          effect_mqtt = "/28";
+        } else if (effectString == "BlinkRainbow") {
+          effect_mqtt = "/29";
+        } else if (effectString == "ChaseWhite") {
+          effect_mqtt = "/30";
+        } else if (effectString == "ChaseColor") {
+          effect_mqtt = "/31";
+        } else if (effectString == "ChaseRandom") {
+          effect_mqtt = "/32";
+        } else if (effectString == "ChaseRainbow") {
+          effect_mqtt = "/33";
+        } else if (effectString == "ChaseFlash") {
+          effect_mqtt = "/34";
+        } else if (effectString == "ChaseFlashRandom") {
+          effect_mqtt = "/35";
+        } else if (effectString == "ChaseRainbowWhite") {
+          effect_mqtt = "/36";
+        } else if (effectString == "ChaseBlackout") {
+          effect_mqtt = "/37";
+        } else if (effectString == "ChaseBlackoutRainbow") {
+          effect_mqtt = "/38";
+        } else if (effectString == "ColorSweepRandom") {
+          effect_mqtt = "/39";
+        } else if (effectString == "RunningColor") {
+          effect_mqtt = "/40";
+        } else if (effectString == "RunningRedBlue") {
+          effect_mqtt = "/41";
+        } else if (effectString == "RunningRandom") {
+          effect_mqtt = "/42";
+        } else if (effectString == "LarsonScanner") {
+          effect_mqtt = "/43";
+        } else if (effectString == "Comet") {
+          effect_mqtt = "/44";
+        } else if (effectString == "Fireworks") {
+          effect_mqtt = "/45";
+        } else if (effectString == "FireworksRandom") {
+          effect_mqtt = "/46";
+        } else if (effectString == "MerryChristmas") {
+          effect_mqtt = "/47";
+        } else if (effectString == "FireFlicker") {
+          effect_mqtt = "/48";
+        } else if (effectString == "FireFlickerSoft") {
+          effect_mqtt = "/49";
+        } else if (effectString == "FireFlickerIntense") {
+          effect_mqtt = "/50";
+        } else if (effectString == "CircusCombustus") {
+          effect_mqtt = "/51";
+        } else if (effectString == "Halloween") {
+          effect_mqtt = "/52";
+        } else if (effectString == "BicolorChase") {
+          effect_mqtt = "/53";
+        } else if (effectString == "TricolorChase") {
+          effect_mqtt = "/54";
+        } else if (effectString == "ICU") {
+          effect_mqtt = "/55";
+        }
+        handleSetWS2812FXMode((uint8_t *)effect_mqtt);
+      }
+    
+      return true;
+    }
+    
+    /********************************** START SEND STATE*****************************************/
+    void sendState() {
+      StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+    
+      JsonObject& root = jsonBuffer.createObject();
+    
+      root["state"] = (stateOn) ? on_cmd : off_cmd;
+      JsonObject& color = root.createNestedObject("color");
+      color["r"] = main_color.red;
+      color["g"] = main_color.green;
+      color["b"] = main_color.blue;
+    
+      root["brightness"] = brightness;
+    
+      char modeName[30];
+      strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+      root["effect"] = removeSpaces(modeName);
+    
+    
+      char buffer[root.measureLength() + 1];
+      root.printTo(buffer, sizeof(buffer));
+    
+      mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
+    }
+  #endif
+  
+  void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
+    uint8_t * payload = (uint8_t *)malloc(length + 1);
+    memcpy(payload, payload_in, length);
+    payload[length] = NULL;
+    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
+
+    #ifdef ENABLE_HOMEASISTANT
+      if ((strcmp(topic, mqtt_ha_state_in.c_str()) == 0)) {
+        if (!processJson((char*)payload)) {
+          return;
+        }
+        sendState();
+    
+      } else if (strcmp(topic, mqtt_ha_speed.c_str()) == 0) {
+        uint8_t d = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
+        ws2812fx_speed = constrain(d, 0, 255);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
+    
+      } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
+    #endif
+  
+      // # ==> Set main color
+      if (payload[0] == '#') {
+        handleSetMainColor(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // ? ==> Set speed
+      if (payload[0] == '?') {
+        uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        ws2812fx_speed = constrain(d, 0, 255);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
+        DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // % ==> Set brightness
+      if (payload[0] == '%') {
+        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        brightness = constrain(b, 0, 255);
+        strip.setBrightness(brightness);
+        DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // * ==> Set main color and light all LEDs (Shortcut)
+      if (payload[0] == '*') {
+        handleSetAllMode(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // ! ==> Set single LED in given color
+      if (payload[0] == '!') {
+        handleSetSingleLED(payload, 1);
+        DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // + ==> Set multiple LED in the given colors
+      if (payload[0] == '+') {
+        handleSetDifferentColors(payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // R ==> Set range of LEDs in the given colors
+      if (payload[0] == 'R') {
+        handleRangeDifferentColors(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // = ==> Activate named mode
+      if (payload[0] == '=') {
+        String str_mode = String((char *) &payload[0]);
+        handleSetNamedMode(str_mode);
+        DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // $ ==> Get status Info.
+      if (payload[0] == '$') {
+        DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
+        DBG_OUTPUT_PORT.println("MQTT: Out: " + String(listStatusJSON()));
+        mqtt_client.publish(mqtt_outtopic, listStatusJSON());
+      }
+  
+      // ~ ==> Get WS2812 modes.
+      // TODO: Fix this, doesn't return anything. Too long?
+      // Hint: https://github.com/knolleary/pubsubclient/issues/110
+      if (payload[0] == '~') {
+        DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
+        DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
+        mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
+        //String json_modes = listModesJSON();
+        //DBG_OUTPUT_PORT.printf(json_modes.c_str());
+  
+        //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
+        //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
+      }
+  
+      // / ==> Set WS2812 mode.
+      if (payload[0] == '/') {
+        handleSetWS2812FXMode(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+
+    #ifdef ENABLE_HOMEASISTANT
+    }
+    #endif
+    free(payload);
+  }
+  
+  void mqtt_reconnect() {
+    // Loop until we're reconnected
+    while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+      mqtt_reconnect_retries++;
+      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
+      // Attempt to connect
+      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+        DBG_OUTPUT_PORT.println("MQTT connected!");
+        // Once connected, publish an announcement...
+        char * message = new char[18 + strlen(HOSTNAME) + 1];
+        strcpy(message, "McLighting ready: ");
+        strcat(message, HOSTNAME);
+        mqtt_client.publish(mqtt_outtopic, message);
+        // ... and resubscribe
+        mqtt_client.subscribe(mqtt_intopic);
+        #ifdef ENABLE_HOMEASISTANT
+          mqtt_client.subscribe(String(mqtt_ha + "#").c_str());
+        #endif
+  
+        DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
+        DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
+      } else {
+        DBG_OUTPUT_PORT.print("failed, rc=");
+        DBG_OUTPUT_PORT.print(mqtt_client.state());
+        DBG_OUTPUT_PORT.println(" try again in 5 seconds");
+        // Wait 5 seconds before retrying
+        delay(5000);
+      }
+    }
+    if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
+      DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
     }
   }
-
-  if (root.containsKey("color")) {
-    main_color.red = root["color"]["r"];
-    main_color.green = root["color"]["g"];
-    main_color.blue = root["color"]["b"];
-    //handleSetWS2812FXMode((uint8_t *) "/0");
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.start();
-  }
-
-  if (root.containsKey("color_temp")) {
-    //temp comes in as mireds, need to convert to kelvin then to RGB
-    int color_temp = root["color_temp"];
-    unsigned int kelvin  = 1000000 / color_temp;
-
-    temp2rgb(kelvin);
-  }
-
-  if (root.containsKey("brightness")) {
-    const char * brightness_json = root["brightness"];
-    uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
-    brightness = constrain(b, 0, 255);
-    strip.setBrightness(brightness);
-  }
-
-  if (root.containsKey("effect")) {
-    effectString = String((const char *)root["effect"]);
-    char * effect_mqtt;
-    animation_on = true;
-    if (effectString=="Static"){
-      effect_mqtt = "/0";
-    } else if (effectString=="Blink"){
-      effect_mqtt = "/1";
-    } else if (effectString=="Breath"){
-      effect_mqtt = "/2";
-    } else if (effectString=="ColorWipe"){
-      effect_mqtt = "/3";
-    } else if (effectString=="ColorWipeInverse"){
-      effect_mqtt = "/4";
-    } else if (effectString=="ColorWipeReverse"){
-      effect_mqtt = "/5";
-    } else if (effectString=="ColorWipeReverseInverse"){
-      effect_mqtt = "/6";
-    } else if (effectString=="ColorWipeRandom"){
-      effect_mqtt = "/7";
-    } else if (effectString=="RandomColor"){
-      effect_mqtt = "/8";
-    } else if (effectString=="SingleDynamic"){
-      effect_mqtt = "/9";
-    } else if (effectString=="MultiDynamic"){
-      effect_mqtt = "/10";
-    } else if (effectString=="Rainbow"){
-      effect_mqtt = "/11";
-    } else if (effectString=="RainbowCycle"){
-      effect_mqtt = "/12";
-    } else if (effectString=="Scan"){
-      effect_mqtt = "/13";
-    } else if (effectString=="DualScan"){
-      effect_mqtt = "/14";
-    } else if (effectString=="Fade"){
-      effect_mqtt = "/15";
-    } else if (effectString=="TheaterChase"){
-      effect_mqtt = "/16";
-    } else if (effectString=="TheaterChaseRainbow"){
-      effect_mqtt = "/17";
-    } else if (effectString=="RunningLights"){
-      effect_mqtt = "/18";
-    } else if (effectString=="Twinkle"){
-      effect_mqtt = "/19";
-    } else if (effectString=="TwinkleRandom"){
-      effect_mqtt = "/20";
-    } else if (effectString=="TwinkleFade"){
-      effect_mqtt = "/21";
-    } else if (effectString=="TwinkleFadeRandom"){
-      effect_mqtt = "/22";
-    } else if (effectString=="Sparkle"){
-      effect_mqtt = "/23";
-    } else if (effectString=="FlashSparkle"){
-      effect_mqtt = "/24";
-    } else if (effectString=="HyperSparkle"){
-      effect_mqtt = "/25";
-    } else if (effectString=="Strobe"){
-      effect_mqtt = "/26";
-    } else if (effectString=="StrobeRainbow"){
-      effect_mqtt = "/27";
-    } else if (effectString=="MultiStrobe"){
-      effect_mqtt = "/28";
-    } else if (effectString=="BlinkRainbow"){
-      effect_mqtt = "/29";
-    } else if (effectString=="ChaseWhite"){
-      effect_mqtt = "/30";
-    } else if (effectString=="ChaseColor"){
-      effect_mqtt = "/31";
-    } else if (effectString=="ChaseRandom"){
-      effect_mqtt = "/32";
-    } else if (effectString=="ChaseRainbow"){
-      effect_mqtt = "/33";
-    } else if (effectString=="ChaseFlash"){
-      effect_mqtt = "/34";
-    } else if (effectString=="ChaseFlashRandom"){
-      effect_mqtt = "/35";
-    } else if (effectString=="ChaseRainbowWhite"){
-      effect_mqtt = "/36";
-    } else if (effectString=="ChaseBlackout"){
-      effect_mqtt = "/37";
-    } else if (effectString=="ChaseBlackoutRainbow"){
-      effect_mqtt = "/38";
-    } else if (effectString=="ColorSweepRandom"){
-      effect_mqtt = "/39";
-    } else if (effectString=="RunningColor"){
-      effect_mqtt = "/40";
-    } else if (effectString=="RunningRedBlue"){
-      effect_mqtt = "/41";
-    } else if (effectString=="RunningRandom"){
-      effect_mqtt = "/42";
-    } else if (effectString=="LarsonScanner"){
-      effect_mqtt = "/43";
-    } else if (effectString=="Comet"){
-      effect_mqtt = "/44";
-    } else if (effectString=="Fireworks"){
-      effect_mqtt = "/45";
-    } else if (effectString=="FireworksRandom"){
-      effect_mqtt = "/46";
-    } else if (effectString=="MerryChristmas"){
-      effect_mqtt = "/47";
-    } else if (effectString=="FireFlicker"){
-      effect_mqtt = "/48";
-    } else if (effectString=="FireFlickerSoft"){
-      effect_mqtt = "/49";
-    } else if (effectString=="FireFlickerIntense"){
-      effect_mqtt = "/50";
-    } else if (effectString=="CircusCombustus"){
-      effect_mqtt = "/51";
-    } else if (effectString=="Halloween"){
-      effect_mqtt = "/52";
-    } else if (effectString=="BicolorChase"){
-      effect_mqtt = "/53";
-    } else if (effectString=="TricolorChase"){
-      effect_mqtt = "/54";
-    } else if (effectString=="ICU"){
-      effect_mqtt = "/55";
-    }
-    handleSetWS2812FXMode((uint8_t *)effect_mqtt);
-  }
-
-  return true;
-}
-
-/********************************** START SEND STATE*****************************************/
-void sendState() {
-  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
-
-  JsonObject& root = jsonBuffer.createObject();
-
-  root["state"] = (stateOn) ? on_cmd : off_cmd;
-  JsonObject& color = root.createNestedObject("color");
-  color["r"] = main_color.red;
-  color["g"] = main_color.green;
-  color["b"] = main_color.blue;
-
-  root["brightness"] = brightness;
-
-  char modeName[30];
-  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-  root["effect"] = removeSpaces(modeName);
-
-
-  char buffer[root.measureLength() + 1];
-  root.printTo(buffer, sizeof(buffer));
-
-  mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
-}
-
-void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
-  uint8_t * payload = (uint8_t *)malloc(length + 1);
-  memcpy(payload, payload_in, length);
-  payload[length] = NULL;
-  DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
-
-  if ((strcmp(topic,mqtt_ha_state_in.c_str())==0)){
-    if (!processJson((char*)payload)) {
-      return;
-    }
-    sendState();
-
-  } else if (strcmp(topic,mqtt_ha_speed.c_str())==0){
-      uint8_t d = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
-      ws2812fx_speed = constrain(d, 0, 255);
-      strip.setSpeed(convertSpeed(ws2812fx_speed));
-
-  } else if (strcmp(topic,(char *)mqtt_intopic)==0){
-
-  // # ==> Set main color
-  if (payload[0] == '#') {
-    handleSetMainColor(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // ? ==> Set speed
-  if (payload[0] == '?') {
-    uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    ws2812fx_speed = constrain(d, 0, 255);
-    strip.setSpeed(convertSpeed(ws2812fx_speed));
-    DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // % ==> Set brightness
-  if (payload[0] == '%') {
-    uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    brightness = constrain(b, 0, 255);
-    strip.setBrightness(brightness);
-    DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // * ==> Set main color and light all LEDs (Shortcut)
-  if (payload[0] == '*') {
-    handleSetAllMode(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // ! ==> Set single LED in given color
-  if (payload[0] == '!') {
-    handleSetSingleLED(payload, 1);
-    DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // + ==> Set multiple LED in the given colors
-  if (payload[0] == '+') {
-    handleSetDifferentColors(payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // R ==> Set range of LEDs in the given colors
-  if (payload[0] == 'R') {
-    handleRangeDifferentColors(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // = ==> Activate named mode
-  if (payload[0] == '=') {
-    String str_mode = String((char *) &payload[0]);
-    handleSetNamedMode(str_mode);
-    DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // $ ==> Get status Info.
-  if (payload[0] == '$') {
-    DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
-    //String json_str = listStatusJSON();
-    //char* json_str = "";
-    DBG_OUTPUT_PORT.println("MQTT: Out: "+String(listStatusJSON()));
-    mqtt_client.publish(mqtt_outtopic, listStatusJSON());
-  }
-
-  // ~ ==> Get WS2812 modes.
-  // TODO: Fix this, doesn't return anything. Too long?
-  // Hint: https://github.com/knolleary/pubsubclient/issues/110
-  if (payload[0] == '~') {
-    DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
-    DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-    mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-    //String json_modes = listModesJSON();
-    //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-
-    //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-    //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
-  }
-
-  // / ==> Set WS2812 mode.
-  if (payload[0] == '/') {
-    handleSetWS2812FXMode(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  }
-  free(payload);
-}
-
-void mqtt_reconnect() {
-  // Loop until we're reconnected
-  while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
-    mqtt_reconnect_retries++;
-    DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
-    // Attempt to connect
-    if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
-      DBG_OUTPUT_PORT.println("MQTT connected!");
-      // Once connected, publish an announcement...
-      char * message = new char[18 + strlen(HOSTNAME) + 1];
-      strcpy(message, "McLighting ready: ");
-      strcat(message, HOSTNAME);
-      mqtt_client.publish(mqtt_outtopic, message);
-      // ... and resubscribe
-      mqtt_client.subscribe(mqtt_intopic);
-      mqtt_client.subscribe(String(mqtt_ha + "#").c_str());
-
-      DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
-      DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
-    } else {
-      DBG_OUTPUT_PORT.print("failed, rc=");
-      DBG_OUTPUT_PORT.print(mqtt_client.state());
-      DBG_OUTPUT_PORT.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-  if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
-    DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
-  }
-}
 #endif
 
 
@@ -882,56 +888,56 @@ void mqtt_reconnect() {
 // Button management
 // ***************************************************************************
 #ifdef ENABLE_BUTTON
-void shortKeyPress() {
-  DBG_OUTPUT_PORT.printf("Short button press\n");
-  if (buttonState == false) {
-    setModeByStateString(BTN_MODE_SHORT);
-    buttonState = true;
-  } else {
-    mode = OFF;
-    buttonState = false;
-  }
-}
-
-// called when button is kept pressed for less than 2 seconds
-void mediumKeyPress() {
-  DBG_OUTPUT_PORT.printf("Medium button press\n");
-  setModeByStateString(BTN_MODE_MEDIUM);
-}
-
-// called when button is kept pressed for 2 seconds or more
-void longKeyPress() {
-  DBG_OUTPUT_PORT.printf("Long button press\n");
-  setModeByStateString(BTN_MODE_LONG);
-}
-
-void button() {
-  if (millis() - keyPrevMillis >= keySampleIntervalMs) {
-    keyPrevMillis = millis();
-
-    byte currKeyState = digitalRead(BUTTON);
-
-    if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
-      // key goes from not pressed to pressed
-      KeyPressCount = 0;
+  void shortKeyPress() {
+    DBG_OUTPUT_PORT.printf("Short button press\n");
+    if (buttonState == false) {
+      setModeByStateString(BTN_MODE_SHORT);
+      buttonState = true;
+    } else {
+      mode = OFF;
+      buttonState = false;
     }
-    else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
-      if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
-        mediumKeyPress();
+  }
+  
+  // called when button is kept pressed for less than 2 seconds
+  void mediumKeyPress() {
+    DBG_OUTPUT_PORT.printf("Medium button press\n");
+    setModeByStateString(BTN_MODE_MEDIUM);
+  }
+  
+  // called when button is kept pressed for 2 seconds or more
+  void longKeyPress() {
+    DBG_OUTPUT_PORT.printf("Long button press\n");
+    setModeByStateString(BTN_MODE_LONG);
+  }
+  
+  void button() {
+    if (millis() - keyPrevMillis >= keySampleIntervalMs) {
+      keyPrevMillis = millis();
+  
+      byte currKeyState = digitalRead(BUTTON);
+  
+      if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
+        // key goes from not pressed to pressed
+        KeyPressCount = 0;
       }
-      else {
-        if (KeyPressCount < mediumKeyPressCountMin) {
-          shortKeyPress();
+      else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
+        if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
+          mediumKeyPress();
+        }
+        else {
+          if (KeyPressCount < mediumKeyPressCountMin) {
+            shortKeyPress();
+          }
         }
       }
-    }
-    else if (currKeyState == LOW) {
-      KeyPressCount++;
-      if (KeyPressCount >= longKeyPressCountMax) {
-        longKeyPress();
+      else if (currKeyState == LOW) {
+        KeyPressCount++;
+        if (KeyPressCount >= longKeyPressCountMax) {
+          longKeyPress();
+        }
       }
+      prevKeyState = currKeyState;
     }
-    prevKeyState = currKeyState;
   }
-}
 #endif
