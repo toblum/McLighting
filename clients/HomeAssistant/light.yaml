@@ -6,61 +6,61 @@ light:
     effect: true
     effect_list:
     ######
-      - Blink
-      - Breath
-      - ColorWipe
-      - ColorWipeInverse
-      - ColorWipeReverse
-      - ColorWipeReverseInverse
-      - ColorWipeRandom
-      - RandomColor
-      - SingleDynamic
-      - MultiDynamic
-      - Rainbow
-      - RainbowCycle
-      - Scan
-      - DualScan
-      - Fade
-      - TheaterChase
-      - TheaterChaseRainbow
-      - RunningLights
-      - Twinkle
-      - TwinkleRandom
-      - TwinkleFade
-      - TwinkleFadeRandom
-      - Sparkle
-      - FlashSparkle
-      - HyperSparkle
-      - Strobe
-      - StrobeRainbow
-      - MultiStrobe
-      - BlinkRainbow
-      - ChaseWhite
-      - ChaseColor
-      - ChaseRandom
-      - ChaseRainbow
-      - ChaseFlash
-      - ChaseFlashRandom
-      - ChaseRainbowWhite
-      - ChaseBlackout
-      - ChaseBlackoutRainbow
-      - ColorSweepRandom
-      - RunningColor
-      - RunningRedBlue
-      - RunningRandom
-      - LarsonScanner
-      - Comet
-      - Fireworks
-      - FireworksRandom
-      - MerryChristmas
-      - FireFlicker
-      - FireFlickerSoft
-      - FireFlickerIntense
-      - CircusCombustus
-      - Halloween
-      - BicolorChase
-      - TricolorChase
-      - ICU
+      - "Blink"
+      - "Breath"
+      - "Color Wipe"
+      - "Color Wipe Inverse"
+      - "Color Wipe Reverse"
+      - "Color Wipe Reverse Inverse"
+      - "Color Wipe Random"
+      - "Random Color"
+      - "Single Dynamic"
+      - "Multi Dynamic"
+      - "Rainbow"
+      - "Rainbow Cycle"
+      - "Scan"
+      - "Dual Scan"
+      - "Fade"
+      - "Theater Chase"
+      - "Theater Chase Rainbow"
+      - "Running Lights"
+      - "Twinkle"
+      - "Twinkle Random"
+      - "Twinkle Fade"
+      - "Twinkle Fade Random"
+      - "Sparkle"
+      - "Flash Sparkle"
+      - "Hyper Sparkle"
+      - "Strobe"
+      - "Strobe Rainbow"
+      - "Multi Strobe"
+      - "Blink Rainbow"
+      - "Chase White"
+      - "Chase Color"
+      - "Chase Random"
+      - "Chase Rainbow"
+      - "Chase Flash"
+      - "Chase Flash Random"
+      - "Chase Rainbow White"
+      - "Chase Blackout"
+      - "Chase Blackout Rainbow"
+      - "Color Sweep Random"
+      - "Running Color"
+      - "Running Red Blue"
+      - "Running Random"
+      - "Larson Scanner"
+      - "Comet"
+      - "Fireworks"
+      - "Fireworks Random"
+      - "Merry Christmas"
+      - "Fire Flicker"
+      - "Fire Flicker (soft)"
+      - "Fire Flicker (intense)"
+      - "Circus Combustus"
+      - "Halloween"
+      - "Bicolor Chase"
+      - "Tricolor Chase"
+      - "ICU"
     brightness: true
     rgb: true
     optimistic: false
