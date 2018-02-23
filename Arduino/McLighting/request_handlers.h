@@ -613,6 +613,7 @@ void shortKeyPress() {
 void mediumKeyPress() {
   DBG_OUTPUT_PORT.printf("Medium button press\n");
   setModeByStateString(BTN_MODE_MEDIUM);
+  buttonState = true;
   #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
   #endif
@@ -622,6 +623,7 @@ void mediumKeyPress() {
 void longKeyPress() {
   DBG_OUTPUT_PORT.printf("Long button press\n");
   setModeByStateString(BTN_MODE_LONG);
+  buttonState = true;
   #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
   #endif
