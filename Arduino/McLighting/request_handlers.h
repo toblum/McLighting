@@ -606,7 +606,6 @@ void shortKeyPress() {
     #ifdef ENABLE_MQTT
         mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
     #endif
-
   }
 }
 
@@ -617,7 +616,6 @@ void mediumKeyPress() {
   #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
   #endif
-
 }
 
 // called when button is kept pressed for 2 seconds or more
@@ -627,7 +625,6 @@ void longKeyPress() {
   #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
   #endif
-
 }
 
 void button() {
