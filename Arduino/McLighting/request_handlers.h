@@ -597,9 +597,15 @@ void shortKeyPress() {
   if (buttonState == false) {
     setModeByStateString(BTN_MODE_SHORT);
     buttonState = true;
+	    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
+    #endif
   } else {
     mode = OFF;
     buttonState = false;
+    #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
+    #endif
   }
 }
 
@@ -607,12 +613,20 @@ void shortKeyPress() {
 void mediumKeyPress() {
   DBG_OUTPUT_PORT.printf("Medium button press\n");
   setModeByStateString(BTN_MODE_MEDIUM);
+  buttonState = true;
+  #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
+  #endif
 }
 
 // called when button is kept pressed for 2 seconds or more
 void longKeyPress() {
   DBG_OUTPUT_PORT.printf("Long button press\n");
   setModeByStateString(BTN_MODE_LONG);
+  buttonState = true;
+  #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
+  #endif
 }
 
 void button() {
