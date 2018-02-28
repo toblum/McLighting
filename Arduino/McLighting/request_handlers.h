@@ -445,6 +445,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         handleAutoStop();
         webSocket.sendTXT(num, "OK");
       }
+      
+      #ifdef ENABLE_HOMEASSISTANT
+        sendState();
+      #endif
+      
       break;
   }
 }
@@ -725,6 +730,7 @@ void checkForRequests() {
       }
 
     #ifdef ENABLE_HOMEASSISTANT
+        sendState();
     }
     #endif
     free(payload);
