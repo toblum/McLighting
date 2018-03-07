@@ -112,7 +112,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] MQTT support
 - [ ] Support multiple strips and control them separately or together
 - [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
-- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [ ] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Remove old / wrong EEPROM settings completely (https://github.com/toblum/McLighting/issues/92)
