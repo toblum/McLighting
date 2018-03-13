@@ -259,6 +259,32 @@ void getModesJSON() {
   server.send ( 200, "application/json", listModesJSON() );
 }
 
+#ifdef ENABLE_HOMEASSISTANT
+/********************************** START SEND STATE*****************************************/
+void sendState() {
+  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.createObject();
+
+  root["state"] = (stateOn) ? on_cmd : off_cmd;
+  JsonObject& color = root.createNestedObject("color");
+  color["r"] = main_color.red;
+  color["g"] = main_color.green;
+  color["b"] = main_color.blue;
+
+  root["brightness"] = brightness;
+
+  char modeName[30];
+  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+  root["effect"] = modeName;
+
+
+  char buffer[root.measureLength() + 1];
+  root.printTo(buffer, sizeof(buffer));
+
+  mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
+}
+#endif
 
 // ***************************************************************************
 // HTTP request handlers
@@ -592,31 +618,6 @@ void checkForRequests() {
       }
     
       return true;
-    }
-    
-    /********************************** START SEND STATE*****************************************/
-    void sendState() {
-      StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
-    
-      JsonObject& root = jsonBuffer.createObject();
-    
-      root["state"] = (stateOn) ? on_cmd : off_cmd;
-      JsonObject& color = root.createNestedObject("color");
-      color["r"] = main_color.red;
-      color["g"] = main_color.green;
-      color["b"] = main_color.blue;
-    
-      root["brightness"] = brightness;
-    
-      char modeName[30];
-      strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-      root["effect"] = modeName;
-    
-    
-      char buffer[root.measureLength() + 1];
-      root.printTo(buffer, sizeof(buffer));
-    
-      mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
     }
   #endif
   
