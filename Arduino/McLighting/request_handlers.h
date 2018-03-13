@@ -782,9 +782,18 @@ void checkForRequests() {
     if (buttonState == false) {
       setModeByStateString(BTN_MODE_SHORT);
       buttonState = true;
+      #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
+      #endif
     } else {
       mode = OFF;
       buttonState = false;
+      #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
+       #ifdef ENABLE_HOMEASSISTANT
+         sendState();
+       #endif
+      #endif
     }
   }
   
@@ -792,12 +801,24 @@ void checkForRequests() {
   void mediumKeyPress() {
     DBG_OUTPUT_PORT.printf("Medium button press\n");
     setModeByStateString(BTN_MODE_MEDIUM);
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
+      #ifdef ENABLE_HOMEASSISTANT
+        sendState();
+      #endif
+    #endif
   }
   
   // called when button is kept pressed for 2 seconds or more
   void longKeyPress() {
     DBG_OUTPUT_PORT.printf("Long button press\n");
     setModeByStateString(BTN_MODE_LONG);
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
+      #ifdef ENABLE_HOMEASSISTANT
+       sendState();
+      #endif
+    #endif
   }
   
   void button() {
