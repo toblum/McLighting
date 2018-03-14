@@ -816,6 +816,7 @@ void checkForRequests() {
         mqtt_client.subscribe(mqtt_intopic);
         #ifdef ENABLE_HOMEASSISTANT
           mqtt_client.subscribe(mqtt_ha_state_in.c_str());
+          mqtt_client.subscribe(mqtt_ha_speed.c_str());
         #endif
   
         DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
