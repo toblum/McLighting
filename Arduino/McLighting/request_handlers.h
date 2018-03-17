@@ -803,7 +803,7 @@ void checkForRequests() {
     // Loop until we're reconnected
     while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
       mqtt_reconnect_retries++;
-      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
+      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d (%s) ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES, mqtt_clientid);
       // Attempt to connect
       if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
@@ -841,64 +841,6 @@ void checkForRequests() {
 // Button management
 // ***************************************************************************
 #ifdef ENABLE_BUTTON
-void shortKeyPress() {
-  DBG_OUTPUT_PORT.printf("Short button press\n");
-  if (buttonState == false) {
-    setModeByStateString(BTN_MODE_SHORT);
-    buttonState = true;
-  } else {
-    mode = OFF;
-    buttonState = false;
-  }
-}
-
-// called when button is kept pressed for less than 2 seconds
-void mediumKeyPress() {
-  DBG_OUTPUT_PORT.printf("Medium button press\n");
-  setModeByStateString(BTN_MODE_MEDIUM);
-}
-
-// called when button is kept pressed for 2 seconds or more
-void longKeyPress() {
-  DBG_OUTPUT_PORT.printf("Long button press\n");
-  setModeByStateString(BTN_MODE_LONG);
-}
-
-void button() {
-  if (millis() - keyPrevMillis >= keySampleIntervalMs) {
-    keyPrevMillis = millis();
-
-    byte currKeyState = digitalRead(BUTTON);
-
-    if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
-      // key goes from not pressed to pressed
-      KeyPressCount = 0;
-    }
-    else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
-      if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
-        mediumKeyPress();
-      }
-      else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
-        if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
-          mediumKeyPress();
-        }
-        else {
-          if (KeyPressCount < mediumKeyPressCountMin) {
-            shortKeyPress();
-          }
-        }
-      }
-      else if (currKeyState == LOW) {
-        KeyPressCount++;
-        if (KeyPressCount >= longKeyPressCountMax) {
-          longKeyPress();
-        }
-      }
-      prevKeyState = currKeyState;
-    }
-  }
-#endif
-
   void shortKeyPress() {
     DBG_OUTPUT_PORT.printf("Short button press\n");
     if (buttonState == false) {
@@ -918,6 +860,7 @@ void button() {
        #endif
       #endif
     }
+  }
   
   // called when button is kept pressed for less than 2 seconds
   void mediumKeyPress() {
@@ -954,3 +897,24 @@ void button() {
       if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
         // key goes from not pressed to pressed
         KeyPressCount = 0;
+      }
+      else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
+        if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
+          mediumKeyPress();
+        }
+        else {
+          if (KeyPressCount < mediumKeyPressCountMin) {
+            shortKeyPress();
+          }
+        }
+      }
+      else if (currKeyState == LOW) {
+        KeyPressCount++;
+        if (KeyPressCount >= longKeyPressCountMax) {
+          longKeyPress();
+        }
+      }
+      prevKeyState = currKeyState;
+    }
+  }
+#endif
