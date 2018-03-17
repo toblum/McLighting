@@ -7,16 +7,17 @@
 > Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
 ___
-Update 15.02.2018:
-Replaced Home Assistant Support using MQTT Light to MQTT JSON Light.
-
-Update 12.02.2018:
-Added Home Assistant Support using MQTT Light. A better implementation would be using MQTT Light JSON.
+Update 18.03.2018:
+The code for integration with homeassistant was merged into master. It's currently active by default. You can safely disable it in definitions.h when use do not want to use it, or want to use McLighting on a small ESP_01.
 
 Update 17.02.2018:
 User @debsahu contributed code for integration with homeassistant. It's currently in a separate branch (https://github.com/toblum/McLighting/tree/feature/ha_integration). If you're using Homeassistant, please try it out and give feedback.
 User @FabLab-Luenn created a version of McLighting (https://github.com/FabLab-Luenen/McLighting) for 6812 and other RGBW strips. Give it a try, if you own such strips.
 A thank you goes to all contributors.
+
+Update 12. / 15.02.2018:
+Added Home Assistant Support using MQTT Light. A better implementation would be using MQTT Light JSON.
+Replaced Home Assistant Support using MQTT Light to MQTT JSON Light.
 
 Update 31.01.2018:
 User @codmpm did a very professional McLighting installation and even designed his own PCBs. He has a great writeup for his project at: https://allgeek.de/2018/01/29/esp8266-neopixel-controller/ (in german).
