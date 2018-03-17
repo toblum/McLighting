@@ -27,6 +27,9 @@
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
+  #ifdef ENABLE_HOMEASSISTANT
+    #include <ArduinoJson.h>
+  #endif
 
   WiFiClient espClient;
   PubSubClient mqtt_client(espClient);

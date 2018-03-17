@@ -190,31 +190,58 @@ void handleSetNamedMode(String str_mode) {
   exit_func = true;
 
   if (str_mode.startsWith("=off")) {
-    mode = OFF;
+    mode = OFF; 
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = false;
+    #endif
   }
   if (str_mode.startsWith("=all")) {
     mode = ALL;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=wipe")) {
     mode = WIPE;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=rainbow")) {
     mode = RAINBOW;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=rainbowCycle")) {
     mode = RAINBOWCYCLE;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=theaterchase")) {
     mode = THEATERCHASE;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=twinkleRandom")) {
     mode = TWINKLERANDOM;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=theaterchaseRainbow")) {
     mode = THEATERCHASERAINBOW;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
   if (str_mode.startsWith("=tv")) {
     mode = TV;
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
   }
 }
 
@@ -259,6 +286,32 @@ void getModesJSON() {
   server.send ( 200, "application/json", listModesJSON() );
 }
 
+#ifdef ENABLE_HOMEASSISTANT
+/********************************** START SEND STATE*****************************************/
+void sendState() {
+  StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.createObject();
+
+  root["state"] = (stateOn) ? on_cmd : off_cmd;
+  JsonObject& color = root.createNestedObject("color");
+  color["r"] = main_color.red;
+  color["g"] = main_color.green;
+  color["b"] = main_color.blue;
+
+  root["brightness"] = brightness;
+
+  char modeName[30];
+  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+  root["effect"] = modeName;
+
+
+  char buffer[root.measureLength() + 1];
+  root.printTo(buffer, sizeof(buffer));
+
+  mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
+}
+#endif
 
 // ***************************************************************************
 // HTTP request handlers
@@ -355,6 +408,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         handleSetMainColor(payload);
         DBG_OUTPUT_PORT.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
       }
 
       // ? ==> Set speed
@@ -373,12 +430,20 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
         strip.setBrightness(brightness);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
       }
 
       // * ==> Set main color and light all LEDs (Shortcut)
       if (payload[0] == '*') {
         handleSetAllMode(payload);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
       }
 
       // ! ==> Set single LED in given color
@@ -408,6 +473,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
         DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          sendState();
+        #endif
       }
 
       // $ ==> Get status Info.
@@ -432,6 +500,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == '/') {
         handleSetWS2812FXMode(payload);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
       }
 
       // start auto cycling
@@ -452,6 +524,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 void checkForRequests() {
   webSocket.loop();
   server.handleClient();
+  #ifdef ENABLE_MQTT
+  mqtt_client.loop();
+  #endif
 }
 
 
@@ -459,132 +534,306 @@ void checkForRequests() {
 // MQTT callback / connection handler
 // ***************************************************************************
 #ifdef ENABLE_MQTT
-void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
-  uint8_t * payload = (uint8_t *)malloc(length + 1);
-  memcpy(payload, payload_in, length);
-  payload[length] = NULL;
-  DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
 
-  // # ==> Set main color
-  if (payload[0] == '#') {
-    handleSetMainColor(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+  #ifdef ENABLE_HOMEASSISTANT
+
+     void temp2rgb(unsigned int kelvin) {
+      int tmp_internal = kelvin / 100.0;
+    
+      // red
+      if (tmp_internal <= 66) {
+        main_color.red = 255;
+      } else {
+        float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
+        if (tmp_red < 0) {
+          main_color.red = 0;
+        } else if (tmp_red > 255) {
+          main_color.red = 255;
+        } else {
+          main_color.red = tmp_red;
+        }
+      }
+    
+      // green
+      if (tmp_internal <= 66) {
+        float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
+        if (tmp_green < 0) {
+          main_color.green = 0;
+        } else if (tmp_green > 255) {
+          main_color.green = 255;
+        } else {
+          main_color.green = tmp_green;
+        }
+      } else {
+        float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
+        if (tmp_green < 0) {
+          main_color.green = 0;
+        } else if (tmp_green > 255) {
+          main_color.green = 255;
+        } else {
+          main_color.green = tmp_green;
+        }
+      }
+    
+      // blue
+      if (tmp_internal >= 66) {
+        main_color.blue = 255;
+      } else if (tmp_internal <= 19) {
+        main_color.blue = 0;
+      } else {
+        float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
+        if (tmp_blue < 0) {
+          main_color.blue = 0;
+        } else if (tmp_blue > 255) {
+          main_color.blue = 255;
+        } else {
+          main_color.blue = tmp_blue;
+        }
+      }
+    
+      //handleSetWS2812FXMode((uint8_t *) "/0");
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.start();
+    
+    }
+    
+    bool processJson(char* message) {
+      StaticJsonBuffer<JSON_OBJECT_SIZE(10)> jsonBuffer;
+    
+      JsonObject& root = jsonBuffer.parseObject(message);
+    
+      if (!root.success()) {
+        Serial.println("parseObject() failed");
+        return false;
+      }
+    
+      if (root.containsKey("state")) {
+        if (strcmp(root["state"], on_cmd) == 0 and !(animation_on)) {
+          stateOn = true;
+          mode = ALL;
+          strip.setColor(main_color.red, main_color.green, main_color.blue);
+          strip.start();
+        }
+        else if (strcmp(root["state"], off_cmd) == 0) {
+          stateOn = false;
+          mode = OFF;
+          animation_on = false;
+          strip.start();
+        }
+      }
+    
+      if (root.containsKey("color")) {
+        main_color.red = root["color"]["r"];
+        main_color.green = root["color"]["g"];
+        main_color.blue = root["color"]["b"];
+        //handleSetWS2812FXMode((uint8_t *) "/0");
+        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        strip.start();
+      }
+    
+      if (root.containsKey("color_temp")) {
+        //temp comes in as mireds, need to convert to kelvin then to RGB
+        int color_temp = root["color_temp"];
+        unsigned int kelvin  = 1000000 / color_temp;
+    
+        temp2rgb(kelvin);
+      }
+    
+      if (root.containsKey("brightness")) {
+        const char * brightness_json = root["brightness"];
+        uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
+        brightness = constrain(b, 0, 255);
+        strip.setBrightness(brightness);
+      }
+      
+      if (root.containsKey("effect")) {
+        animation_on = true;
+        effectString = String((const char *)root["effect"]);
+
+        for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+          if(String(strip.getModeName(i)) == effectString) {
+            mode = HOLD;
+            strip.setColor(main_color.red, main_color.green, main_color.blue);
+            strip.setMode(i);
+            strip.start();
+            break;
+          }
+        }
+      }
+    
+      return true;
+    }
+  #endif
+  
+  void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
+    uint8_t * payload = (uint8_t *)malloc(length + 1);
+    memcpy(payload, payload_in, length);
+    payload[length] = NULL;
+    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
+
+    #ifdef ENABLE_HOMEASSISTANT
+      if (strcmp(topic, mqtt_ha_state_in.c_str()) == 0) {
+        if (!processJson((char*)payload)) {
+          return;
+        }
+        sendState();
+    
+      } else if (strcmp(topic, mqtt_ha_speed.c_str()) == 0) {
+        uint8_t d = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
+        ws2812fx_speed = constrain(d, 0, 255);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
+    
+      } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
+    #endif
+  
+      // # ==> Set main color
+      if (payload[0] == '#') {
+        handleSetMainColor(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
+      }
+  
+      // ? ==> Set speed
+      if (payload[0] == '?') {
+        uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        ws2812fx_speed = constrain(d, 0, 255);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
+        DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // % ==> Set brightness
+      if (payload[0] == '%') {
+        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        brightness = constrain(b, 0, 255);
+        strip.setBrightness(brightness);
+        DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
+      }
+  
+      // * ==> Set main color and light all LEDs (Shortcut)
+      if (payload[0] == '*') {
+        handleSetAllMode(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
+      }
+  
+      // ! ==> Set single LED in given color
+      if (payload[0] == '!') {
+        handleSetSingleLED(payload, 1);
+        DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // + ==> Set multiple LED in the given colors
+      if (payload[0] == '+') {
+        handleSetDifferentColors(payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // R ==> Set range of LEDs in the given colors
+      if (payload[0] == 'R') {
+        handleRangeDifferentColors(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      }
+  
+      // = ==> Activate named mode
+      if (payload[0] == '=') {
+        String str_mode = String((char *) &payload[0]);
+        handleSetNamedMode(str_mode);
+        DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+        #ifdef ENABLE_HOMEASSISTANT
+          sendState();
+        #endif
+      }
+  
+      // $ ==> Get status Info.
+      if (payload[0] == '$') {
+        DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
+        DBG_OUTPUT_PORT.println("MQTT: Out: " + String(listStatusJSON()));
+        mqtt_client.publish(mqtt_outtopic, listStatusJSON());
+      }
+  
+      // ~ ==> Get WS2812 modes.
+      // TODO: Fix this, doesn't return anything. Too long?
+      // Hint: https://github.com/knolleary/pubsubclient/issues/110
+      if (payload[0] == '~') {
+        DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
+        DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
+        mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
+        //String json_modes = listModesJSON();
+        //DBG_OUTPUT_PORT.printf(json_modes.c_str());
+  
+        //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
+        //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
+      }
+  
+      // / ==> Set WS2812 mode.
+      if (payload[0] == '/') {
+        handleSetWS2812FXMode(payload);
+        DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
+        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+        #ifdef ENABLE_HOMEASSISTANT
+          stateOn = true;
+          sendState();
+        #endif
+      }
+
+    #ifdef ENABLE_HOMEASSISTANT
+    }
+    #endif
+    free(payload);
   }
-
-  // ? ==> Set speed
-  if (payload[0] == '?') {
-    uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    ws2812fx_speed = constrain(d, 0, 255);
-    strip.setSpeed(convertSpeed(ws2812fx_speed));
-    DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // % ==> Set brightness
-  if (payload[0] == '%') {
-    uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    brightness = constrain(b, 0, 255);
-    strip.setBrightness(brightness);
-    DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // * ==> Set main color and light all LEDs (Shortcut)
-  if (payload[0] == '*') {
-    handleSetAllMode(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // ! ==> Set single LED in given color
-  if (payload[0] == '!') {
-    handleSetSingleLED(payload, 1);
-    DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // + ==> Set multiple LED in the given colors
-  if (payload[0] == '+') {
-    handleSetDifferentColors(payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // R ==> Set range of LEDs in the given colors
-  if (payload[0] == 'R') {
-    handleRangeDifferentColors(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // = ==> Activate named mode
-  if (payload[0] == '=') {
-    String str_mode = String((char *) &payload[0]);
-    handleSetNamedMode(str_mode);
-    DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  // $ ==> Get status Info.
-  if (payload[0] == '$') {
-    DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
-    mqtt_client.publish(mqtt_outtopic, listStatusJSON());
-  }
-
-  // ~ ==> Get WS2812 modes.
-  // TODO: Fix this, doesn't return anything. Too long?
-  // Hint: https://github.com/knolleary/pubsubclient/issues/110
-  if (payload[0] == '~') {
-    DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
-    DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-    mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-    //String json_modes = listModesJSON();
-    //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-
-    //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-    //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
-  }
-
-  // / ==> Set WS2812 mode.
-  if (payload[0] == '/') {
-    handleSetWS2812FXMode(payload);
-    DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
-    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-  }
-
-  free(payload);
-}
-
-void mqtt_reconnect() {
-  // Loop until we're reconnected
-  while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
-    mqtt_reconnect_retries++;
-    DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
-    // Attempt to connect
-    if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
-      DBG_OUTPUT_PORT.println("MQTT connected!");
-      // Once connected, publish an announcement...
-      char * message = new char[18 + strlen(HOSTNAME) + 1];
-      strcpy(message, "McLighting ready: ");
-      strcat(message, HOSTNAME);
-      mqtt_client.publish(mqtt_outtopic, message);
-      // ... and resubscribe
-      mqtt_client.subscribe(mqtt_intopic);
-
-      DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
-      DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
-    } else {
-      DBG_OUTPUT_PORT.print("failed, rc=");
-      DBG_OUTPUT_PORT.print(mqtt_client.state());
-      DBG_OUTPUT_PORT.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+  
+  void mqtt_reconnect() {
+    // Loop until we're reconnected
+    while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+      mqtt_reconnect_retries++;
+      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
+      // Attempt to connect
+      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+        DBG_OUTPUT_PORT.println("MQTT connected!");
+        // Once connected, publish an announcement...
+        char * message = new char[18 + strlen(HOSTNAME) + 1];
+        strcpy(message, "McLighting ready: ");
+        strcat(message, HOSTNAME);
+        mqtt_client.publish(mqtt_outtopic, message);
+        // ... and resubscribe
+        mqtt_client.subscribe(mqtt_intopic);
+        #ifdef ENABLE_HOMEASSISTANT
+          DBG_OUTPUT_PORT.printf("Homeassistant MQTT topic in: %s\n", mqtt_ha_state_in.c_str());
+          mqtt_client.subscribe(mqtt_ha_state_in.c_str());
+          mqtt_client.subscribe(mqtt_ha_speed.c_str());
+        #endif
+  
+        DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
+        DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
+      } else {
+        DBG_OUTPUT_PORT.print("failed, rc=");
+        DBG_OUTPUT_PORT.print(mqtt_client.state());
+        DBG_OUTPUT_PORT.println(" try again in 5 seconds");
+        // Wait 5 seconds before retrying
+        delay(5000);
+      }
+    }
+    if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
+      DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
     }
   }
-  if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
-    DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
-  }
-}
 #endif
 
 
@@ -597,15 +846,9 @@ void shortKeyPress() {
   if (buttonState == false) {
     setModeByStateString(BTN_MODE_SHORT);
     buttonState = true;
-	    #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
-    #endif
   } else {
     mode = OFF;
     buttonState = false;
-    #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
-    #endif
   }
 }
 
@@ -613,20 +856,12 @@ void shortKeyPress() {
 void mediumKeyPress() {
   DBG_OUTPUT_PORT.printf("Medium button press\n");
   setModeByStateString(BTN_MODE_MEDIUM);
-  buttonState = true;
-  #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
-  #endif
 }
 
 // called when button is kept pressed for 2 seconds or more
 void longKeyPress() {
   DBG_OUTPUT_PORT.printf("Long button press\n");
   setModeByStateString(BTN_MODE_LONG);
-  buttonState = true;
-  #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
-  #endif
 }
 
 void button() {
@@ -643,19 +878,79 @@ void button() {
       if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
         mediumKeyPress();
       }
-      else {
-        if (KeyPressCount < mediumKeyPressCountMin) {
-          shortKeyPress();
+      else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
+        if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
+          mediumKeyPress();
+        }
+        else {
+          if (KeyPressCount < mediumKeyPressCountMin) {
+            shortKeyPress();
+          }
         }
       }
-    }
-    else if (currKeyState == LOW) {
-      KeyPressCount++;
-      if (KeyPressCount >= longKeyPressCountMax) {
-        longKeyPress();
+      else if (currKeyState == LOW) {
+        KeyPressCount++;
+        if (KeyPressCount >= longKeyPressCountMax) {
+          longKeyPress();
+        }
       }
+      prevKeyState = currKeyState;
     }
-    prevKeyState = currKeyState;
   }
-}
 #endif
+
+  void shortKeyPress() {
+    DBG_OUTPUT_PORT.printf("Short button press\n");
+    if (buttonState == false) {
+      setModeByStateString(BTN_MODE_SHORT);
+      buttonState = true;
+      #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
+      #endif
+    } else {
+      mode = OFF;
+      buttonState = false;
+      #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
+       #ifdef ENABLE_HOMEASSISTANT
+         stateOn = false;
+         sendState();
+       #endif
+      #endif
+    }
+  
+  // called when button is kept pressed for less than 2 seconds
+  void mediumKeyPress() {
+    DBG_OUTPUT_PORT.printf("Medium button press\n");
+    setModeByStateString(BTN_MODE_MEDIUM);
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+        sendState();
+      #endif
+    #endif
+  }
+  
+  // called when button is kept pressed for 2 seconds or more
+  void longKeyPress() {
+    DBG_OUTPUT_PORT.printf("Long button press\n");
+    setModeByStateString(BTN_MODE_LONG);
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
+      #ifdef ENABLE_HOMEASSISTANT
+       stateOn = true;
+       sendState();
+      #endif
+    #endif
+  }
+  
+  void button() {
+    if (millis() - keyPrevMillis >= keySampleIntervalMs) {
+      keyPrevMillis = millis();
+  
+      byte currKeyState = digitalRead(BUTTON);
+  
+      if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
+        // key goes from not pressed to pressed
+        KeyPressCount = 0;

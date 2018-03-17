@@ -1,0 +1,91 @@
+light:
+  - platform: mqtt_json
+    name: "NeoPixel LEDs"
+    state_topic: "home/McLighting01_ha/state/out"
+    command_topic: "home/McLighting01_ha/state/in"
+    effect: true
+    effect_list:
+    ######
+      - "Blink"
+      - "Breath"
+      - "Color Wipe"
+      - "Color Wipe Inverse"
+      - "Color Wipe Reverse"
+      - "Color Wipe Reverse Inverse"
+      - "Color Wipe Random"
+      - "Random Color"
+      - "Single Dynamic"
+      - "Multi Dynamic"
+      - "Rainbow"
+      - "Rainbow Cycle"
+      - "Scan"
+      - "Dual Scan"
+      - "Fade"
+      - "Theater Chase"
+      - "Theater Chase Rainbow"
+      - "Running Lights"
+      - "Twinkle"
+      - "Twinkle Random"
+      - "Twinkle Fade"
+      - "Twinkle Fade Random"
+      - "Sparkle"
+      - "Flash Sparkle"
+      - "Hyper Sparkle"
+      - "Strobe"
+      - "Strobe Rainbow"
+      - "Multi Strobe"
+      - "Blink Rainbow"
+      - "Chase White"
+      - "Chase Color"
+      - "Chase Random"
+      - "Chase Rainbow"
+      - "Chase Flash"
+      - "Chase Flash Random"
+      - "Chase Rainbow White"
+      - "Chase Blackout"
+      - "Chase Blackout Rainbow"
+      - "Color Sweep Random"
+      - "Running Color"
+      - "Running Red Blue"
+      - "Running Random"
+      - "Larson Scanner"
+      - "Comet"
+      - "Fireworks"
+      - "Fireworks Random"
+      - "Merry Christmas"
+      - "Fire Flicker"
+      - "Fire Flicker (soft)"
+      - "Fire Flicker (intense)"
+      - "Circus Combustus"
+      - "Halloween"
+      - "Bicolor Chase"
+      - "Tricolor Chase"
+      - "ICU"
+    brightness: true
+    rgb: true
+    optimistic: false
+    qos: 0
+    retain: true
+    
+input_number:
+  neopixel_animation_speed:
+    name: NeoPixel Animation Speed
+    initial: 200
+    min: 0
+    max: 255
+    step: 5
+    
+automation:
+  - id: 71938579813759813757
+    alias: NeoPixel Animation Speed
+    initial_state: true
+    hide_entity: false
+    trigger:
+    - entity_id: input_number.neopixel_animation_speed
+      platform: state
+    action:
+    - data_template:
+        payload_template: '{{ trigger.to_state.state | int }}'
+        retain: true
+        topic: home/McLighting01_ha/speed
+      service: mqtt.publish
