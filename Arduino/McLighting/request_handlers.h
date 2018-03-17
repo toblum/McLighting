@@ -815,6 +815,7 @@ void checkForRequests() {
         // ... and resubscribe
         mqtt_client.subscribe(mqtt_intopic);
         #ifdef ENABLE_HOMEASSISTANT
+          DBG_OUTPUT_PORT.printf("Homeassistant MQTT topic in: %s\n", mqtt_ha_state_in.c_str());
           mqtt_client.subscribe(mqtt_ha_state_in.c_str());
           mqtt_client.subscribe(mqtt_ha_speed.c_str());
         #endif
