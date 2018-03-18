@@ -42,6 +42,10 @@
 ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+#ifdef HTTP_OTA
+  #include <ESP8266HTTPUpdateServer.h>
+  ESP8266HTTPUpdateServer httpUpdater;
+#endif
 
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
@@ -571,6 +575,10 @@ void setup() {
     mode = SET_MODE;
     getStatusJSON();
   });
+  
+  #ifdef HTTP_OTA
+    httpUpdater.setup(&server,"/update");
+  #endif
 
   server.begin();
 

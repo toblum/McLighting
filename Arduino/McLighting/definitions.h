@@ -6,6 +6,7 @@
 
 const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 
+//#define HTTP_OTA       // If defined, enable Added ESP8266HTTPUpdateServer
 #define ENABLE_OTA    // If defined, enable Arduino OTA code.
 #define ENABLE_MQTT   // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
