@@ -9,6 +9,7 @@
 ___
 Update 18.03.2018:
 The code for integration with homeassistant was merged into master. It's currently active by default. You can safely disable it in definitions.h when use do not want to use it, or want to use McLighting on a small ESP_01.
+There are some informations in the [Wiki](https://github.com/toblum/McLighting/wiki/Homeassistant-integration).
 
 Update 17.02.2018:
 User @debsahu contributed code for integration with homeassistant. It's currently in a separate branch (https://github.com/toblum/McLighting/tree/feature/ha_integration). If you're using Homeassistant, please try it out and give feedback.
