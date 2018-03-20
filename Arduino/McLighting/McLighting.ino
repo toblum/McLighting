@@ -35,6 +35,18 @@
   PubSubClient mqtt_client(espClient);
 #endif
 
+#ifdef ENABLE_AMQTT
+  #include <AsyncMqttClient.h>    //https://github.com/marvinroger/async-mqtt-client
+                                  //https://github.com/me-no-dev/ESPAsyncTCP
+  #ifdef ENABLE_HOMEASSISTANT
+    #include <ArduinoJson.h>
+  #endif
+  
+  AsyncMqttClient amqttClient;
+  WiFiEventHandler wifiConnectHandler;
+  WiFiEventHandler wifiDisconnectHandler;
+#endif
+
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -42,6 +54,10 @@
 ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+#ifdef HTTP_OTA
+#include <ESP8266HTTPUpdateServer.h>
+ESP8266HTTPUpdateServer httpUpdater;
+#endif
 
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
@@ -69,6 +85,13 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // ***************************************************************************
 #include <Ticker.h>
 Ticker ticker;
+#ifdef ENABLE_HOMEASSISTANT
+  Ticker ha_send_data;
+#endif
+#ifdef ENABLE_AMQTT
+  Ticker mqttReconnectTimer;
+  Ticker wifiReconnectTimer;
+#endif
 
 void tick()
 {
@@ -126,7 +149,6 @@ String getValue(String data, char separator, int index)
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
-
 // ***************************************************************************
 // Callback for WiFiManager library when config mode is entered
 // ***************************************************************************
@@ -167,15 +189,15 @@ void saveConfigCallback () {
 // ***************************************************************************
 #include "colormodes.h"
 
-
-
 // ***************************************************************************
 // MAIN
 // ***************************************************************************
 void setup() {
+//  system_update_cpu_freq(160);
+  
   DBG_OUTPUT_PORT.begin(115200);
   EEPROM.begin(512);
-
+  
   // set builtin led pin as output
   pinMode(BUILTIN_LED, OUTPUT);
   // button pin setup
@@ -203,7 +225,7 @@ void setup() {
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-  #ifdef ENABLE_MQTT
+  #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     String settings_available = readEEPROM(134, 1);
     if (settings_available == "1") {
       readEEPROM(0, 64).toCharArray(mqtt_host, 64);   // 0-63
@@ -215,13 +237,12 @@ void setup() {
       DBG_OUTPUT_PORT.printf("MQTT user: %s\n", mqtt_user);
       DBG_OUTPUT_PORT.printf("MQTT pass: %s\n", mqtt_pass);
     }
-  
     WiFiManagerParameter custom_mqtt_host("host", "MQTT hostname", mqtt_host, 64);
     WiFiManagerParameter custom_mqtt_port("port", "MQTT port", mqtt_port, 6);
     WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32);
     WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32);
   #endif
-  
+
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
   //reset settings - for testing
@@ -230,7 +251,7 @@ void setup() {
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback(configModeCallback);
 
-  #ifdef ENABLE_MQTT
+  #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //set config save notify callback
     wifiManager.setSaveConfigCallback(saveConfigCallback);
   
@@ -240,6 +261,8 @@ void setup() {
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_pass);
   #endif
+
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
@@ -252,7 +275,7 @@ void setup() {
     delay(1000);
   }
 
-  #ifdef ENABLE_MQTT
+  #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //read updated parameters
     strcpy(mqtt_host, custom_mqtt_host.getValue());
     strcpy(mqtt_port, custom_mqtt_port.getValue());
@@ -270,6 +293,11 @@ void setup() {
       writeEEPROM(134, 1, "1");        // 134 --> always "1"
       EEPROM.commit();
     }
+  #endif
+
+  #ifdef ENABLE_AMQTT
+    wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
+    wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
   #endif
 
   //if you get here you have connected to the WiFi
@@ -336,6 +364,21 @@ void setup() {
     }
   #endif
 
+  #ifdef ENABLE_AMQTT
+    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {      
+      amqttClient.onConnect(onMqttConnect);
+      amqttClient.onDisconnect(onMqttDisconnect);
+      amqttClient.onMessage(onMqttMessage);
+      amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
+      amqttClient.setClientId(mqtt_clientid);
+
+      connectToMqtt();
+    }
+  #endif
+
+  #ifdef ENABLE_HOMEASSISTANT
+    ha_send_data.attach(5, sendState); // Send HA data back only every 5 sec
+  #endif
 
   // ***************************************************************************
   // Setup: MDNS responder
@@ -572,6 +615,10 @@ void setup() {
     getStatusJSON();
   });
 
+  #ifdef HTTP_OTA
+    httpUpdater.setup(&server, "/firmware", "admin", "allforfun");
+  #endif
+  
   server.begin();
 
   // Start MDNS service
@@ -604,11 +651,26 @@ void loop() {
   #endif
 
   #ifdef ENABLE_MQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0 && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
-      if (!mqtt_client.connected()) {
-        mqtt_reconnect(); 
-      } else {
-        mqtt_client.loop();
+    if (WiFi.status() != WL_CONNECTED) {
+      #ifdef ENABLE_HOMEASSISTANT
+         ha_send_data.detach();
+      #endif
+      DBG_OUTPUT_PORT.println("WiFi disconnected, reconnecting!");
+      WiFi.disconnect();
+      WiFi.setSleepMode(WIFI_NONE_SLEEP);
+      WiFi.mode(WIFI_STA);
+      WiFi.begin();
+    } else {
+      if (mqtt_host != "" && String(mqtt_port).toInt() > 0 && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+        if (!mqtt_client.connected()) {
+          #ifdef ENABLE_HOMEASSISTANT
+           ha_send_data.detach();
+          #endif
+          DBG_OUTPUT_PORT.println("MQTT disconnected, reconnecting!");
+          mqtt_reconnect(); 
+        } else {
+          mqtt_client.loop();
+        }
       }
     }
   #endif
@@ -627,6 +689,14 @@ void loop() {
   if (mode == ALL) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(FX_MODE_STATIC);
+    mode = HOLD;
+  }
+  if (mode == SETCOLOR) {
+    strip.setColor(main_color.red, main_color.green, main_color.blue);
+    mode = HOLD;
+  }
+  if (mode == BRIGHTNESS) {
+    strip.setBrightness(brightness);
     mode = HOLD;
   }
   if (mode == WIPE) {
