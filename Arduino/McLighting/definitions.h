@@ -32,15 +32,18 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
   #ifdef ENABLE_MQTT
     #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
-  
+
     int mqtt_reconnect_retries = 0;
     char mqtt_intopic[strlen(HOSTNAME) + 4 + 5];      // Topic in will be: <HOSTNAME>/in
     char mqtt_outtopic[strlen(HOSTNAME) + 5 + 5];     // Topic out will be: <HOSTNAME>/out
+    uint8_t qossub = 0; // PubSubClient can sub qos 0 or 1
   #endif
 
   #ifdef ENABLE_AMQTT
     String mqtt_intopic = String(HOSTNAME) + "/in";
     String mqtt_outtopic = String(HOSTNAME) + "/out";
+    uint8_t qossub = 0; // AMQTT can sub qos 0 or 1 or 2
+    uint8_t qospub = 0; // AMQTT can pub qos 0 or 1 or 2
   #endif
 
   #ifdef ENABLE_HOMEASSISTANT
@@ -48,17 +51,17 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
     String mqtt_ha_state_in = mqtt_ha + "state/in";
     String mqtt_ha_state_out = mqtt_ha + "state/out";
     String mqtt_ha_speed = mqtt_ha + "speed";
-  
+
     const char* on_cmd = "ON";
     const char* off_cmd = "OFF";
     bool stateOn = false;
     bool animation_on = false;
-    bool new_ha_mqtt_msg = true;
+    bool new_ha_mqtt_msg = false;
     uint16_t color_temp = 327; // min is 154 and max is 500
   #endif
-  
+
     const char mqtt_clientid[] = "NeoPixelStrip01"; // MQTT ClientID
-  
+
     char mqtt_host[64] = "";
     char mqtt_port[6] = "";
     char mqtt_user[32] = "";
@@ -97,13 +100,17 @@ typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
 LEDState main_color = { 255, 0, 0 };  // Store the "main color" of the strip used in single color modes
 
-#define ENABLE_STATE_SAVE             // If defined, save state on reboot
-#ifdef ENABLE_STATE_SAVE
+#define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
+//#define ENABLE_STATE_SAVE_EEPROM        // If defined, save state on reboot
+#ifdef ENABLE_STATE_SAVE_EEPROM
   char current_state[32];               // Keeps the current state representation
   char last_state[32];                  // Save the last state as string representation
   unsigned long time_statechange = 0;   // Time when the state last changed
   int timeout_statechange_save = 5000;  // Timeout in ms to wait before state is saved
   bool state_save_requested = false;    // State has to be saved after timeout
+#endif
+#ifdef ENABLE_STATE_SAVE_SPIFFS
+  bool updateStateFS = false;
 #endif
 
 // Button handling
