@@ -463,10 +463,6 @@ void setup() {
     }
     strip.setBrightness(brightness);
 
-    if (mode == HOLD) {
-      mode = ALL;
-    }
-
     getStatusJSON();
   });
 
