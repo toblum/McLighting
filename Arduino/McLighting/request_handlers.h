@@ -1205,12 +1205,13 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(6));
-//    StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
+  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7));
+//    StaticJsonBuffer<JSON_OBJECT_SIZE(7)> jsonBuffer;
   JsonObject& json = jsonBuffer.createObject();
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip.getMode();
   json["brightness"] = brightness;
+  json["speed"] = ws2812fx_speed;
   json["red"] = main_color.red;
   json["green"] = main_color.green;
   json["blue"] = main_color.blue;
@@ -1247,17 +1248,24 @@ bool readStateFS() {
       // Allocate a buffer to store contents of the file.
       std::unique_ptr<char[]> buf(new char[size]);
       configFile.readBytes(buf.get(), size);
-      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(6)+170);
-//      StaticJsonBuffer<JSON_OBJECT_SIZE(6)+170> jsonBuffer;
+      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7)+200);
+//      StaticJsonBuffer<JSON_OBJECT_SIZE(7)+200> jsonBuffer;
       JsonObject& json = jsonBuffer.parseObject(buf.get());
       json.printTo(DBG_OUTPUT_PORT);
       if (json.success()) {
         mode = static_cast<MODE>((int) json["mode"]);
         ws2812fx_mode = json["strip_mode"];
         brightness = json["brightness"];
+        ws2812fx_speed = json["speed"];
         main_color.red = json["red"];
         main_color.green = json["green"];
         main_color.blue = json["blue"];
+
+        strip.setMode(ws2812fx_mode);
+        strip.setSpeed(convertSpeed(ws2812fx_speed));
+        strip.setBrightness(brightness);
+        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        
         updateFS = false;
         return true;
       } else {
