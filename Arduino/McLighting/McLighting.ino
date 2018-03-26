@@ -510,11 +510,19 @@ void setup() {
       brightness = 0;
     }
     strip.setBrightness(brightness);
-
-    if (mode == HOLD) {
-      mode = ALL;
-    }
-
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK %") + String(brightness)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK %") + String(brightness)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     getStatusJSON();
   });
 
@@ -530,6 +538,12 @@ void setup() {
       ws2812fx_speed = server.arg("d").toInt();
       ws2812fx_speed = constrain(ws2812fx_speed, 0, 255);
       strip.setSpeed(convertSpeed(ws2812fx_speed));
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ?") + String(ws2812fx_speed)).c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ?") + String(ws2812fx_speed)).c_str());
+      #endif
     }
 
     getStatusJSON();
@@ -563,6 +577,18 @@ void setup() {
     mode = OFF;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = false;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/all", []() {
@@ -570,6 +596,18 @@ void setup() {
     mode = ALL;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =all").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =all").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/wipe", []() {
@@ -577,6 +615,18 @@ void setup() {
     mode = WIPE;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =wipe").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =wipe").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/rainbow", []() {
@@ -584,6 +634,18 @@ void setup() {
     mode = RAINBOW;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =rainbow").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbow").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/rainbowCycle", []() {
@@ -591,6 +653,18 @@ void setup() {
     mode = RAINBOWCYCLE;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =rainbowCycle").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbowCycle").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/theaterchase", []() {
@@ -598,13 +672,56 @@ void setup() {
     mode = THEATERCHASE;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =theaterchase").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchase").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
+  server.on("/twinkleRandom", []() {
+    exit_func = true;
+    mode = TWINKLERANDOM;
+    getArgs();
+    getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =twinkleRandom").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =twinkleRandom").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  });
+  
   server.on("/theaterchaseRainbow", []() {
     exit_func = true;
     mode = THEATERCHASERAINBOW;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =theaterchaseRainbow").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchaseRainbow").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/tv", []() {
@@ -612,6 +729,18 @@ void setup() {
     mode = TV;
     getArgs();
     getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =tv").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   server.on("/get_modes", []() {
@@ -622,6 +751,20 @@ void setup() {
     getArgs();
     mode = SET_MODE;
     getStatusJSON();
+
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK /") + String(ws2812fx_mode)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
   });
 
   #ifdef HTTP_OTA
