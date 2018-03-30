@@ -59,6 +59,25 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif
 
+#ifdef USE_NEOANIMATIONFX
+// ***************************************************************************
+// Load libraries / Instanciate NeoAnimationFX library
+// ***************************************************************************
+// https://github.com/debsahu/NeoAnimationFX
+#include <NeoAnimationFX.h>
+#define NEOMETHOD NeoPBBGRB800
+
+NEOMETHOD neoStrip(NUMLEDS);
+NeoAnimationFX<NEOMETHOD> strip(neoStrip);
+
+// Uses Pin RX / GPIO3 (Only pin that is supported, due to hardware limitations)
+// NEOMETHOD NeoPBBGRB800 uses GRB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+// NEOMETHOD NeoPBBGRB400 uses GRB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+// NEOMETHOD NeoPBBRGB800 uses RGB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+// NEOMETHOD NeoPBBRGB400 uses RGB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+#endif
+
+#ifdef USE_WS2812FX
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
@@ -78,7 +97,7 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
-
+#endif
 
 // ***************************************************************************
 // Load library "ticker" for blinking status led

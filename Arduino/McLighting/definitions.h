@@ -1,3 +1,6 @@
+//#define USE_NEOANIMATIONFX  // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
+#define USE_WS2812FX        // Uses WS2812FX
+
 // Neopixel
 #define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 300      // Number of leds in the strip
@@ -13,6 +16,12 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 
+#if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
+#error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
+#endif
+#if !defined(USE_NEOANIMATIONFX) and !defined(USE_WS2812FX)
+#error "Need to either use NeoAnimationFX and WS2812FX mode."
+#endif
 #if defined(ENABLE_MQTT) and defined(ENABLE_AMQTT)
 #error "Cant have both PubSubClient and AsyncMQTT enabled. Choose either one."
 #endif
