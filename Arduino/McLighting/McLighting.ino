@@ -563,6 +563,9 @@ void setup() {
       #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ?") + String(ws2812fx_speed)).c_str());
       #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+      #endif
     }
 
     getStatusJSON();

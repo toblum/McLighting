@@ -415,6 +415,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         strip.setSpeed(convertSpeed(ws2812fx_speed));
         DBG_OUTPUT_PORT.printf("WS: Set speed to: [%u]\n", ws2812fx_speed);
         webSocket.sendTXT(num, "OK");
+        #ifdef ENABLE_HOMEASSISTANT
+          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+        #endif
         #ifdef ENABLE_MQTT
         mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
         #endif
@@ -668,7 +671,7 @@ void checkForRequests() {
     }
 
     void sendState() {
-      const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
+      const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
       //StaticJsonBuffer<bufferSize> jsonBuffer;
       DynamicJsonBuffer jsonBuffer(bufferSize);
       JsonObject& root = jsonBuffer.createObject();
@@ -682,6 +685,8 @@ void checkForRequests() {
       root["brightness"] = brightness;
 
       root["color_temp"] = color_temp;
+
+      root["speed"] = ws2812fx_speed;
 
       char modeName[30];
       strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
@@ -833,6 +838,9 @@ void checkForRequests() {
         ws2812fx_speed = constrain(d, 0, 255);
         strip.setSpeed(convertSpeed(ws2812fx_speed));
         DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
+        #ifdef ENABLE_HOMEASSISTANT
+          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+        #endif
         #ifdef ENABLE_MQTT
         mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
         #endif
