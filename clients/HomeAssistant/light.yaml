@@ -87,9 +87,9 @@ automation:
       platform: state
     action:
     - data_template:
-        payload_template: '{{ trigger.to_state.state | int }}'
+        payload_template: '{"speed": {{ trigger.to_state.state | int }}}'
         retain: true
-        topic: home/McLighting01_ha/speed
+        topic: home/McLighting01_ha/state/in
       service: mqtt.publish
 
   - id: 93786598732698756967

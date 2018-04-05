@@ -742,6 +742,14 @@ void checkForRequests() {
         mode = SETCOLOR;
       }
 
+      if (root.containsKey("speed")) {
+        uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
+        if (json_speed != ws2812fx_speed) {
+          ws2812fx_speed = json_speed;
+          mode = SETSPEED;
+        }
+      }
+
       if (root.containsKey("color_temp")) {
         //temp comes in as mireds, need to convert to kelvin then to RGB
         color_temp = (uint16_t) root["color_temp"];
@@ -800,16 +808,11 @@ void checkForRequests() {
         #ifdef ENABLE_STATE_SAVE_SPIFFS
           if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
         #endif
-
-      } else if (strcmp(topic, mqtt_ha_speed.c_str()) == 0) {
-        uint8_t d = (uint8_t) strtol((const char *) &payload[0], NULL, 10);
-        ws2812fx_speed = constrain(d, 0, 255);
-        strip.setSpeed(convertSpeed(ws2812fx_speed));
-      #ifdef ENABLE_MQTT
-      } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
-      #endif
-      #ifdef ENABLE_AMQTT
-      } else if (strcmp(topic, mqtt_intopic.c_str()) == 0) {
+        #ifdef ENABLE_MQTT
+        } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
+        #endif
+        #ifdef ENABLE_AMQTT
+        } else if (strcmp(topic, mqtt_intopic.c_str()) == 0) {
       #endif
     #endif
 
@@ -1019,7 +1022,6 @@ void checkForRequests() {
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
-          mqtt_client.subscribe(mqtt_ha_speed.c_str(), qossub);
         #endif
 
         DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
@@ -1079,8 +1081,6 @@ void checkForRequests() {
         ha_send_data.detach();
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
-        uint16_t packetIdSub3 = amqttClient.subscribe((char *)mqtt_ha_speed.c_str(), qossub);
-        DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub3);
       #endif
     }
 

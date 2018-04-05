@@ -59,7 +59,6 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
     String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
     String mqtt_ha_state_in = mqtt_ha + "state/in";
     String mqtt_ha_state_out = mqtt_ha + "state/out";
-    String mqtt_ha_speed = mqtt_ha + "speed";
 
     const char* on_cmd = "ON";
     const char* off_cmd = "OFF";
@@ -85,7 +84,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { SET_MODE, HOLD, OFF, ALL, SETCOLOR, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
+enum MODE { SET_MODE, HOLD, OFF, ALL, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
 
 MODE mode = RAINBOW;        // Standard mode that is active when software starts
 
