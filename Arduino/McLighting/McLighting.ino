@@ -878,7 +878,7 @@ void loop() {
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    mode = HOLD;
+    // mode = HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
