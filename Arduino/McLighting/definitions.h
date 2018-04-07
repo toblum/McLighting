@@ -1,18 +1,21 @@
-//#define USE_NEOANIMATIONFX  // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
-#define USE_WS2812FX        // Uses WS2812FX
+//#define USE_NEOANIMATIONFX  // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3, see: https://github.com/debsahu/NeoAnimationFX
+#define USE_WS2812FX          // Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
-#define PIN 5           // PIN (14 / D5) where neopixel / WS2811 strip is attached
-#define NUMLEDS 24      // Number of leds in the strip
+#define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
+#define NUMLEDS 24       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
 const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 
-#define ENABLE_OTA    // If defined, enable Arduino OTA code.
-#define ENABLE_MQTT   // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
+#define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
+//#define ENABLE_OTA         // If defined, enable Arduino OTA code.
+#define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
+//#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
+
 
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
@@ -28,7 +31,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #endif
 
 // parameters for automatically cycling favorite patterns
-uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
+uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   {0xff0000, 200,  1,  5.0}, // blink red for 5 seconds
   {0x00ff00, 200,  3, 10.0}, // wipe green for 10 seconds
   {0x0000ff, 200, 11,  5.0}, // dual scan blue for 5 seconds
@@ -68,11 +71,10 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 
   const char mqtt_clientid[] = "NeoPixelsStrip"; // MQTT ClientID
 
-    char mqtt_host[64] = "";
-    char mqtt_port[6] = "";
-    char mqtt_user[32] = "";
-    char mqtt_pass[32] = "";
-
+  char mqtt_host[64] = "";
+  char mqtt_port[6] = "";
+  char mqtt_user[32] = "";
+  char mqtt_pass[32] = "";
 #endif
 
 
@@ -133,13 +135,3 @@ LEDState main_color = { 255, 0, 0 };  // Store the "main color" of the strip use
   byte prevKeyState = HIGH;             // button is active low
   boolean buttonState = false;
 #endif
-
-#define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
-#define NUMLEDS 300      // Number of leds in the strip
-#define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
-#define BUTTON 0         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-#define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
-//#define ENABLE_OTA           // If defined, enable Arduino OTA code.
-#define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
-//#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-  const char * mqtt_clientid = HOSTNAME;           // Set ClientID to HOSTNAME to be unique
