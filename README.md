@@ -128,7 +128,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [x] MQTT support
-- [ ] Support multiple strips and control them separately or together
+- [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
 - [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
@@ -145,9 +145,11 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
 - [x] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
 - [ ] Additional clients
-- [ ] If no wifi, at least enable button mode. [Issue](https://github.com/toblum/McLighting/issues/88)
+- [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
 - [x] Make a set of NodeRed nodes.
+- [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
+- [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 
 
 ## Licence
