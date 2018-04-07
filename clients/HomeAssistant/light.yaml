@@ -3,6 +3,7 @@ light:
     name: "NeoPixel LEDs"
     state_topic: "home/McLighting01_ha/state/out"
     command_topic: "home/McLighting01_ha/state/in"
+    on_command_type: 'first'
     effect: true
     effect_list:
     ######
@@ -62,6 +63,7 @@ light:
       - "Tricolor Chase"
       - "ICU"
     brightness: true
+    color_temp: true
     rgb: true
     optimistic: false
     qos: 0
@@ -77,7 +79,7 @@ input_number:
     
 automation:
   - id: 71938579813759813757
-    alias: NeoPixel Animation Speed
+    alias: NeoPixel Animation Speed Send
     initial_state: true
     hide_entity: false
     trigger:
@@ -85,7 +87,18 @@ automation:
       platform: state
     action:
     - data_template:
-        payload_template: '{{ trigger.to_state.state | int }}'
+        payload_template: '{"speed": {{ trigger.to_state.state | int }}}'
         retain: true
-        topic: home/McLighting01_ha/speed
+        topic: home/McLighting01_ha/state/in
       service: mqtt.publish
+
+  - id: 93786598732698756967
+    alias: NeoPixel Animation Speed Receive
+    trigger:
+    - platform: mqtt
+      topic: home/McLighting01_ha/state/out
+    action:
+    - data_template:
+        entity_id: input_number.neopixel_animation_speed
+        value: '{{ trigger.payload_json.speed | int }}'
+      service: input_number.set_value
