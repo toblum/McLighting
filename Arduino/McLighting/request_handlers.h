@@ -746,7 +746,7 @@ void checkForRequests() {
         uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (json_speed != ws2812fx_speed) {
           ws2812fx_speed = json_speed;
-          mode = SETSPEED;
+          if(stateOn) mode = SETSPEED;
         }
       }
 

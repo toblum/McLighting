@@ -863,7 +863,7 @@ void loop() {
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setMode(ws2812fx_mode);
-    mode = HOLD;
+    mode = SETSPEED;
   }
   if (mode == OFF) {
 //    strip.setColor(0,0,0);
@@ -882,7 +882,7 @@ void loop() {
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    // mode = HOLD;
+    mode = HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
