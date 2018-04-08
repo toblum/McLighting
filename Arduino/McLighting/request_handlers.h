@@ -1256,6 +1256,7 @@ void checkForRequests() {
 
 #ifdef ENABLE_STATE_SAVE_SPIFFS
 bool updateFS = false;
+#if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
 // Write configuration to FS JSON
 bool writeConfigFS(bool saveConfig){
   if (saveConfig) {
@@ -1325,6 +1326,7 @@ bool readConfigFS() {
   updateFS = false;
   return false;
 }
+#endif
 
 bool writeStateFS(){
   updateFS = true;

@@ -24,6 +24,11 @@
   #include <ArduinoOTA.h>
 #endif
 
+//SPIFFS Save
+#if !defined(ENABLE_HOMEASSISTANT) and defined(ENABLE_STATE_SAVE_SPIFFS)
+  #include <ArduinoJson.h>        //
+#endif
+
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
@@ -264,7 +269,7 @@ void setup() {
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
   #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
-    #if defined(ENABLE_STATE_SAVE_SPIFFS)
+    #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
       (readConfigFS()) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Read success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Read failure!");
     #else
       String settings_available = readEEPROM(134, 1);
@@ -325,7 +330,7 @@ void setup() {
     strcpy(mqtt_pass, custom_mqtt_pass.getValue());
 
     //save the custom parameters to FS
-    #if defined(ENABLE_STATE_SAVE_SPIFFS)
+    #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
       (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
     #else if defined(ENABLE_STATE_SAVE_EEPROM)
       if (shouldSaveConfig) {
