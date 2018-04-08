@@ -788,6 +788,10 @@ void setup() {
       if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
   });
+  
+  #ifdef HTTP_OTA
+    httpUpdater.setup(&server,"/update");
+  #endif
 
   #ifdef HTTP_OTA
     httpUpdater.setup(&server, "/update");
