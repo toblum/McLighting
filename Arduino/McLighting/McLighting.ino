@@ -775,7 +775,7 @@ void setup() {
     getStatusJSON();
 
     #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode).c_str());
+    mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
     amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK /") + String(ws2812fx_mode)).c_str());
