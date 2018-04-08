@@ -1022,6 +1022,27 @@ void checkForRequests() {
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
+          #ifdef MQTT_HOME_ASSISTANT_SUPPORT
+            DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+            JsonObject& json = jsonBuffer.createObject();
+            json["name"] = HOSTNAME;
+            json["platform"] = "mqtt_json";
+            json["state_topic"] = mqtt_ha_state_out;
+            json["command_topic"] = mqtt_ha_state_in;
+            json["on_command_type"] = "first";
+            json["brightness"] = "true";
+            json["rgb"] = "true";
+            json["optimistic"] = "false";
+            json["color_temp"] = "true";
+            json["effect"] = "true";
+            JsonArray& effect_list = json.createNestedArray("effect_list");
+            for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+              effect_list.add(strip.getModeName(i));
+            }
+            char buffer[json.measureLength() + 1];
+            json.printTo(buffer, sizeof(buffer));
+            mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+          #endif
         #endif
 
         DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
@@ -1081,6 +1102,28 @@ void checkForRequests() {
         ha_send_data.detach();
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
+        #ifdef MQTT_HOME_ASSISTANT_SUPPORT
+          DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+          JsonObject& json = jsonBuffer.createObject();
+          json["name"] = HOSTNAME;
+          json["platform"] = "mqtt_json";
+          json["state_topic"] = mqtt_ha_state_out;
+          json["command_topic"] = mqtt_ha_state_in;
+          json["on_command_type"] = "first";
+          json["brightness"] = "true";
+          json["rgb"] = "true";
+          json["optimistic"] = "false";
+          json["color_temp"] = "true";
+          json["effect"] = "true";
+          JsonArray& effect_list = json.createNestedArray("effect_list");
+          for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+            effect_list.add(strip.getModeName(i));
+          }
+          char buffer[json.measureLength() + 1];
+          json.printTo(buffer, sizeof(buffer));
+          DBG_OUTPUT_PORT.println(buffer);
+          amqttClient.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), qospub, true, buffer);
+        #endif
       #endif
     }
 
