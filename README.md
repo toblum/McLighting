@@ -13,6 +13,7 @@
 ___
 Update 07.04.2018:  
 And even more changes to McLighting! Most of them were contributed by user @debsahu. Thank you!
+- Update arduino-esp8266 to latest, at least version 2.4.1
 - AMQTT is now the default MQTT library, it's a bit more lightweight and stable. You can still use PubSubClient if you want to.
 - You can use @debsahu great NeoAnimationFX library as a alternative to WS2812FX. It's based on the NeoPixelBus instead of Adafruits NeoPixel library. It can handle longer strips more efficient. If you want, give it a try. WS2812FX is still the default.
 - Some more changes regarding Homeassistant integration.  
