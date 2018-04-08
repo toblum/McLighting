@@ -746,7 +746,7 @@ void checkForRequests() {
         uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (json_speed != ws2812fx_speed) {
           ws2812fx_speed = json_speed;
-          mode = SETSPEED;
+          if(stateOn) mode = SETSPEED;
         }
       }
 
@@ -1018,7 +1018,7 @@ void checkForRequests() {
         strcat(message, HOSTNAME);
         mqtt_client.publish(mqtt_outtopic, message);
         // ... and resubscribe
-        mqtt_client.subscribe(mqtt_intopic, qossub, qossub);
+        mqtt_client.subscribe(mqtt_intopic, qossub);
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);

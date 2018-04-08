@@ -775,7 +775,7 @@ void setup() {
     getStatusJSON();
 
     #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode).c_str());
+    mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
     amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK /") + String(ws2812fx_mode)).c_str());
@@ -863,7 +863,7 @@ void loop() {
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setMode(ws2812fx_mode);
-    mode = HOLD;
+    mode = SETSPEED;
   }
   if (mode == OFF) {
 //    strip.setColor(0,0,0);
@@ -882,7 +882,7 @@ void loop() {
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    // mode = HOLD;
+    mode = HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
