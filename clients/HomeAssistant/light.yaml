@@ -7,6 +7,7 @@ light:
     effect: true
     effect_list:
     ######
+      - "Static"
       - "Blink"
       - "Breath"
       - "Color Wipe"
