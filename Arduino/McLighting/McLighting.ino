@@ -428,6 +428,7 @@ void setup() {
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
       amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
+	  amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
 
       connectToMqtt();
