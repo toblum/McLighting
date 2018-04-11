@@ -80,6 +80,13 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
 // NEOMETHOD NeoPBBGRB400 uses GRB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 // NEOMETHOD NeoPBBRGB800 uses RGB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 // NEOMETHOD NeoPBBRGB400 uses RGB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+
+// Uses Pin D4 / GPIO2 (Only pin that is supported, due to hardware limitations)
+// NEOMETHOD NeoPBBGRBU800 uses GRB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+// NEOMETHOD NeoPBBGRBU400 uses GRB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+// NEOMETHOD NeoPBBRGBU800 uses RGB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+// NEOMETHOD NeoPBBRGBU400 uses RGB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+
 #endif
 
 #ifdef USE_WS2812FX
@@ -421,6 +428,7 @@ void setup() {
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
       amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
+	  amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
 
       connectToMqtt();
@@ -793,10 +801,6 @@ void setup() {
       if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
   });
-  
-  #ifdef HTTP_OTA
-    httpUpdater.setup(&server,"/update");
-  #endif
 
   #ifdef HTTP_OTA
     httpUpdater.setup(&server, "/update");
