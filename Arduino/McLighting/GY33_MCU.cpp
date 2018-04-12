@@ -46,14 +46,14 @@ float powf(const float x, const float y)
     @brief  Writes a register and an 8 bit value over I2C
 */
 /**************************************************************************/
-void GY33_MCU::write8 (uint8_t reg, uint32_t val)
+uint8_t GY33_MCU::write8 (uint8_t reg, uint8_t val)
 {
   uint8_t buf[2];
   brzo_i2c_start_transaction(MCU_ADDRESS, SCL_SPEED);
   buf[0]=reg;
   buf[1]=val;
   brzo_i2c_write(buf, 2, true);
-  brzo_i2c_end_transaction();
+  return brzo_i2c_end_transaction();
 }
 
 /**************************************************************************/
@@ -125,7 +125,7 @@ boolean GY33_MCU::begin(void)
   /* Make sure we're actually connected */
   uint8_t x = read8(MCU_CONFIG);
   Serial.println(x, HEX);
-  if ((x != 0x00) && (x != 0xFF))
+  if (x != 0x10) 
   {
     return false;
   }
@@ -161,6 +161,7 @@ void GY33_MCU::getData (uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c)
   *b = read8(MCU_BDATA);
   *c = read8(MCU_COLDATA);  
 }
+
 /**************************************************************************/
 /*!
     @brief  Converts the raw R/G/B values to color temperature in degrees
@@ -212,29 +213,15 @@ uint16_t GY33_MCU::calculateLux(uint16_t r, uint16_t g, uint16_t b)
   return (uint16_t)illuminance;
 }
 
-
-/*void GY33_MCU::setInterrupt(boolean i) {
-  uint8_t r = read8(MCU_ENABLE);
-  if (i) {
-    r |= MCU_ENABLE_AIEN;
-  } else {
-    r &= ~MCU_ENABLE_AIEN;
-  }
-  write8(MCU_ENABLE, r);
-}
-
-void GY33_MCU::clearInterrupt(void) {
-  Wire.beginTransmission(MCU_ADDRESS);
-  #if ARDUINO >= 100
-  Wire.write(MCU_COMMAND_BIT | 0x66);
-  #else
-  Wire.send(MCU_COMMAND_BIT | 0x66);
-  #endif
-  Wire.endTransmission();
-}
-*/
-
 void GY33_MCU::setConfig(uint8_t high, uint8_t low) {
 //   write8(MCU_CONFIG, high | low);
+   Serial.println("GY-33: ");
+   Serial.println(high | low, HEX);
    write8(MCU_CONFIG, 0x11);
+}
+uint8_t GY33_MCU::getConfig(void)
+{
+  if (!_MCUInitialised) begin();
+
+  return read8(MCU_CONFIG);
 }

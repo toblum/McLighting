@@ -38,12 +38,6 @@
 #ifndef _MCU_H_
 #define _MCU_H_
 
-#if ARDUINO >= 100
- #include <Arduino.h>
-#else
- #include <WProgram.h>
-#endif
-
 #include <brzo_i2c.h>
 
 #define MCU_ADDRESS          (0x5A)
@@ -92,13 +86,11 @@ class GY33_MCU {
   void     getData(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c);
   uint16_t calculateColorTemperature(uint16_t r, uint16_t g, uint16_t b);
   uint16_t calculateLux(uint16_t r, uint16_t g, uint16_t b);
-  void     write8 (uint8_t reg, uint32_t val);
+  uint8_t  write8 (uint8_t reg, uint8_t val);
   uint8_t  read8 (uint8_t reg);
   uint16_t read16 (uint8_t reg);
-/*  void setInterrupt(boolean flag);
-  void clearInterrupt(void);*/
-  void setConfig(uint8_t h, uint8_t l);
-
+  void     setConfig(uint8_t h, uint8_t l);
+  uint8_t  getConfig(void);
  private:
   boolean _MCUInitialised;
   

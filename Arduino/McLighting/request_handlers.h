@@ -1269,7 +1269,7 @@ void checkForRequests() {
   }
 #endif
 
-#ifdef ENABLE_BUTTON2
+#ifdef ENABLE_BUTTON_GY33
   void shortKeyPress2() {
     DBG_OUTPUT_PORT.printf("Short button2 press\n");
     if (buttonState == false) {
@@ -1365,7 +1365,7 @@ void checkForRequests() {
     if (millis() - keyPrevMillis2 >= keySampleIntervalMs2) {
       keyPrevMillis2 = millis();
 
-      byte currKeyState2 = digitalRead(BUTTON2);
+      byte currKeyState2 = digitalRead(BUTTON_GY33);
 
       if ((prevKeyState2 == HIGH) && (currKeyState2 == LOW)) {
         // key goes from not pressed to pressed

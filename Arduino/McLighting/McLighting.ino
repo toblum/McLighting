@@ -18,7 +18,7 @@
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
 
-#ifdef ENABLE_BUTTON2
+#ifdef ENABLE_BUTTON_GY33
   // needed for MCU
   #include "GY33_MCU.h"
   // ***************************************************************************
@@ -105,7 +105,12 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
   // ***************************************************************************
   // https://github.com/kitesurfer1404/WS2812FX
   #include "WS2812FX.h"
+
+#ifdef RGBW
   WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
+#else
+  WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+#endif
 
   // Parameter 1 = number of pixels in strip
   // Parameter 2 = Arduino pin number (most are valid)
@@ -248,8 +253,11 @@ void setup() {
   pinMode(BUTTON, INPUT_PULLUP);
 #endif
 
-#ifdef ENABLE_BUTTON2
-  pinMode(BUTTON2, INPUT_PULLUP);
+DBG_OUTPUT_PORT.println("");
+DBG_OUTPUT_PORT.println("Starting....");
+  
+#ifdef ENABLE_BUTTON_GY33
+  pinMode(BUTTON_GY33, INPUT_PULLUP);
   for (int i=0; i<256; i++) {
     float x = i;
     x /= 255;
@@ -258,8 +266,7 @@ void setup() {
     gammatable[i] = x;      
   }
   if (tcs.begin()) {
-    DBG_OUTPUT_PORT.println("Found GY33 sensor");
-    tcs.setConfig(MCU_LED_OFF,MCU_LED_OFF);
+    DBG_OUTPUT_PORT.println("Found GY-33 sensor");
   } else {
     DBG_OUTPUT_PORT.println("No GY33 sensor found ... check your connections");
   }
@@ -853,13 +860,16 @@ void setup() {
     }
     sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   #endif
+  tcs.setConfig(MCU_LED_10,MCU_WHITE_ON);
+  DBG_OUTPUT_PORT.println("Config is:");
+  DBG_OUTPUT_PORT.println( tcs.getConfig());
 }
 
 void loop() {
   #ifdef ENABLE_BUTTON
     button();
   #endif
-  #ifdef ENABLE_BUTTON2
+  #ifdef ENABLE_BUTTON_GY33
     button2();
   #endif 
   server.handleClient();
@@ -901,8 +911,10 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
+    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(ws2812fx_mode);
-    mode = SETSPEED;
+    strip.setSpeed(convertSpeed(ws2812fx_speed));
+    mode = HOLD;
   }
   if (mode == OFF) {
 //    strip.setColor(0,0,0,0);
