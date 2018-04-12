@@ -428,7 +428,7 @@ void setup() {
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
       amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
-	  amqttClient.setCredentials(mqtt_user, mqtt_pass);
+      amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
 
       connectToMqtt();
@@ -530,18 +530,8 @@ void setup() {
   // Setup: SPIFFS Webserver handler
   // ***************************************************************************
   server.on("/set_brightness", []() {
-    if (server.arg("c").toInt() > 0) {
-      brightness = (int) server.arg("c").toInt() * 2.55;
-    } else {
-      brightness = server.arg("p").toInt();
-    }
-    if (brightness > 255) {
-      brightness = 255;
-    }
-    if (brightness < 0) {
-      brightness = 0;
-    }
-    strip.setBrightness(brightness);
+    getArgs();
+	mode = BRIGHTNESS;
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK %") + String(brightness)).c_str());
     #endif
@@ -871,6 +861,7 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
+	strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(ws2812fx_mode);
     mode = SETSPEED;
   }

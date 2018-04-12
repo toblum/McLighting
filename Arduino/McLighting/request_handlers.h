@@ -31,6 +31,13 @@ void getArgs() {
   if (server.arg("m") != "") {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
+  
+  if (server.arg("c").toInt() > 0) {
+    brightness = (int) server.arg("c").toInt() * 2.55;
+  } else {
+    brightness = server.arg("p").toInt();
+  }
+  brightness = constrain(brightness, 0, 255);
 
   main_color.red = constrain(main_color.red, 0, 255);
   main_color.green = constrain(main_color.green, 0, 255);
