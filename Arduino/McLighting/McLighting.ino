@@ -587,7 +587,8 @@ void setup() {
   });
 
   server.on("/get_color", []() {
-    String rgbcolor = String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX);
+    char rgbcolor[7];
+    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X", main_color.red, main_color.green, main_color.blue);
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
     DBG_OUTPUT_PORT.println(rgbcolor);
@@ -861,7 +862,7 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
-	strip.setColor(main_color.red, main_color.green, main_color.blue);
+	  strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(ws2812fx_mode);
     mode = SETSPEED;
   }
@@ -882,7 +883,7 @@ void loop() {
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    mode = HOLD;
+    mode = BRIGHTNESS;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
