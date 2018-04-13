@@ -17,11 +17,7 @@
     v1.0 - First release
 */
 /**************************************************************************/
-#ifdef __AVR
-  #include <avr/pgmspace.h>
-#elif defined(ESP8266)
-  #include <pgmspace.h>
-#endif
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -52,7 +48,7 @@ uint8_t GY33_MCU::write8 (uint8_t reg, uint8_t val)
   brzo_i2c_start_transaction(MCU_ADDRESS, SCL_SPEED);
   buf[0]=reg;
   buf[1]=val;
-  brzo_i2c_write(buf, 2, true);
+  brzo_i2c_write(buf, 2, false);
   return brzo_i2c_end_transaction();
 }
 
@@ -140,26 +136,28 @@ boolean GY33_MCU::begin(void)
     @brief  Reads the raw red, green, blue and clear channel values
 */
 /**************************************************************************/
-void GY33_MCU::getRawData (uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c, uint16_t *ct)
+void GY33_MCU::getRawData (uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c, uint16_t *lux, uint16_t *ct)
 {
   if (!_MCUInitialised) begin();
 
-  *r  = read16(MCU_RDATAH);
-  *g  = read16(MCU_GDATAH);
-  *b  = read16(MCU_BDATAH);
-  *c  = read16(MCU_CDATAH);
-  *ct = read16(MCU_CTDATAH);
+  *r   = read16(MCU_RDATAH);
+  *g   = read16(MCU_GDATAH);
+  *b   = read16(MCU_BDATAH);
+  *c   = read16(MCU_CDATAH);
+  *lux = read16(MCU_LDATAH);
+  *ct  = read16(MCU_CTDATAH);
 }
 
 
-void GY33_MCU::getData (uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c)
+void GY33_MCU::getData (uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c, uint8_t *conf)
 {
   if (!_MCUInitialised) begin();
 
   *r = read8(MCU_RDATA);
   *g = read8(MCU_GDATA);
   *b = read8(MCU_BDATA);
-  *c = read8(MCU_COLDATA);  
+  *c = read8(MCU_COLDATA);
+  *conf = read8(MCU_CONFIG);
 }
 
 /**************************************************************************/
@@ -214,10 +212,9 @@ uint16_t GY33_MCU::calculateLux(uint16_t r, uint16_t g, uint16_t b)
 }
 
 void GY33_MCU::setConfig(uint8_t high, uint8_t low) {
-//   write8(MCU_CONFIG, high | low);
    Serial.println("GY-33: ");
    Serial.println(high | low, HEX);
-   write8(MCU_CONFIG, 0x11);
+   write8(MCU_CONFIG, high | low);
 }
 uint8_t GY33_MCU::getConfig(void)
 {

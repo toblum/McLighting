@@ -25,7 +25,24 @@
   // Initialize Color Sensor
   // ***************************************************************************
   byte gammatable[256];
-  GY33_MCU tcs;  
+  GY33_MCU tcs;
+  byte gamma8[] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
+    2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
+    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
+   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
+   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
+   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
+   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
+   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
+   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
+   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
+  115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
+  144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
+  177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
+  215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };  
 #endif
 
 // OTA
@@ -565,18 +582,8 @@ DBG_OUTPUT_PORT.println("Starting....");
   // Setup: SPIFFS Webserver handler
   // ***************************************************************************
   server.on("/set_brightness", []() {
-    if (server.arg("c").toInt() > 0) {
-      brightness = (int) server.arg("c").toInt() * 2.55;
-    } else {
-      brightness = server.arg("p").toInt();
-    }
-    if (brightness > 255) {
-      brightness = 255;
-    }
-    if (brightness < 0) {
-      brightness = 0;
-    }
-    strip.setBrightness(brightness);
+    getArgs();
+    mode = BRIGHTNESS;
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK %") + String(brightness)).c_str());
     #endif
@@ -632,7 +639,9 @@ DBG_OUTPUT_PORT.println("Starting....");
   });
 
   server.on("/get_color", []() {
-    String rgbcolor = String(main_color.white, HEX) + String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX);
+    //String rgbcolor = String(main_color.white, HEX) + String(main_color.red, HEX) + String(main_color.green, HEX) + String(main_color.blue, HEX);
+    char rgbcolor[9];
+    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
     DBG_OUTPUT_PORT.println(rgbcolor);
@@ -860,9 +869,7 @@ DBG_OUTPUT_PORT.println("Starting....");
     }
     sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   #endif
-  tcs.setConfig(MCU_LED_10,MCU_WHITE_ON);
-  DBG_OUTPUT_PORT.println("Config is:");
-  DBG_OUTPUT_PORT.println( tcs.getConfig());
+  tcs.setConfig(MCU_LED_05, MCU_WHITE_ON);
 }
 
 void loop() {
@@ -870,7 +877,7 @@ void loop() {
     button();
   #endif
   #ifdef ENABLE_BUTTON_GY33
-    button2();
+    button_gy33();
   #endif 
   server.handleClient();
   webSocket.loop();
@@ -913,8 +920,7 @@ void loop() {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
     strip.setMode(ws2812fx_mode);
-    strip.setSpeed(convertSpeed(ws2812fx_speed));
-    mode = HOLD;
+    mode = SETSPEED;
   }
   if (mode == OFF) {
 //    strip.setColor(0,0,0,0);
@@ -933,7 +939,7 @@ void loop() {
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    mode = HOLD;
+    mode = BRIGHTNESS;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);

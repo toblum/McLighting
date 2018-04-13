@@ -1,3 +1,4 @@
 clients/web/node_modules/
 
 clients/web/\.vscode/
+*.DS_Store

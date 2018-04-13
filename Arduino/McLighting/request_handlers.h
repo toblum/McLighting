@@ -33,6 +33,13 @@ void getArgs() {
   if (server.arg("m") != "") {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
+ 
+  if (server.arg("c").toInt() > 0) {
+    brightness = (int) server.arg("c").toInt() * 2.55;
+  } else {
+    brightness = server.arg("p").toInt();
+  }
+  brightness = constrain(brightness, 0, 255);
 
   main_color.white = constrain(main_color.white, 0, 255);
   main_color.red   = constrain(main_color.red,   0, 255);
@@ -1270,26 +1277,15 @@ void checkForRequests() {
 #endif
 
 #ifdef ENABLE_BUTTON_GY33
-  void shortKeyPress2() {
-    DBG_OUTPUT_PORT.printf("Short button2 press\n");
+  void shortKeyPress_gy33() {
+    DBG_OUTPUT_PORT.printf("Short GY-33 button press\n");
     if (buttonState == false) {
       uint16_t red, green, blue, cl, ct, lux;
-//      tcs.setInterrupt(false);      // turn on LED
-      delay(60);  // takes 50ms to read 
-      tcs.getRawData(&red, &green, &blue, &cl, &ct);
-//      ct = tcs.calculateColorTemperature(red, green, blue);
-      lux = tcs.calculateLux(red, green, blue);
-//      tcs.setInterrupt(true);       // turn off LED
-      // Figure out some basic hex code for visualization
-      uint32_t sum = cl;
-/*      float r, g, b, col;
-      r = red; r /= sum;
-      g = green; g /= sum;
-      b = blue; b /= sum;
-      r *= 256; g *= 256; b *= 256;*/
-      uint8_t r, g, b, col;
-      tcs.getData(&r, &g, &b, &col);
-      DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Colortemp: [%d] Lux: [%d]\n", (int)r, (int)g, (int)b, (int)cl, (int)ct, (int)lux );
+      tcs.getRawData(&red, &green, &blue, &cl, &lux, &ct);
+      DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
+      uint8_t r, g, b, col, conf;
+      tcs.getData(&r, &g, &b, &col, &conf);
+      DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
       char newmode[38];
       sprintf(newmode, "STA| 1|  0|245|196|0|%3d|%3d|%3d", (int)r, (int)g, (int)b);
       DBG_OUTPUT_PORT.println(newmode);
@@ -1297,12 +1293,11 @@ void checkForRequests() {
       main_color.white = 0; main_color.red = gammatable[(int)r]; main_color.green = gammatable[(int)g]; main_color.blue = gammatable[(int)b];
       mode = HOLD;
       strip.setMode(0);
-      strip.setSpeed(convertSpeed(245));
-      strip.setBrightness(196);
+      //strip.setBrightness(196);
       strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       buttonState = false;
       #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
+        mqtt_client.publish(mqtt_outtopic, String("OK =static GY-33").c_str());
       #endif
     } else {
       mode = OFF;
@@ -1324,70 +1319,42 @@ void checkForRequests() {
   }
 
   // called when button is kept pressed for less than 2 seconds
-  void mediumKeyPress2() {
-    DBG_OUTPUT_PORT.printf("Medium button2 press\n");
-    setModeByStateString(BTN_MODE_MEDIUM);
-    #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fire flicker").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
+  void mediumKeyPress_gy33() {   
+      tcs.setConfig(MCU_LED_02, MCU_WHITE_OFF);
   }
 
   // called when button is kept pressed for 2 seconds or more
-  void longKeyPress2() {
-    DBG_OUTPUT_PORT.printf("Long button2 press\n");
-    setModeByStateString(BTN_MODE_LONG);
-    #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fireworks random").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-     stateOn = true;
-     if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
+  void longKeyPress_gy33() {
+      tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);  
   }
 
-  void button2() {
-    if (millis() - keyPrevMillis2 >= keySampleIntervalMs2) {
-      keyPrevMillis2 = millis();
+  void button_gy33() {
+    if (millis() - keyPrevMillis_gy33 >= keySampleIntervalMs_gy33) {
+      keyPrevMillis_gy33 = millis();
 
-      byte currKeyState2 = digitalRead(BUTTON_GY33);
+      byte currKeyState_gy33 = digitalRead(BUTTON_GY33);
 
-      if ((prevKeyState2 == HIGH) && (currKeyState2 == LOW)) {
+      if ((prevKeyState_gy33 == HIGH) && (currKeyState_gy33 == LOW)) {
         // key goes from not pressed to pressed
-        KeyPressCount2 = 0;
+        KeyPressCount_gy33 = 0;
       }
-      else if ((prevKeyState2 == LOW) && (currKeyState2 == HIGH)) {
-        if (KeyPressCount2 < longKeyPressCountMax2 && KeyPressCount2 >= mediumKeyPressCountMin2) {
-          mediumKeyPress2();
+      else if ((prevKeyState_gy33 == LOW) && (currKeyState_gy33 == HIGH)) {
+        if (KeyPressCount_gy33 < longKeyPressCountMax_gy33 && KeyPressCount_gy33 >= mediumKeyPressCountMin_gy33) {
+          mediumKeyPress_gy33();
         }
         else {
-          if (KeyPressCount2 < mediumKeyPressCountMin2) {
-            shortKeyPress2();
+          if (KeyPressCount_gy33 < mediumKeyPressCountMin_gy33) {
+            shortKeyPress_gy33();
           }
         }
       }
-      else if (currKeyState2 == LOW) {
-        KeyPressCount2++;
-        if (KeyPressCount2 >= longKeyPressCountMax2) {
-          longKeyPress2();
+      else if (currKeyState_gy33 == LOW) {
+        KeyPressCount_gy33++;
+        if (KeyPressCount_gy33 >= longKeyPressCountMax_gy33) {
+          longKeyPress_gy33();
         }
       }
-      prevKeyState2 = currKeyState2;
+      prevKeyState_gy33 = currKeyState_gy33;
     }
   }
 #endif

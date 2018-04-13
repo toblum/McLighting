@@ -150,11 +150,11 @@ LEDState main_color = { 0, 255, 0, 0};  // Store the "main color" of the strip u
   #define BTN_MODE_MEDIUM "STA| 1| 48|245|196|  0|255|102|  0"  // Fire flicker
   #define BTN_MODE_LONG   "STA| 1| 46|253|196|  0|255|102|  0"  // Fireworks random
   
-  unsigned long keyPrevMillis2 = 0;
-  const unsigned long keySampleIntervalMs2 = 25;
-  byte longKeyPressCountMax2 = 80;       // 80 * 25 = 2000 ms
-  byte mediumKeyPressCountMin2 = 20;     // 20 * 25 = 500 ms
-  byte KeyPressCount2 = 0;
-  byte prevKeyState2 = HIGH;             // button is active low
+  unsigned long keyPrevMillis_gy33 = 0;
+  const unsigned long keySampleIntervalMs_gy33 = 25;
+  byte longKeyPressCountMax_gy33 = 80;       // 80 * 25 = 2000 ms
+  byte mediumKeyPressCountMin_gy33 = 20;     // 20 * 25 = 500 ms
+  byte KeyPressCount_gy33 = 0;
+  byte prevKeyState_gy33 = HIGH;             // button is active low
 #endif
 

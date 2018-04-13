@@ -38,24 +38,24 @@
 #ifndef _MCU_H_
 #define _MCU_H_
 
-#include <brzo_i2c.h>
+#include <brzo_i2c.h>        // https://github.com/pasko-zh/brzo_i2c
 
 #define MCU_ADDRESS          (0x5A)
 
 #define SCL_SPEED            100
 #define SCL_STRETCH_TIMEOUT  50000
 
-#define MCU_LED_OFF          (0x00)
-#define MCU_LED_1            (0x10)
-#define MCU_LED_2            (0x20)
-#define MCU_LED_3            (0x30)
-#define MCU_LED_4            (0x40)
-#define MCU_LED_5            (0x50)
-#define MCU_LED_6            (0x60)
-#define MCU_LED_7            (0x70)
-#define MCU_LED_8            (0x80)
-#define MCU_LED_9            (0x90)
-#define MCU_LED_10           (0xA0)
+#define MCU_LED_OFF          (0xA0)
+#define MCU_LED_01           (0x90)
+#define MCU_LED_02           (0x80)
+#define MCU_LED_03           (0x70)
+#define MCU_LED_04           (0x60)
+#define MCU_LED_05           (0x50)
+#define MCU_LED_06           (0x40)
+#define MCU_LED_07           (0x30)
+#define MCU_LED_08           (0x20)
+#define MCU_LED_09           (0x10)
+#define MCU_LED_10           (0x00)
 #define MCU_WHITE_OFF        (0x00)  /* No Whitebalance  */
 #define MCU_WHITE_ON         (0x01)  /* Whitebalance */
 
@@ -75,15 +75,15 @@
 #define MCU_GDATA            (0x0D)    /* Green channel data */
 #define MCU_BDATA            (0x0E)    /* Blue channel data */
 #define MCU_COLDATA          (0x0F)    /* Blue channel data */
-#define MCU_CONFIG           (0x10)
+#define MCU_CONFIG           (0x10)    /* Config channel data */
 
 class GY33_MCU {
  public:
   GY33_MCU();
  
   boolean  begin(void);
-  void     getRawData(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c, uint16_t *ct);
-  void     getData(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c);
+  void     getRawData(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c, uint16_t *lux, uint16_t *ct);
+  void     getData(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *c, uint8_t *conf);
   uint16_t calculateColorTemperature(uint16_t r, uint16_t g, uint16_t b);
   uint16_t calculateLux(uint16_t r, uint16_t g, uint16_t b);
   uint8_t  write8 (uint8_t reg, uint8_t val);
