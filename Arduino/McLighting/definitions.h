@@ -16,7 +16,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
-
+#define ENABLE_LEGACY_ANIMATIONS
 
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
@@ -85,16 +85,21 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE { SET_MODE, HOLD, OFF, ALL, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
+#ifdef ENABLE_LEGACY_ANIMATIONS
+  enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
+  MODE mode = RAINBOW;         // Standard mode that is active when software starts
+  bool exit_func = false;      // Global helper variable to get out of the color modes when mode changes
+#else
+  enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, CUSTOM };
+  MODE mode = SET_MODE;        // Standard mode that is active when software starts
+#endif
 
-MODE mode = RAINBOW;        // Standard mode that is active when software starts
+MODE prevmode = mode;
 
 int ws2812fx_speed = 196;   // Global variable for storing the delay between color changes --> smaller == faster
 int brightness = 196;       // Global variable for storing the brightness (255 == 100%)
 
 int ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
-
-bool exit_func = false;     // Global helper variable to get out of the color modes when mode changes
 
 bool shouldSaveConfig = false;  // For WiFiManger custom config
 

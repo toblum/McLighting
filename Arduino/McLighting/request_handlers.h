@@ -33,11 +33,10 @@ void getArgs() {
   }
   
   if (server.arg("c").toInt() > 0) {
-    brightness = (int) server.arg("c").toInt() * 2.55;
-  } else {
-    brightness = server.arg("p").toInt();
+    brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
+  } else if (server.arg("p").toInt() > 0) {
+    brightness = constrain(server.arg("p").toInt(), 0, 255);
   }
-  brightness = constrain(brightness, 0, 255);
 
   main_color.red = constrain(main_color.red, 0, 255);
   main_color.green = constrain(main_color.green, 0, 255);
@@ -81,7 +80,8 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+//  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  mode = SETCOLOR;
 }
 
 void handleSetAllMode(uint8_t * mypayload) {
@@ -92,13 +92,16 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
-  }
-  strip.show();
+//  for (int i = 0; i < strip.numPixels(); i++) {
+//    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
+//  }
+//  strip.show();
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-  exit_func = true;
-  mode = ALL;
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    exit_func = true;
+  #endif
+  ws2812fx_mode = FX_MODE_STATIC;
+  mode = SET_MODE;
 }
 
 void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
@@ -126,7 +129,9 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
     strip.show();
   }
-  exit_func = true;
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    exit_func = true;
+  #endif
   mode = CUSTOM;
 }
 
@@ -205,64 +210,67 @@ void setModeByStateString(String saved_state_string) {
   strip.setColor(main_color.red, main_color.green, main_color.blue);
 }
 
-void handleSetNamedMode(String str_mode) {
-  exit_func = true;
-
-  if (str_mode.startsWith("=off")) {
-    mode = OFF;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = false;
-    #endif
+#ifdef ENABLE_LEGACY_ANIMATIONS
+  void handleSetNamedMode(String str_mode) {
+    exit_func = true;
+  
+    if (str_mode.startsWith("=off")) {
+      mode = OFF;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = false;
+      #endif
+    }
+    if (str_mode.startsWith("=all")) {
+      ws2812fx_mode = FX_MODE_STATIC;
+      mode = SET_MODE;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=wipe")) {
+      mode = WIPE;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=rainbow")) {
+      mode = RAINBOW;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=rainbowCycle")) {
+      mode = RAINBOWCYCLE;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=theaterchase")) {
+      mode = THEATERCHASE;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=twinkleRandom")) {
+      mode = TWINKLERANDOM;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=theaterchaseRainbow")) {
+      mode = THEATERCHASERAINBOW;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=tv")) {
+      mode = TV;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
   }
-  if (str_mode.startsWith("=all")) {
-    mode = ALL;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=wipe")) {
-    mode = WIPE;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=rainbow")) {
-    mode = RAINBOW;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=rainbowCycle")) {
-    mode = RAINBOWCYCLE;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=theaterchase")) {
-    mode = THEATERCHASE;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=twinkleRandom")) {
-    mode = TWINKLERANDOM;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=theaterchaseRainbow")) {
-    mode = THEATERCHASERAINBOW;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-  if (str_mode.startsWith("=tv")) {
-    mode = TV;
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-  }
-}
+#endif
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = HOLD;
@@ -277,10 +285,16 @@ char* listStatusJSON() {
   char json[255];
 
   char modeName[30];
-  strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
 
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-           mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+//  if (mode == SET_MODE) {
+    strncpy_P(modeName, (PGM_P)strip.getModeName((uint8_t) ws2812fx_mode), sizeof(modeName)); // copy from progmem
+    snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+             mode, ws2812fx_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+//  }else {
+//    strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+//    snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+//             mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+//  }
   return json;
 }
 
@@ -510,28 +524,30 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         #endif
       }
 
-      // = ==> Activate named mode
-      if (payload[0] == '=') {
-        // we get mode data
-        String str_mode = String((char *) &payload[0]);
-
-        handleSetNamedMode(str_mode);
-
-        DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
+      #ifdef ENABLE_LEGACY_ANIMATIONS
+        // = ==> Activate named mode
+        if (payload[0] == '=') {
+          // we get mode data
+          String str_mode = String((char *) &payload[0]);
+  
+          handleSetNamedMode(str_mode);
+  
+          DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
+          webSocket.sendTXT(num, "OK");
+          #ifdef ENABLE_MQTT
+          mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+          #endif
+          #ifdef ENABLE_AMQTT
+          amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          #endif
+          #ifdef ENABLE_HOMEASSISTANT
+            if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+          #endif
+          #ifdef ENABLE_STATE_SAVE_SPIFFS
+            if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+          #endif
+        }
+      #endif
 
       // $ ==> Get status Info.
       if (payload[0] == '$') {
@@ -604,13 +620,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 }
 
-void checkForRequests() {
-  webSocket.loop();
-  server.handleClient();
-  #ifdef ENABLE_MQTT
-  mqtt_client.loop();
-  #endif
-}
+#ifdef ENABLE_LEGACY_ANIMATIONS
+  void checkForRequests() {
+    webSocket.loop();
+    server.handleClient();
+    #ifdef ENABLE_MQTT
+    mqtt_client.loop();
+    #endif
+  }
+#endif
 
 
 // ***************************************************************************
@@ -731,7 +749,8 @@ void checkForRequests() {
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0 and !(animation_on)) {
           stateOn = true;
-          mode = ALL;
+          ws2812fx_mode = FX_MODE_STATIC;
+          mode = SET_MODE;
         }
         else if (strcmp(state_in, off_cmd) == 0) {
           stateOn = false;
@@ -934,24 +953,26 @@ void checkForRequests() {
         #endif
       }
 
-      // = ==> Activate named mode
-      if (payload[0] == '=') {
-        String str_mode = String((char *) &payload[0]);
-        handleSetNamedMode(str_mode);
-        DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
+      #ifdef ENABLE_LEGACY_ANIMATIONS
+        // = ==> Activate named mode
+        if (payload[0] == '=') {
+          String str_mode = String((char *) &payload[0]);
+          handleSetNamedMode(str_mode);
+          DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
+          #ifdef ENABLE_MQTT
+          mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+          #endif
+          #ifdef ENABLE_AMQTT
+          amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          #endif
+          #ifdef ENABLE_HOMEASSISTANT
+            if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+          #endif
+          #ifdef ENABLE_STATE_SAVE_SPIFFS
+            if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+          #endif
+        }
+      #endif
 
       // $ ==> Get status Info.
       if (payload[0] == '$') {

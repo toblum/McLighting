@@ -26,14 +26,14 @@
 
 //SPIFFS Save
 #if !defined(ENABLE_HOMEASSISTANT) and defined(ENABLE_STATE_SAVE_SPIFFS)
-  #include <ArduinoJson.h>        //
+  #include <ArduinoJson.h>        //https://github.com/bblanchon/ArduinoJson
 #endif
 
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
   #ifdef ENABLE_HOMEASSISTANT
-    #include <ArduinoJson.h>
+    #include <ArduinoJson.h>     //https://github.com/bblanchon/ArduinoJson
   #endif
 
   WiFiClient espClient;
@@ -220,7 +220,9 @@ void saveConfigCallback () {
 // ***************************************************************************
 // Include: Color modes
 // ***************************************************************************
-#include "colormodes.h"
+#ifdef ENABLE_LEGACY_ANIMATIONS
+  #include "colormodes.h"
+#endif
 
 // ***************************************************************************
 // MAIN
@@ -599,7 +601,9 @@ void setup() {
   });
 
   server.on("/off", []() {
-    exit_func = true;
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      exit_func = true;
+    #endif
     mode = OFF;
     getArgs();
     getStatusJSON();
@@ -618,8 +622,12 @@ void setup() {
   });
 
   server.on("/all", []() {
-    exit_func = true;
-    mode = ALL;
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      exit_func = true;
+    #endif
+    ws2812fx_mode = FX_MODE_STATIC;
+    mode = SET_MODE;
+    //mode = ALL;
     getArgs();
     getStatusJSON();
     #ifdef ENABLE_MQTT
@@ -636,138 +644,140 @@ void setup() {
     #endif
   });
 
-  server.on("/wipe", []() {
-    exit_func = true;
-    mode = WIPE;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =wipe").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =wipe").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
-
-  server.on("/rainbow", []() {
-    exit_func = true;
-    mode = RAINBOW;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =rainbow").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbow").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
-
-  server.on("/rainbowCycle", []() {
-    exit_func = true;
-    mode = RAINBOWCYCLE;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =rainbowCycle").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbowCycle").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
-
-  server.on("/theaterchase", []() {
-    exit_func = true;
-    mode = THEATERCHASE;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =theaterchase").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchase").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
-
-  server.on("/twinkleRandom", []() {
-    exit_func = true;
-    mode = TWINKLERANDOM;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =twinkleRandom").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =twinkleRandom").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    server.on("/wipe", []() {
+      exit_func = true;
+      mode = WIPE;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =wipe").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =wipe").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
   
-  server.on("/theaterchaseRainbow", []() {
-    exit_func = true;
-    mode = THEATERCHASERAINBOW;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =theaterchaseRainbow").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchaseRainbow").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
-
-  server.on("/tv", []() {
-    exit_func = true;
-    mode = TV;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =tv").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = true;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
-  });
+    server.on("/rainbow", []() {
+      exit_func = true;
+      mode = RAINBOW;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =rainbow").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbow").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+  
+    server.on("/rainbowCycle", []() {
+      exit_func = true;
+      mode = RAINBOWCYCLE;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =rainbowCycle").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbowCycle").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+  
+    server.on("/theaterchase", []() {
+      exit_func = true;
+      mode = THEATERCHASE;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =theaterchase").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchase").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+  
+    server.on("/twinkleRandom", []() {
+      exit_func = true;
+      mode = TWINKLERANDOM;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =twinkleRandom").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =twinkleRandom").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+    
+    server.on("/theaterchaseRainbow", []() {
+      exit_func = true;
+      mode = THEATERCHASERAINBOW;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =theaterchaseRainbow").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchaseRainbow").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+  
+    server.on("/tv", []() {
+      exit_func = true;
+      mode = TV;
+      getArgs();
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =tv").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+  #endif
 
   server.on("/get_modes", []() {
     getModesJSON();
@@ -862,73 +872,77 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
-	  strip.setColor(main_color.red, main_color.green, main_color.blue);
     strip.setMode(ws2812fx_mode);
-    mode = SETSPEED;
+    prevmode = SET_MODE;
+    mode = SETCOLOR;
   }
   if (mode == OFF) {
-//    strip.setColor(0,0,0);
-//    strip.setMode(FX_MODE_STATIC);
     if(strip.isRunning()) strip.stop(); //should clear memory
     // mode = HOLD;
   }
-  if (mode == ALL) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.setMode(FX_MODE_STATIC);
-    mode = HOLD;
-  }
   if (mode == SETCOLOR) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
-    mode = HOLD;
+    mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    mode = BRIGHTNESS;
+    mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
+    if (prevmode == SET_MODE) prevmode == HOLD;
     mode = HOLD;
   }
-  if (mode == WIPE) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.setMode(FX_MODE_COLOR_WIPE);
-    mode = HOLD;
-  }
-  if (mode == RAINBOW) {
-    strip.setMode(FX_MODE_RAINBOW);
-    mode = HOLD;
-  }
-  if (mode == RAINBOWCYCLE) {
-    strip.setMode(FX_MODE_RAINBOW_CYCLE);
-    mode = HOLD;
-  }
-  if (mode == THEATERCHASE) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.setMode(FX_MODE_THEATER_CHASE);
-    mode = HOLD;
-  }
-  if (mode == TWINKLERANDOM) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.setMode(FX_MODE_TWINKLE_RANDOM);
-    mode = HOLD;
-  }
-  if (mode == THEATERCHASERAINBOW) {
-    strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
-    mode = HOLD;
-  }
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    if (mode == WIPE) {
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setMode(FX_MODE_COLOR_WIPE);
+      mode = HOLD;
+    }
+    if (mode == RAINBOW) {
+      strip.setMode(FX_MODE_RAINBOW);
+      mode = HOLD;
+    }
+    if (mode == RAINBOWCYCLE) {
+      strip.setMode(FX_MODE_RAINBOW_CYCLE);
+      mode = HOLD;
+    }
+    if (mode == THEATERCHASE) {
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setMode(FX_MODE_THEATER_CHASE);
+      mode = HOLD;
+    }
+    if (mode == TWINKLERANDOM) {
+      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setMode(FX_MODE_TWINKLE_RANDOM);
+      mode = HOLD;
+    }
+    if (mode == THEATERCHASERAINBOW) {
+      strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+      mode = HOLD;
+    }
+  #endif
   if (mode == HOLD || mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
-    if (exit_func) {
-      exit_func = false;
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      if (exit_func) {
+        exit_func = false;
+      }
+    #endif
+  }
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    if (mode == TV) {
+      if(!strip.isRunning()) strip.start();
+      tv();
     }
-  }
-  if (mode == TV) {
-    if(!strip.isRunning()) strip.start();
-    tv();
-  }
+  #endif
 
   // Only for modes with WS2812FX functionality
+  #ifdef ENABLE_LEGACY_ANIMATIONS
   if (mode != TV && mode != CUSTOM) {
+  #else
+  if (mode != CUSTOM) {
+  #endif
     strip.service();
   }
 
