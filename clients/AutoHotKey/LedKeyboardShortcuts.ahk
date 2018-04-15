@@ -4,6 +4,7 @@ SetBatchLines, -1
 
 
 socket := new Example("ws://192.168.1.33:81") ; replace with the ip address of the mclighting controller
+connected := 0 ;  state variable for server connection
 
 incrementAmount := 10 ; how finely you adjust the color, speed, and brightness per keypress
 maxColor := 255
@@ -24,7 +25,7 @@ mode := 1
 		mode := maxMode
 	cmd = /%mode% ; / is the set effect mode command
 	TrayTip, , Mode: %mode%
-	socket.Send(cmd)
+	sendCmd(cmd) 
 	; MsgBox %cmd%
 	return
 
@@ -35,19 +36,19 @@ mode := 1
 		mode := 0
 	TrayTip, , Mode: %mode%
 	cmd = /%mode%
-	socket.Send(cmd)
+	sendCmd(cmd)
 	; MsgBox %cmd%
 	return
 	
 ^#Numpad5:: ; turn off
 	TrayTip, , Leds are off
-	socket.Send("=off") ; = is the set control command
+	sendCmd("=off") ; = is the set control command
 	return
 	
 ^#Numpad0:: ; turn on to static color
 	TrayTip, , Leds are on
 	cmd := "*"+toHexColor(red,green,blue) ; * is the set all command
-	socket.Send(cmd) ; = is the set control command
+	sendCmd(cmd) ; = is the set control command
 	return
 	
 	
@@ -57,7 +58,7 @@ mode := 1
 		brightness := 0
 	cmd = `%%brightness% ;  % is the set brightness mode command. ` is the escape character
 	TrayTip, , Brightness: %brightness%
-	socket.Send(cmd)
+	sendCmd(cmd)
 	; MsgBox %cmd%
 	return
 	
@@ -67,7 +68,7 @@ mode := 1
 		brightness := maxColor
 	cmd = `%%brightness% ; % is the set brightness mode command
 	TrayTip, , Brightness: %brightness%
-	socket.Send(cmd)
+	sendCmd(cmd)
 	; MsgBox %cmd%
 	return
 
@@ -77,7 +78,7 @@ mode := 1
 		speed := 0
 	cmd = ?%speed% ;  ? is the set brightness mode command
 	TrayTip, , Speed: %speed%
-	socket.Send(cmd)
+	sendCmd(cmd)
 	; MsgBox %cmd%
 	return
 	
@@ -87,7 +88,7 @@ mode := 1
 		speed := maxColor
 	cmd = ?%speed% ;  ? is the set brightness mode command
 	TrayTip, , Speed: %speed%
-	socket.Send(cmd)
+	sendCmd(cmd)
 	; MsgBox %cmd%
 	return
 
@@ -100,7 +101,7 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Red: %red%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
 	
@@ -112,7 +113,7 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Red: %red%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
 
@@ -124,7 +125,7 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Green: %green%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
 	
@@ -136,7 +137,7 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Green: %green%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
 	
@@ -148,7 +149,7 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Blue: %blue%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
 	
@@ -160,10 +161,24 @@ mode := 1
 	cmd := "#"+toHexColor(red,green,blue) ; # is the set main color command
 	; MsgBox %cmd%
 	TrayTip, , Blue: %blue%
-	socket.Send(cmd)
+	sendCmd(cmd)
 
 	return
-	
+
+sendCmd(cmd)
+{
+	global connected
+	global socket
+	; MsgBox %connected%
+	if( connected )
+	{
+		socket.Send(cmd)
+		; MsgBox %cmd%
+	}
+	else
+		TrayTip, , Not connected to server!
+}
+
 toHexColor(r, g, b)
 {
 	SetFormat, IntegerFast, hex ; To print values as hexadecimal
@@ -183,6 +198,7 @@ class Example extends WebSocket
 		TrayTip, ,Connection established to led controller!
 		; InputBox, Data, WebSocket, Enter some text to send through the websocket.
 		; this.Send(Data)
+		global connected := 1
 	}
 	
 	OnMessage(Event)
@@ -194,6 +210,7 @@ class Example extends WebSocket
 	OnClose(Event)
 	{
 		TrayTip, , Websocket Closed
+		global connected := 0
 		this.Disconnect()
 		ExitApp
 	}
@@ -201,6 +218,7 @@ class Example extends WebSocket
 	OnError(Event)
 	{
 		TrayTip, , Websocket Error
+		global connected := 0
 		this.Close()
 	}
 	
