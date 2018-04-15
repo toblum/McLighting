@@ -1,3 +1,5 @@
+!!! Make sure that the ip address is edited to match the ip address of your McLighting server !!!
+
 If you are not familiar with AutoHotKey, this tutorial will get you started: https://autohotkey.com/docs/Tutorial.htm
 Once you have AutoHotKey installed, double click it to start the script. 
 
