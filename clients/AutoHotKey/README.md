@@ -7,6 +7,8 @@ The script is not aware of the current state of the McLighting server and will o
 
 This was developed on Windows 7. The notification balloons look best and update in real time on Windows 7. On Windows 10, I reccommend changing the notification settings for AutoHotKey to not play a sound when they arrive. You must open the notification center on windows 10 to see the notifications in real time.
 
+The shortcuts only work on the numberpad and only when num lock is on! If you don't have a numberpad you must change the shortcuts to something else. Just be aware that you might be overrriding previously existing shortcuts! Here is the list of windows shortcuts: https://support.microsoft.com/en-us/help/12445/windows-keyboard-shortcuts
+
 The shortcuts are as follows:
 
 ctrl+windows+numpad4 decrements the animation mode
