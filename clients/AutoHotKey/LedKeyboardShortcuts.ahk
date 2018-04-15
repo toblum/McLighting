@@ -3,7 +3,7 @@
 SetBatchLines, -1
 
 
-socket := new Example("ws://192.168.1.33:81") ; replace with the ip address of the mclighting controller
+socket := new Example("ws://192.168.1.33:81") ; !!! Update this !!!
 connected := 0 ;  state variable for server connection
 
 incrementAmount := 10 ; how finely you adjust the color, speed, and brightness per keypress
