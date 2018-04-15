@@ -96,7 +96,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // Load libraries / Instanciate NeoAnimationFX library
 // ***************************************************************************
 // https://github.com/debsahu/NeoAnimationFX
-#include <NeoAnimationFX.h>
+#include "NeoAnimationFX.h"
 #define NEOMETHOD NeoPBBGRB800
 
 NEOMETHOD neoStrip(NUMLEDS);
@@ -869,7 +869,10 @@ DBG_OUTPUT_PORT.println("Starting....");
     }
     sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   #endif
-  tcs.setConfig(MCU_LED_05, MCU_WHITE_ON);
+  
+  #ifdef ENABLE_BUTTON_GY33
+    tcs.setConfig(MCU_LED_05, MCU_WHITE_ON);
+  #endif
 }
 
 void loop() {

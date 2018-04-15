@@ -17,7 +17,7 @@ const char HOSTNAME[] = "ESPLightRGBW02";   // Friedly hostname
 //#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-#define ENABLE_BUTTON_GY33       //
+//#define ENABLE_BUTTON_GY33       //
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 
 
@@ -146,10 +146,6 @@ LEDState main_color = { 0, 255, 0, 0};  // Store the "main color" of the strip u
 #endif
 
 #ifdef ENABLE_BUTTON_GY33
-  #define BTN_MODE_SHORT  "STA| 1|  0|245|196|255|  0|  0|  0"  // Static white
-  #define BTN_MODE_MEDIUM "STA| 1| 48|245|196|  0|255|102|  0"  // Fire flicker
-  #define BTN_MODE_LONG   "STA| 1| 46|253|196|  0|255|102|  0"  // Fireworks random
-  
   unsigned long keyPrevMillis_gy33 = 0;
   const unsigned long keySampleIntervalMs_gy33 = 25;
   byte longKeyPressCountMax_gy33 = 80;       // 80 * 25 = 2000 ms
