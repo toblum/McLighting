@@ -195,11 +195,13 @@ class Example extends WebSocket
 	{
 		TrayTip, , Websocket Closed
 		this.Disconnect()
+		ExitApp
 	}
 	
 	OnError(Event)
 	{
 		TrayTip, , Websocket Error
+		this.Close()
 	}
 	
 	__Delete()
