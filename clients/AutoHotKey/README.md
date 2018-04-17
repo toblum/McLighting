@@ -7,7 +7,10 @@ If the Mclighting server goes down for some reason, a socket error notification 
 
 The script is not aware of the current state of the McLighting server and will override what is currently being displayed with its own internal values.
 
-This was developed on Windows 7. The notification balloons look best and update in real time on Windows 7. On Windows 10, I reccommend changing the notification settings for AutoHotKey to not play a sound when they arrive. You must open the notification center on windows 10 to see the notifications in real time.
+This has been tested on windows 7 and windows 10.
+Set the notificationTime variable to the time in seconds that you want the notification to stay on the screen.
+You can prevent notifications from appearing by setting the notificationEnable variable to false.
+
 
 The shortcuts only work on the numberpad and only when num lock is on! If you don't have a numberpad you must change the shortcuts to something else. Just be aware that you might be overrriding previously existing shortcuts! Here is the list of windows shortcuts: https://support.microsoft.com/en-us/help/12445/windows-keyboard-shortcuts
 
