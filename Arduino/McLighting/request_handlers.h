@@ -273,12 +273,9 @@ void setModeByStateString(String saved_state_string) {
 #endif
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
-  mode = HOLD;
-  uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-  ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
-  strip.setMode(ws2812fx_mode);
-  strip.start();
+  mode = SET_MODE;
+  uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
+  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
 }
 
 char* listStatusJSON() {
