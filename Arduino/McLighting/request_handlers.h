@@ -273,28 +273,19 @@ void setModeByStateString(String saved_state_string) {
 #endif
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
-  mode = HOLD;
-  uint8_t ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-  ws2812fx_mode = constrain(ws2812fx_mode, 0, 255);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
-  strip.setMode(ws2812fx_mode);
-  strip.start();
+  mode = SET_MODE;
+  uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
+  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
 }
 
 char* listStatusJSON() {
   char json[255];
-
   char modeName[30];
-
-//  if (mode == SET_MODE) {
-    strncpy_P(modeName, (PGM_P)strip.getModeName((uint8_t) ws2812fx_mode), sizeof(modeName)); // copy from progmem
-    snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-             mode, ws2812fx_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
-//  }else {
-//    strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-//    snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-//             mode, strip.getMode(), modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
-//  }
+  uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
+  
+  strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+           mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   return json;
 }
 
