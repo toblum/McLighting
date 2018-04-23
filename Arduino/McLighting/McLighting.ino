@@ -413,24 +413,24 @@ void setup() {
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+    if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
       snprintf(mqtt_outtopic, sizeof mqtt_outtopic, "%s/out", HOSTNAME);
 
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\n", mqtt_host, String(mqtt_port).toInt());
 
-      mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
+      mqtt_client.setServer(mqtt_host, atoi(mqtt_port));
       mqtt_client.setCallback(mqtt_callback);
     }
   #endif
 
   #ifdef ENABLE_AMQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+    if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       amqttClient.onConnect(onMqttConnect);
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
-      amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
-      amqttClient.setCredentials(mqtt_user, mqtt_pass);
+      amqttClient.setServer(mqtt_host, atoi(mqtt_port));
+      if (mqtt_user != "" or mqtt_pass != "") amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
 
       connectToMqtt();

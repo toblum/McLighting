@@ -58,6 +58,7 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   #endif
 
   #ifdef ENABLE_HOMEASSISTANT
+    //#define ENABLE_HA_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of HA hostname
     String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
     String mqtt_ha_state_in = mqtt_ha + "state/in";
     String mqtt_ha_state_out = mqtt_ha + "state/out";
@@ -70,7 +71,13 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
     uint16_t color_temp = 327; // min is 154 and max is 500
   #endif
 
-  const char mqtt_clientid[] = "NeoPixelsStrip"; // MQTT ClientID
+  #define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
+  #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
+    const char* mqtt_clientid = String(String(HOSTNAME) + "-" + String(ESP.getChipId())).c_str(); // MQTT ClientID
+  #else
+    const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
+  #endif
+
 
   char mqtt_host[64] = "";
   char mqtt_port[6] = "";
