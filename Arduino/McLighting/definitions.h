@@ -58,7 +58,6 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   #endif
 
   #ifdef ENABLE_HOMEASSISTANT
-    //#define ENABLE_HA_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of HA hostname
     String mqtt_ha = "home/" + String(HOSTNAME) + "_ha/";
     String mqtt_ha_state_in = mqtt_ha + "state/in";
     String mqtt_ha_state_out = mqtt_ha + "state/out";

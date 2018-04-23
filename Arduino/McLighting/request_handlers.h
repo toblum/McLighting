@@ -1044,11 +1044,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
             DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
             JsonObject& json = jsonBuffer.createObject();
-            #ifdef ENABLE_HA_HOSTNAME_CHIPID
-              json["name"] = String(String(HOSTNAME) + "-" + String(ESP.getChipId()));
-            #else
-              json["name"] = HOSTNAME;
-            #endif
+            json["name"] = HOSTNAME;
             json["platform"] = "mqtt_json";
             json["state_topic"] = mqtt_ha_state_out;
             json["command_topic"] = mqtt_ha_state_in;
@@ -1128,11 +1124,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
           DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
           JsonObject& json = jsonBuffer.createObject();
-          #ifdef ENABLE_HA_HOSTNAME_CHIPID
-            json["name"] = String(String(HOSTNAME) + "-" + String(ESP.getChipId()));
-          #else
-            json["name"] = HOSTNAME;
-          #endif
+          json["name"] = HOSTNAME;
           json["platform"] = "mqtt_json";
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
