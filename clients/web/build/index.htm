@@ -196,13 +196,13 @@ $(function(){
 		$.getJSON("http://" + host + "/status", function(data) {
 		    console.log("status", data);
 			mode  = data.mode;
-			ws2812fx_mode = data.ws2812fx_mode;
+			ws2812fx_mode = data.ws2812fx_mode_name;
+		    $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
 			$("#rng_white").val(data.color[0]);	
 			$("#rng_red").val(data.color[1]);
 			$("#rng_green").val(data.color[2]);
 			$("#rng_blue").val(data.color[3]);
-			$("#rng_delay").val(data.speed);
 			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
 			$('#status').css("backgroundColor", statusColor);
 			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);
@@ -210,12 +210,12 @@ $(function(){
 
 		// Load modes async
 		// List of all color modes
-		// enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, AUTO };
+		// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, CUSTOM};
 		$.getJSON("http://" + host + "/get_modes", function(data) {
 		    console.log("modes", data);
 			var modes_html = "";
 			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == 2) {
+			if (mode == 3) {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="off">OFF';
 			} else {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF';
@@ -224,7 +224,7 @@ $(function(){
 			modes_html += '</a>';
 			modes_html += '</div>'
 						modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == 10) {
+			if (mode == 4) {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="tv">TV';
 			} else {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV';

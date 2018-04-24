@@ -42,13 +42,13 @@ $(function(){
 		$.getJSON("http://" + host + "/status", function(data) {
 		    console.log("status", data);
 			mode  = data.mode;
-			ws2812fx_mode = data.ws2812fx_mode;
+			ws2812fx_mode = data.ws2812fx_mode_name;
+		    $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
 			$("#rng_white").val(data.color[0]);	
 			$("#rng_red").val(data.color[1]);
 			$("#rng_green").val(data.color[2]);
 			$("#rng_blue").val(data.color[3]);
-			$("#rng_delay").val(data.speed);
 			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
 			$('#status').css("backgroundColor", statusColor);
 			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);

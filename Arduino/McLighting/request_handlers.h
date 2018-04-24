@@ -100,7 +100,7 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.blue  = ((rgb      ) & 0xFF);
 
 //  for (int i = 0; i < strip.numPixels(); i++) {
-//    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
+//    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue, main_color.white);
 //  }
 //  strip.show();
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: W: [%u] R: [%u] G: [%u] B: [%u]\n", main_color.white, main_color.red, main_color.green, main_color.blue);
@@ -297,8 +297,8 @@ char* listStatusJSON() {
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
   strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-           mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d, %d]}",
+           mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
   return json;
 }
 

@@ -959,7 +959,7 @@ void loop() {
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_COLOR_WIPE);
       mode = HOLD;
     }
@@ -972,12 +972,12 @@ void loop() {
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_THEATER_CHASE);
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
       mode = HOLD;
     }
