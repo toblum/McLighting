@@ -25,9 +25,9 @@ $(function(){
 		$('#' + pane).removeClass('hide');
 		$('.button-collapse').sideNav('hide');
 		
-		if (pane == "pane2") {
-			setMainColor();
-		}
+		//if (pane == "pane2") {
+		//	setMainColor();
+		//}
 	}
 	
 	
@@ -37,16 +37,60 @@ $(function(){
 	function init() {
 		console.log("Connection websockets to:", ws_url);
 		connection = new WebSocket(ws_url, ['arduino']);
-		
+		var mode = 0;
+		var ws2812fx_mode = 0;
+		$.getJSON("http://" + host + "/status", function(data) {
+		    console.log("status", data);
+			mode  = data.mode;
+			ws2812fx_mode = data.ws2812fx_mode;
+			$("#rng_brightness").val(data.brightness);
+			$("#rng_white").val(data.color[0]);	
+			$("#rng_red").val(data.color[1]);
+			$("#rng_green").val(data.color[2]);
+			$("#rng_blue").val(data.color[3]);
+			$("#rng_delay").val(data.speed);
+			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
+			$('#status').css("backgroundColor", statusColor);
+			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);
+		});
+
 		// Load modes async
+		// List of all color modes
+		// enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, AUTO };
 		$.getJSON("http://" + host + "/get_modes", function(data) {
-			//console.log("modes", data);
-			
+		    console.log("modes", data);
 			var modes_html = "";
+			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
+			if (mode == 2) {
+				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="off">OFF';
+			} else {
+				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF';
+			}
+			modes_html += '<i class="material-icons right">send</i>';
+			modes_html += '</a>';
+			modes_html += '</div>'
+						modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
+			if (mode == 10) {
+				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="tv">TV';
+			} else {
+				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV';
+			}
+			modes_html += '<i class="material-icons right">send</i>';
+			modes_html += '</a>';
+			modes_html += '</div>';
+
+			
+			
+			
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
 					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
+					if (mode == 1 && current_mode.mode == ws2812fx_mode) {
+						modes_html += '<a class="btn waves-effect waves-light btn_mode red" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
+
+					} else {
+						modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
+					}
 					modes_html += '<i class="material-icons right">send</i>';
 					modes_html += '</a>';
 					modes_html += '</div>';
@@ -55,7 +99,7 @@ $(function(){
 			
 			$('#modes').html(modes_html);
 		});
-				
+						
 		// When the connection is open, send some data to the server
 		connection.onopen = function () {
 			//connection.send('Ping'); // Send the message 'Ping' to the server
@@ -130,12 +174,16 @@ $(function(){
 	}
 	
 	function setMainColor() {
+		var white = $("#rng_white").val();	
 		var red = $("#rng_red").val();
 		var green = $("#rng_green").val();
-		var blue = $("#rng_blue").val();		
+		var blue = $("#rng_blue").val();
 		
-		var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
-		wsSetMainColor(mainColorHex);
+		var hexColor = componentToHex(white) + componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		var statusColor = "#" + componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		wsSetMainColor(hexColor);
+		$('#status').css("backgroundColor", statusColor);
+		$('#status_color').text(statusColor + "- R=" + red + ", G=" + green + ", B=" + blue);
 	}
 	
 	
@@ -253,15 +301,18 @@ $(function(){
 
 	//display the touch/click position and color info
 	function updateStatus(pos, color) {
-		var hexColor = rgbToHex(color);
-		wsSetAll(hexColor);
+		//var hexColor = rgbToHex(color);
+		//wsSetAll(hexColor);
+		var hexColor = componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
+		wsSetMainColor(hexColor);
 		
 		hexColor = "#" + hexColor;
 		
 		$('#status').css("backgroundColor", hexColor);
-		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
+		$('#status_color').text(hexColor + "- R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
 		
+		$("#rng_white").val(0);
 		$("#rng_red").val(color[0]);
 		$("#rng_green").val(color[1]);
 		$("#rng_blue").val(color[2]);
