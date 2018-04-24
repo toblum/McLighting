@@ -70,7 +70,7 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
     uint16_t color_temp = 327; // min is 154 and max is 500
   #endif
 
-  #define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
+  //#define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
   #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
     const char* mqtt_clientid = String(String(HOSTNAME) + "-" + String(ESP.getChipId())).c_str(); // MQTT ClientID
   #else
