@@ -196,7 +196,7 @@ $(function(){
 		$.getJSON("http://" + host + "/status", function(data) {
 		    console.log("status", data);
 			mode  = data.mode;
-			ws2812fx_mode = data.ws2812fx_mode_name;
+			ws2812fx_mode = data.ws2812fx_mode;
 		    $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
 			$("#rng_white").val(data.color[0]);	

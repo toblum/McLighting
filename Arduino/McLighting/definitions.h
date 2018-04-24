@@ -89,11 +89,11 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 
 // List of all color modes
 #ifdef ENABLE_LEGACY_ANIMATIONS
-  enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, CUSTOM};
+  enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
   MODE mode = RAINBOW;         // Standard mode that is active when software starts
   bool exit_func = false;      // Global helper variable to get out of the color modes when mode changes
 #else
-  enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, SETCOLOR, SETSPEED, BRIGHTNESS, CUSTOM};
+  enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS};
   MODE mode = SET_MODE;        // Standard mode that is active when software starts
 #endif
 
