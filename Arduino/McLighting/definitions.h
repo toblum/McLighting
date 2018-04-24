@@ -20,6 +20,8 @@ const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 //#define ENABLE_BUTTON_GY33       //
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
+#define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
+//#define ENABLE_STATE_SAVE_EEPROM      // If defined, save state on reboot
 
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
@@ -118,9 +120,8 @@ typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
 LEDState main_color = { 0, 255, 0, 0};  // Store the "main color" of the strip used in single color modes
 
-#define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
-//#define ENABLE_STATE_SAVE_EEPROM      // If defined, save state on reboot
-#ifdef ENABLE_STATE_SAVE
+
+#ifdef ENABLE_STATE_SAVE_EEPROM
   char current_state[36];               // Keeps the current state representation
   char last_state[36];                  // Save the last state as string representation
   unsigned long time_statechange = 0;   // Time when the state last changed
