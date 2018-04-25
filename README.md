@@ -151,6 +151,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Make a set of NodeRed nodes.
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 
 
 ## Licence
