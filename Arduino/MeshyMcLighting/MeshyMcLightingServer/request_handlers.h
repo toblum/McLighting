@@ -931,6 +931,9 @@ void receivedCallback(uint32_t from, String & msg) {
   //Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
   else Serial.printf("Processed incoming message from %u successfully!", from);
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+  #endif
 }
 
 void newConnectionCallback(uint32_t nodeId) {

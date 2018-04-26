@@ -16,6 +16,7 @@ const char HOSTNAME_BASE[] = "MeshyMcLighting";
 const char* HOSTNAME = String(String(HOSTNAME_BASE) + "-" + String(ESP.getChipId())).c_str();
 
 #define ENABLE_STATE_SAVE_SPIFFS
+#define ENABLE_WEBSERVER
 
 #define DEFAULT_COLOR 0xFF5900
 #define DEFAULT_BRIGHTNESS 196

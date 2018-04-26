@@ -92,15 +92,15 @@ File fsUploadFile;
 
 SimpleList<uint32_t> nodes;
 Scheduler userScheduler; // to control your personal task
-Task taskSendMessage( TASK_SECOND * 1, TASK_ONCE, &sendMessage );
+Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage );
 #ifdef ENABLE_AMQTT
   Task taskConnecttMqtt( TASK_SECOND * 1, TASK_FOREVER, &connectToMqtt ); 
 #endif
 #ifdef ENABLE_STATE_SAVE_SPIFFS
-  Task taskSpiffsSaveState(TASK_SECOND * 1, TASK_ONCE, &fnSpiffsSaveState);
+  Task taskSpiffsSaveState(TASK_SECOND * 1, TASK_FOREVER, &fnSpiffsSaveState);
 #endif
 #ifdef ENABLE_HOMEASSISTANT
-  Task taskSendHAState(TASK_SECOND * 3, TASK_ONCE, &fnSendHAState);
+  Task taskSendHAState(TASK_SECOND * 3, TASK_FOREVER, &fnSendHAState);
 #endif
 
 #include "request_handlers.h"
@@ -224,6 +224,9 @@ void setup(){
         uint8_t b = (tmp         & 0xFF);
         main_color = {r, g, b};
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+        #ifdef ENABLE_STATE_SAVE_SPIFFS
+          if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+        #endif
         mode = SETCOLOR;
       }
     }
@@ -239,12 +242,18 @@ void setup(){
         brightness = tmp;
       }
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
       mode = BRIGHTNESS;
     }
 
     if (request->hasArg("s")) {
       ws2812fx_speed = (request->arg("s") == "-") ? strip.getSpeed() * 0.8 : max(strip.getSpeed(), 5) * 1.2 ;
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
       mode = SETSPEED;
     }
 
@@ -270,6 +279,9 @@ void setup(){
         mode = OFF;
       }
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
     }
     
     request->send(200, "text/plain", "OK");
@@ -461,6 +473,9 @@ void loop() {
     Serial.print("mode is "); Serial.println(strip.getModeName(strip.getMode()));
     taskSendMessage.enableIfNot();
     taskSendMessage.forceNextIteration();
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+    #endif
     auto_last_change = now;
   }
 }

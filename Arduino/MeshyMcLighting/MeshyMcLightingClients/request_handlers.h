@@ -158,6 +158,8 @@ uint16_t convertSpeed(uint8_t mcl_speed) {
   return ws2812_speed;
 }
 
+#ifdef ENABLE_WEBSERVER
+
 void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
@@ -401,6 +403,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     }
   }
 }
+#endif
 
 #ifdef ENABLE_STATE_SAVE_SPIFFS
 bool updateFS = false;
@@ -518,6 +521,9 @@ void receivedCallback(uint32_t from, String & msg) {
   //Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
   else Serial.printf("Processed incoming message from %u successfully!", from);
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+  #endif
 }
 
 void newConnectionCallback(uint32_t nodeId) {
@@ -539,5 +545,5 @@ void mesh_setup() {
   Serial.println("My AP IP is " + myAPIP.toString());
 
   userScheduler.addTask(taskSendMessage);
-  taskSendMessage.enable();
+  taskSendMessage.disable();
 }
