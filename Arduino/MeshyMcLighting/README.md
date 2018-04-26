@@ -17,6 +17,8 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 ### Limitations/TODO
 
 - No WiFiManager yet, have to think of ways of implementing this
+- Remove WS2812FX automode and replace with McLighting automode
+- Add McLighting Button mode
 
 #### Libraries to install
 
