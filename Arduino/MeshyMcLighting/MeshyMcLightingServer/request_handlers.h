@@ -900,6 +900,75 @@ void fnSpiffsSaveState(void){
 }
 #endif
 
+///////// Mesh Stuff ///////////
+
 IPAddress getlocalIP() {
   return IPAddress(mesh.getStationIP());
+}
+
+
+void modes_setup() {
+  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
+  uint8_t num_modes = sizeof(myModes) > 0 ? sizeof(myModes) + 1 : strip.getModeCount() + 1;
+  for(uint8_t i=1; i < num_modes; i++) {
+    uint8_t m = sizeof(myModes) > 0 ? myModes[i-1] : i;
+    modes += "<li><a href='#' class='m' id='";
+    modes += (m);
+    modes += "'>";
+    modes += strip.getModeName(m-1);
+    modes += "</a></li>";
+  }
+}
+
+void sendMessage() {
+  String msg = statusLEDs();
+  mesh.sendBroadcast(msg);
+  taskSendMessage.disable();
+  Serial.println("Broadcasting!");
+}
+
+void receivedCallback(uint32_t from, String & msg) {
+  //Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  if(!processJson(msg)) return;
+  else Serial.printf("Processed incoming message from %u successfully!", from);
+}
+
+void newConnectionCallback(uint32_t nodeId) {
+  String msg = statusLEDs();
+  mesh.sendSingle(nodeId, msg);
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+
+void changedConnectionCallback() {
+  Serial.printf("Changed connections %s\n", mesh.subConnectionJson().c_str());
+  nodes = mesh.getNodeList();
+  Serial.printf("Num nodes: %d\n", nodes.size());
+  Serial.printf("Connection list:");
+
+  SimpleList<uint32_t>::iterator node = nodes.begin();
+  while (node != nodes.end()) {
+    Serial.printf(" %u", *node);
+    node++;
+  }
+  Serial.println();
+
+  if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+}
+
+void mesh_setup() {
+  //WiFi.mode(WIFI_AP_STA);
+  //WiFi.hostname("MeshyMcLighting");
+  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+  mesh.setHostname(HOSTNAME);
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+  mesh.stationManual(STATION_SSID, STATION_PASSWORD);
+  
+  myAPIP = IPAddress(mesh.getAPIP());
+  Serial.println("My AP IP is " + myAPIP.toString());
+
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
 }

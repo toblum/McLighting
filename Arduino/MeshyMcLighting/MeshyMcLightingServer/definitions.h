@@ -19,8 +19,8 @@
 #define HOSTNAME "MeshyMcLighting"
 
 #define ENABLE_AMQTT                  // If defined, enable AMQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_AMQTT must be active
-#define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
+//#define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_AMQTT must be active
+//#define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_STATE_SAVE_SPIFFS
 
 #ifdef ENABLE_AMQTT
@@ -42,8 +42,8 @@
     const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
   #endif
   
-  char mqtt_host[64] = "";
-  char mqtt_port[6] = "";
+  char mqtt_host[64] = "debsahu.ddns.net";
+  char mqtt_port[6] = "1884";
   char mqtt_user[32] = "";
   char mqtt_pass[32] = "";
 #endif
