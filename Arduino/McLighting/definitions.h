@@ -6,23 +6,25 @@
 #define NUMLEDS 194        // Number of leds in the strip 
 #define BUILTIN_LED 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON  14         // Input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-#define BUTTON_GY33 12         // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
-#define RGBW
+//#define BUTTON_GY33 12         // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+#define RGBW               // If defined, use RGBW Strips
 
 const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 
-#define HTTP_OTA           // If defined, enable Added ESP8266HTTPUpdateServer
+#define HTTP_OTA             // If defined, enable Added ESP8266HTTPUpdateServer
 //#define ENABLE_OTA           // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-//#define ENABLE_BUTTON_GY33       //
+//#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 #define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
 //#define ENABLE_STATE_SAVE_EEPROM      // If defined, save state on reboot
-
+#define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
+#define DBG_OUTPUT_PORT Serial  // Set debug output port
+  
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
 #endif
@@ -75,7 +77,11 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
     uint16_t color_temp = 327; // min is 154 and max is 500
   #endif
 
-  const char mqtt_clientid[] = "NeoPixelsStrip"; // MQTT ClientID
+  #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
+    const char* mqtt_clientid = String(String(HOSTNAME) + "-" + String(ESP.getChipId())).c_str(); // MQTT ClientID
+  #else
+    const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
+  #endif
 
   char mqtt_host[64] = "";
   char mqtt_port[6] = "";
@@ -87,7 +93,6 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 // ***************************************************************************
 // Global variables / definitions
 // ***************************************************************************
-#define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
 #ifdef ENABLE_LEGACY_ANIMATIONS
@@ -158,4 +163,3 @@ LEDState main_color = { 0, 255, 0, 0};  // Store the "main color" of the strip u
   byte KeyPressCount_gy33 = 0;
   byte prevKeyState_gy33 = HIGH;             // button is active low
 #endif
-

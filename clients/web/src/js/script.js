@@ -61,7 +61,7 @@ $(function(){
 		    console.log("modes", data);
 			var modes_html = "";
 			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == 2) {
+			if (mode == "3") {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="off">OFF';
 			} else {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF';
@@ -70,7 +70,7 @@ $(function(){
 			modes_html += '</a>';
 			modes_html += '</div>'
 						modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == 10) {
+			if (mode == "4") {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="tv">TV';
 			} else {
 				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV';
@@ -85,7 +85,7 @@ $(function(){
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
 					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-					if (mode == 1 && current_mode.mode == ws2812fx_mode) {
+					if (mode == "1" && current_mode.mode == ws2812fx_mode) {
 						modes_html += '<a class="btn waves-effect waves-light btn_mode red" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
 
 					} else {

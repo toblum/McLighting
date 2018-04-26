@@ -25,18 +25,17 @@ void getArgs() {
     main_color.green = server.arg("g").toInt();
     main_color.blue  = server.arg("b").toInt();
   }
-  ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
-  if (server.arg("s") == "") {
-    ws2812fx_speed = 196;
+  if (server.arg("s") != "") {
+    ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
   }
 
   if (server.arg("m") != "") {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
   
-  if (server.arg("c").toInt() > 0) {
+  if (server.arg("c") != "") {
     brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
-  } else if (server.arg("p").toInt() > 0) {
+  } else if (server.arg("p") != "") {
     brightness = constrain(server.arg("p").toInt(), 0, 255);
   }
 
@@ -86,7 +85,6 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.red   = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >>  8) & 0xFF);
   main_color.blue  = ((rgb      ) & 0xFF);
-  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
   mode = SETCOLOR;
 }
 
@@ -394,6 +392,265 @@ void handleAutoStop() {
   strip.stop();
 }
 
+void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
+  // # ==> Set main color
+  if (payload[0] == '#') {
+    handleSetMainColor(payload);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set main color to: W: [%u] R: [%u] G: [%u] B: [%u]\n", main_color.white, main_color.red, main_color.green, main_color.blue);
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  }
+
+  // ? ==> Set speed
+  if (payload[0] == '?') {
+    uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+    ws2812fx_speed = constrain(d, 0, 255);
+    strip.setSpeed(convertSpeed(ws2812fx_speed));
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+  }
+
+  // % ==> Set brightness
+  if (payload[0] == '%') {
+    uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+    brightness = constrain(b, 0, 255);
+    strip.setBrightness(brightness);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  }
+
+  // * ==> Set main color and light all LEDs (Shortcut)
+  if (payload[0] == '*') {
+    handleSetAllMode(payload);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\n", payload);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  }
+
+  // ! ==> Set single LED in given color
+  if (payload[0] == '!') {
+    handleSetSingleLED(payload, 1);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\n", payload);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+  }
+
+  // + ==> Set multiple LED in the given colors
+  if (payload[0] == '+') {
+    handleSetDifferentColors(payload);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\n", payload);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+  }
+
+  // + ==> Set range of LEDs in the given color
+  if (payload[0] == 'R') {
+    handleRangeDifferentColors(payload);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\n", payload);
+    webSocket.sendTXT(num, "OK");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+  }
+
+  #ifdef ENABLE_LEGACY_ANIMATIONS
+    // = ==> Activate named mode
+    if (payload[0] == '=') {
+      // we get mode data
+      String str_mode = String((char *) &payload[0]);
+
+      handleSetNamedMode(str_mode);
+      if (mqtt == true)  {
+        DBG_OUTPUT_PORT.print("MQTT: "); 
+      } else {
+        DBG_OUTPUT_PORT.print("WS: ");
+        webSocket.sendTXT(num, "OK");
+      }
+      DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    }
+  #endif
+
+  // $ ==> Get status Info.
+  if (payload[0] == '$') {
+    String json = listStatusJSON();
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.println("Get status info: " + json);
+    webSocket.sendTXT(num, json);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, listStatusJSON());
+    #endif
+    #ifdef ENABLE_AMQTT
+    String liststat = (String) listStatusJSON();
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, liststat.c_str());
+    #endif
+  }
+
+  // ~ ==> Get WS2812 modes.
+  if (payload[0] == '~') {
+    String json = listModesJSON();
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.println("Get WS2812 modes.");
+    DBG_OUTPUT_PORT.println(json);
+    #ifdef ENABLE_MQTT
+    DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
+    mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
+    //String json_modes = listModesJSON();
+    //DBG_OUTPUT_PORT.printf(json_modes.c_str());
+
+    //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
+    //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("ERROR: Not implemented. Message too large for AsyncMQTT.").c_str());
+    #endif
+  }
+
+  // / ==> Set WS2812 mode.
+  // TODO: Fix this, doesn't return anything. Too long?
+  // Hint: https://github.com/knolleary/pubsubclient/issues/110
+  if (payload[0] == '/') {
+    handleSetWS2812FXMode(payload);
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: "); 
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+    }
+    DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\n", payload);
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  }
+}
+
+
 // ***************************************************************************
 // WS request handlers
 // ***************************************************************************
@@ -415,201 +672,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     case WStype_TEXT:
       DBG_OUTPUT_PORT.printf("WS: [%u] get Text: %s\n", num, payload);
 
-      // # ==> Set main color
-      if (payload[0] == '#') {
-        handleSetMainColor(payload);
-        DBG_OUTPUT_PORT.printf("Set main color to: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // ? ==> Set speed
-      if (payload[0] == '?') {
-        uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        ws2812fx_speed = constrain(d, 0, 255);
-        strip.setSpeed(convertSpeed(ws2812fx_speed));
-        DBG_OUTPUT_PORT.printf("WS: Set speed to: [%u]\n", ws2812fx_speed);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_HOMEASSISTANT
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // % ==> Set brightness
-      if (payload[0] == '%') {
-        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        brightness = ((b >> 0) & 0xFF);
-        DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
-        strip.setBrightness(brightness);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // * ==> Set main color and light all LEDs (Shortcut)
-      if (payload[0] == '*') {
-        handleSetAllMode(payload);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // ! ==> Set single LED in given color
-      if (payload[0] == '!') {
-        handleSetSingleLED(payload, 1);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // + ==> Set multiple LED in the given colors
-      if (payload[0] == '+') {
-        handleSetDifferentColors(payload);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // + ==> Set range of LEDs in the given color
-      if (payload[0] == 'R') {
-        handleRangeDifferentColors(payload);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      #ifdef ENABLE_LEGACY_ANIMATIONS
-        // = ==> Activate named mode
-        if (payload[0] == '=') {
-          // we get mode data
-          String str_mode = String((char *) &payload[0]);
-  
-          handleSetNamedMode(str_mode);
-  
-          DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
-          webSocket.sendTXT(num, "OK");
-          #ifdef ENABLE_MQTT
-          mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-          #endif
-          #ifdef ENABLE_AMQTT
-          amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-          #endif
-          #ifdef ENABLE_HOMEASSISTANT
-            if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-          #endif
-          #ifdef ENABLE_STATE_SAVE_SPIFFS
-            if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-          #endif
-        }
-      #endif
-
-      // $ ==> Get status Info.
-      if (payload[0] == '$') {
-        DBG_OUTPUT_PORT.printf("Get status info.");
-
-        String json = listStatusJSON();
-        DBG_OUTPUT_PORT.println(json);
-        webSocket.sendTXT(num, json);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, listStatusJSON());
-        #endif
-        #ifdef ENABLE_AMQTT
-        String liststat = (String) listStatusJSON();
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, liststat.c_str());
-        #endif
-      }
-
-      // ~ ==> Get WS2812 modes.
-      if (payload[0] == '~') {
-        DBG_OUTPUT_PORT.printf("Get WS2812 modes.");
-
-        String json = listModesJSON();
-        DBG_OUTPUT_PORT.println(json);
-        webSocket.sendTXT(num, json);
-        #ifdef ENABLE_MQTT
-        DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-        mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-        //String json_modes = listModesJSON();
-        //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-
-        //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-        //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("ERROR: Not implemented. Message too large for AsyncMQTT.").c_str());
-        #endif
-      }
-
-      // / ==> Set WS2812 mode.
-      if (payload[0] == '/') {
-        handleSetWS2812FXMode(payload);
-        webSocket.sendTXT(num, "OK");
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
+      checkpayload(payload, false, num);
 
       // start auto cycling
       if (strcmp((char *)payload, "start") == 0 ) {
@@ -848,188 +911,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       #endif
     #endif
 
-      // # ==> Set main color
-      if (payload[0] == '#') {
-        handleSetMainColor(payload);
-        DBG_OUTPUT_PORT.printf("MQTT: Set main color to [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // ? ==> Set speed
-      if (payload[0] == '?') {
-        uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        ws2812fx_speed = constrain(d, 0, 255);
-        strip.setSpeed(convertSpeed(ws2812fx_speed));
-        DBG_OUTPUT_PORT.printf("MQTT: Set speed to [%u]\n", ws2812fx_speed);
-        #ifdef ENABLE_HOMEASSISTANT
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // % ==> Set brightness
-      if (payload[0] == '%') {
-        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        brightness = constrain(b, 0, 255);
-        strip.setBrightness(brightness);
-        DBG_OUTPUT_PORT.printf("MQTT: Set brightness to [%u]\n", brightness);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // * ==> Set main color and light all LEDs (Shortcut)
-      if (payload[0] == '*') {
-        handleSetAllMode(payload);
-        DBG_OUTPUT_PORT.printf("MQTT: Set main color and light all LEDs [%s]\n", payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
-
-      // ! ==> Set single LED in given color
-      if (payload[0] == '!') {
-        handleSetSingleLED(payload, 1);
-        DBG_OUTPUT_PORT.printf("MQTT: Set single LED in given color [%s]\n", payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // + ==> Set multiple LED in the given colors
-      if (payload[0] == '+') {
-        handleSetDifferentColors(payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      // R ==> Set range of LEDs in the given colors
-      if (payload[0] == 'R') {
-        handleRangeDifferentColors(payload);
-        DBG_OUTPUT_PORT.printf("MQTT: Set range of LEDS to single color: [%s]\n", payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-      }
-
-      #ifdef ENABLE_LEGACY_ANIMATIONS
-        // = ==> Activate named mode
-        if (payload[0] == '=') {
-          String str_mode = String((char *) &payload[0]);
-          handleSetNamedMode(str_mode);
-          DBG_OUTPUT_PORT.printf("MQTT: Activate named mode [%s]\n", payload);
-          #ifdef ENABLE_MQTT
-          mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-          #endif
-          #ifdef ENABLE_AMQTT
-          amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-          #endif
-          #ifdef ENABLE_HOMEASSISTANT
-            if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-          #endif
-          #ifdef ENABLE_STATE_SAVE_SPIFFS
-            if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-          #endif
-        }
-      #endif
-
-      // $ ==> Get status Info.
-      if (payload[0] == '$') {
-        DBG_OUTPUT_PORT.printf("MQTT: Get status info.\n");
-        DBG_OUTPUT_PORT.println("MQTT: Out: " + String(listStatusJSON()));
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, listStatusJSON());
-        #endif
-        #ifdef ENABLE_AMQTT
-        String liststat = (String) listStatusJSON();
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, liststat.c_str());
-        #endif
-      }
-
-      // ~ ==> Get WS2812 modes.
-      // TODO: Fix this, doesn't return anything. Too long?
-      // Hint: https://github.com/knolleary/pubsubclient/issues/110
-      if (payload[0] == '~') {
-        DBG_OUTPUT_PORT.printf("MQTT: Get WS2812 modes.\n");
-        #ifdef ENABLE_MQTT
-        DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-        mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-        //String json_modes = listModesJSON();
-        //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-
-        //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-        //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("ERROR: Not implemented. Message too large for AsyncMQTT.").c_str());
-        #endif
-      }
-
-      // / ==> Set WS2812 mode.
-      if (payload[0] == '/') {
-        handleSetWS2812FXMode(payload);
-        DBG_OUTPUT_PORT.printf("MQTT: Set WS2812 mode [%s]\n", payload);
-        #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
-        #endif
-        #ifdef ENABLE_HOMEASSISTANT
-          stateOn = true;
-          if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-        #endif
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-        #endif
-      }
+    checkpayload(payload, true);
 
     #ifdef ENABLE_HOMEASSISTANT
     }
@@ -1200,6 +1082,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       #ifdef ENABLE_MQTT
         mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
       #endif
+      #ifdef ENABLE_AMQTT
+        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static white").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
     } else {
       mode = OFF;
       buttonState = false;
@@ -1291,48 +1183,36 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 #ifdef ENABLE_BUTTON_GY33
   void shortKeyPress_gy33() {
     DBG_OUTPUT_PORT.printf("Short GY-33 button press\n");
-    if (buttonState == false) {
-      uint16_t red, green, blue, cl, ct, lux;
-      tcs.getRawData(&red, &green, &blue, &cl, &lux, &ct);
-      DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
-      uint8_t r, g, b, col, conf;
-      tcs.getData(&r, &g, &b, &col, &conf);
-      DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
-      char newmode[38];
-      sprintf(newmode, "STA| 1|  0|245|196|0|%3d|%3d|%3d", (int)r, (int)g, (int)b);
-      DBG_OUTPUT_PORT.println(newmode);
-     //  setModeByStateString(newmode);
-      main_color.white = 0; main_color.red = gammatable[(int)r]; main_color.green = gammatable[(int)g]; main_color.blue = gammatable[(int)b];
-      mode = HOLD;
-      strip.setMode(0);
-      //strip.setBrightness(196);
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
-      buttonState = false;
-      #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String("OK =static GY-33").c_str());
-      #endif
-    } else {
-      mode = OFF;
-      buttonState = false;
-      #ifdef ENABLE_MQTT
-        mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = false;
-        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
-    }
+//    tcs.setConfig(MCU_LED_04, MCU_WHITE_OFF);
+//    delay(500);
+    uint16_t red, green, blue, cl, ct, lux;
+    tcs.getRawData(&red, &green, &blue, &cl, &lux, &ct);
+    DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
+    uint8_t r, g, b, col, conf;
+    tcs.getData(&r, &g, &b, &col, &conf);
+    DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
+    main_color.white = 0; main_color.red = (pow((r/255.0), 2.5)*255); main_color.green = (pow((g/255.0), 2.5)*255); main_color.blue = (pow((b/255.0), 2.5)*255);
+    ws2812fx_mode = 0;
+    mode = SET_MODE;
+    buttonState = true;
+    #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =static GY-33").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static GY-33").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+//    tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);
   }
 
   // called when button is kept pressed for less than 2 seconds
   void mediumKeyPress_gy33() {   
-      tcs.setConfig(MCU_LED_02, MCU_WHITE_OFF);
+      tcs.setConfig(MCU_LED_07, MCU_WHITE_ON);
   }
 
   // called when button is kept pressed for 2 seconds or more

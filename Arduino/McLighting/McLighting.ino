@@ -24,25 +24,7 @@
   // ***************************************************************************
   // Initialize Color Sensor
   // ***************************************************************************
-  byte gammatable[256];
   GY33_MCU tcs;
-  byte gamma8[] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
-    2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
-   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
-   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
-   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
-   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
-   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
-   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
-  115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
-  144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
-  177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
-  215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };  
 #endif
 
 // OTA
@@ -123,14 +105,11 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
   // https://github.com/kitesurfer1404/WS2812FX
   #include "WS2812FX.h"
 
-
-
-
-#ifdef RGBW
-  WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
-#else
-  WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
-#endif
+  #ifdef RGBW
+    WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
+  #else
+    WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+  #endif
 
   // Parameter 1 = number of pixels in strip
   // Parameter 2 = Arduino pin number (most are valid)
@@ -277,13 +256,6 @@ void setup() {
 
 #ifdef ENABLE_BUTTON_GY33
   pinMode(BUTTON_GY33, INPUT_PULLUP);
-  for (int i=0; i<256; i++) {
-    float x = i;
-    x /= 255;
-    x = pow(x, 2.5);
-    x *= 255;
-    gammatable[i] = x;      
-  }
   if (tcs.begin()) {
     DBG_OUTPUT_PORT.println("Found GY-33 sensor");
   } else {
@@ -468,24 +440,24 @@ DBG_OUTPUT_PORT.println("Starting....");
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+    if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
       snprintf(mqtt_outtopic, sizeof mqtt_outtopic, "%s/out", HOSTNAME);
 
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\n", mqtt_host, String(mqtt_port).toInt());
 
-      mqtt_client.setServer(mqtt_host, String(mqtt_port).toInt());
+      mqtt_client.setServer(mqtt_host, atoi(mqtt_port));
       mqtt_client.setCallback(mqtt_callback);
     }
   #endif
 
   #ifdef ENABLE_AMQTT
-    if (mqtt_host != "" && String(mqtt_port).toInt() > 0) {
+    if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       amqttClient.onConnect(onMqttConnect);
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
-      amqttClient.setServer(mqtt_host, String(mqtt_port).toInt());
-      amqttClient.setCredentials(mqtt_user, mqtt_pass);
+      amqttClient.setServer(mqtt_host, atoi(mqtt_port));
+      if (mqtt_user != "" or mqtt_pass != "") amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
 
       connectToMqtt();
@@ -582,6 +554,13 @@ DBG_OUTPUT_PORT.println("Starting....");
     wifiManager.startConfigPortal(HOSTNAME);
   });
 
+  server.on("/format_spiffs", []() {
+    DBG_OUTPUT_PORT.printf("/format_spiffs\n");
+    server.send(200, "text/plain", "Formatting SPIFFS ..." );
+    SPIFFS.format();
+    server.send(200, "text/plain", "Formatting SPIFFS complete" );
+  });
+
 
   // ***************************************************************************
   // Setup: SPIFFS Webserver handler
@@ -660,7 +639,7 @@ DBG_OUTPUT_PORT.println("Starting....");
       exit_func = true;
     #endif
     mode = OFF;
-    getArgs();
+    //getArgs();
     getStatusJSON();
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
@@ -883,7 +862,9 @@ DBG_OUTPUT_PORT.println("Starting....");
   #endif
   
   #ifdef ENABLE_BUTTON_GY33
-    tcs.setConfig(MCU_LED_05, MCU_WHITE_ON);
+    tcs.setConfig(MCU_LED_06, MCU_WHITE_ON);
+//    delay(2000);
+//    tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);
   #endif
 }
 
@@ -959,7 +940,6 @@ void loop() {
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_COLOR_WIPE);
       mode = HOLD;
     }
@@ -972,12 +952,10 @@ void loop() {
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_THEATER_CHASE);
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
       mode = HOLD;
     }

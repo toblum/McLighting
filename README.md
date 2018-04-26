@@ -29,7 +29,7 @@ There are some informations in the [Wiki](https://github.com/toblum/McLighting/w
 
 Update 17.02.2018:  
 User @debsahu contributed code for integration with homeassistant. It's currently in a separate branch (https://github.com/toblum/McLighting/tree/feature/ha_integration). If you're using Homeassistant, please try it out and give feedback.
-User @FabLab-Luenn created a version of McLighting (https://github.com/FabLab-Luenen/McLighting) for 6812 and other RGBW strips. Give it a try, if you own such strips.
+User @FabLab-Luenen created a version of McLighting (https://github.com/FabLab-Luenen/McLighting) for 6812 and other RGBW strips. Give it a try, if you own such strips.
 A thank you goes to all contributors.
 
 Update 12. / 15.02.2018:  
@@ -151,6 +151,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Make a set of NodeRed nodes.
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 
 
 ## Licence
