@@ -17,6 +17,7 @@
 #endif
 
 // Prototypes
+void autoTick(void);
 void sendMessage(void);
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
@@ -101,26 +102,29 @@ Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage );
 #ifdef ENABLE_HOMEASSISTANT
   Task taskSendHAState(TASK_SECOND * 3, TASK_FOREVER, &fnSendHAState);
 #endif
+Task autoModeTask(TASK_SECOND * (int) autoParams[0][3], TASK_FOREVER, &autoTick);
 
 #include "request_handlers.h"
 
 void setup(){
-  Serial.begin(115200);
-  Serial.println();
-  Serial.println();
-  Serial.println("Starting...");
+  #ifdef SERIALDEBUG
+    Serial.begin(115200);
+  #endif
+  DEBUG_PRINTLN();
+  DEBUG_PRINTLN();
+  DEBUG_PRINTLN("Starting...");
 
   if(SPIFFS.begin()){
     Dir dir = SPIFFS.openDir("/");
     while (dir.next()) {
       String fileName = dir.fileName();
       size_t fileSize = dir.fileSize();
-      Serial.printf("FS File: %s, size: %dB\n", fileName.c_str(), fileSize);
+      DEBUG_PRINTF3("FS File: %s, size: %dB\n", fileName.c_str(), fileSize);
     }
 
     FSInfo fs_info;
     SPIFFS.info(fs_info);
-    Serial.printf("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
+    DEBUG_PRINTF3("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
   
   modes.reserve(5000);
@@ -130,16 +134,16 @@ void setup(){
     async_mqtt_setup();
   #endif
   
-  Serial.print("WS2812FX setup ... ");
+  DEBUG_PRINT("WS2812FX setup ... ");
   strip.init();
-  Serial.println("done!");
+  DEBUG_PRINTLN("done!");
   
-  Serial.println("---------- WiFi Mesh Setup ---------");
+  DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
   mesh_setup();
-  Serial.println("----- WiFi Mesh Setup complete -----");
+  DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   //Async webserver
-  Serial.print("Async HTTP server starting ... ");
+  DEBUG_PRINT("Async HTTP server starting ... ");
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
@@ -161,7 +165,7 @@ void setup(){
     request->send(response);
   },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
     if(!index){
-      Serial.printf("UploadStart: %s\n", filename.c_str());
+      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
       if (!filename.startsWith("/")) filename = "/" + filename;
       if (SPIFFS.exists(filename)) SPIFFS.remove(filename);
       fsUploadFile = SPIFFS.open(filename, "w");
@@ -170,7 +174,7 @@ void setup(){
       fsUploadFile.write(data[i]);
     if(final){
       fsUploadFile.close();
-      Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
     }
   });
 
@@ -189,19 +193,29 @@ void setup(){
       return;
     }
     if(!index){
-      Serial.printf("Update Start: %s\n", filename.c_str());
+      DEBUG_PRINTF("Update Start: %s\n", filename.c_str());
       Update.runAsync(true);
-      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) Update.printError(Serial);
+      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
+      #ifdef SERIALDEBUG
+        Update.printError(Serial);
+      #endif
+      }
     }
     if(!Update.hasError()){
-      if(Update.write(data, len) != len)
+      if(Update.write(data, len) != len) {
+      #ifdef SERIALDEBUG
         Update.printError(Serial);
+      #endif
+      }
     }
     if(final){
       if(Update.end(true)) 
-        Serial.printf("Update Success: %uB\n", index+len);
-      else 
+        DEBUG_PRINTF("Update Success: %uB\n", index+len);
+      else {
+      #ifdef SERIALDEBUG
         Update.printError(Serial);
+      #endif
+      }
     }
   });
   
@@ -261,12 +275,14 @@ void setup(){
 
     if (request->hasArg("a")) {
       if(request->arg("a") == "-") {
-        auto_cycle = false;
-        mode = HOLD;
+        //auto_cycle = false;
+        //mode = HOLD;
+        handleAutoStop();
       } else {
-        auto_cycle = true;
-        auto_last_change = 0;
-        mode = HOLD;
+        //auto_cycle = true;
+        //auto_last_change = 0;
+        //mode = HOLD;
+        handleAutoStart();
       }
     }
 
@@ -325,47 +341,47 @@ void setup(){
       return true;
     }
 
-    Serial.printf("NOT_FOUND: ");
+    DEBUG_PRINT("NOT_FOUND: ");
     if(request->method() == HTTP_GET)
-      Serial.printf("GET");
+      DEBUG_PRINT("GET");
     else if(request->method() == HTTP_POST)
-      Serial.printf("POST");
+      DEBUG_PRINT("POST");
     else if(request->method() == HTTP_DELETE)
-      Serial.printf("DELETE");
+      DEBUG_PRINT("DELETE");
     else if(request->method() == HTTP_PUT)
-      Serial.printf("PUT");
+      DEBUG_PRINT("PUT");
     else if(request->method() == HTTP_PATCH)
-      Serial.printf("PATCH");
+      DEBUG_PRINT("PATCH");
     else if(request->method() == HTTP_HEAD)
-      Serial.printf("HEAD");
+      DEBUG_PRINT("HEAD");
     else if(request->method() == HTTP_OPTIONS)
-      Serial.printf("OPTIONS");
+      DEBUG_PRINT("OPTIONS");
     else
-      Serial.printf("UNKNOWN");
+      DEBUG_PRINT("UNKNOWN");
 
-    Serial.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+    DEBUG_PRINTF3(" http://%s%s\n", request->host().c_str(), request->url().c_str());
 
     if(request->contentLength()){
-      Serial.printf("_CONTENT_TYPE: %s\n", request->contentType().c_str());
-      Serial.printf("_CONTENT_LENGTH: %u\n", request->contentLength());
+      DEBUG_PRINTF("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+      DEBUG_PRINTF("_CONTENT_LENGTH: %u\n", request->contentLength());
     }
 
     int headers = request->headers();
     int i;
     for(i=0;i<headers;i++){
       AsyncWebHeader* h = request->getHeader(i);
-      Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+      DEBUG_PRINTF3("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
     }
 
     int params = request->params();
     for(i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isFile()){
-        Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());       
+        DEBUG_PRINTF4("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());       
       } else if(p->isPost()){
-        Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        DEBUG_PRINTF3("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
       } else {
-        Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        DEBUG_PRINTF3("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
       }
     }
 
@@ -375,7 +391,7 @@ void setup(){
 //  server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 //    File fsUploadFile;
 //    if(!index){
-//      Serial.printf("UploadStart: %s\n", filename.c_str());
+//      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
 //      fsUploadFile = SPIFFS.open("/" + filename, "w");
 //    }
 //    for(size_t i=0; i<len; i++){
@@ -383,21 +399,21 @@ void setup(){
 //    }
 //    if(final){
 //      fsUploadFile.close();
-//      Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+//      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
 //    }
 //    request->send(200, "text/plain", "Upload " + filename);
 //  });
   
   server.begin();
-  Serial.println("done!");
+  DEBUG_PRINTLN("done!");
 
-//  Serial.print("Starting MDNS ... ");
+//  DEBUG_PRINT("Starting MDNS ... ");
 //  bool mdns_result = MDNS.begin(HOSTNAME);
 //  if (mdns_result) MDNS.addService("http", "tcp", 80);
-//  Serial.println("done!");
+//  DEBUG_PRINTLN("done!");
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
-    Serial.println((readStateFS()) ? " Success!" : " Failure!");
+    DEBUG_PRINTLN((readStateFS()) ? " Success!" : " Failure!");
   #endif
 
   #ifdef ENABLE_AMQTT
@@ -412,16 +428,22 @@ void setup(){
     userScheduler.addTask(taskSendHAState);
     taskSendHAState.enable();
   #endif
+
+  //AutoMode Scheduler
+  userScheduler.addTask(autoModeTask);
+  autoModeTask.disable();
 }
 
 void loop() {
-  unsigned long now = millis();
-
+//  unsigned long now = millis();
+  #ifdef ENABLE_BUTTON
+    button();
+  #endif
   userScheduler.execute();
   mesh.update();
   if(myIP != getlocalIP()){
     myIP = getlocalIP();
-    Serial.println("Station IP is " + myIP.toString());
+    DEBUG_PRINTLN("Station IP is " + myIP.toString());
     #ifdef ENABLE_AMQTT
       if(myIP != IPAddress(0,0,0,0)) {
       //if (WiFi.isConnected()) {
@@ -433,53 +455,54 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     strip.setMode(ws2812fx_mode);
-    Serial.print("mode is "); Serial.println(strip.getModeName(strip.getMode()));
+    DEBUG_PRINT("mode is "); DEBUG_PRINTLN(strip.getModeName(strip.getMode()));
     prevmode = SET_MODE;
     mode = SETCOLOR;
   }
   if (mode == OFF) {
-    Serial.println("mode is OFF");
+    DEBUG_PRINTLN("mode is OFF");
     if(strip.isRunning()) strip.stop(); //should clear memory
     mode = HOLD;
   }
   if (mode == SETCOLOR) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
-    Serial.printf("color R: %d G: %d B: %d\n", main_color.red, main_color.green, main_color.blue);
+    DEBUG_PRINTF4("color R: %d G: %d B: %d\n", main_color.red, main_color.green, main_color.blue);
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
     strip.setSpeed(ws2812fx_speed);
-    Serial.print("speed is "); Serial.println(strip.getSpeed());
+    DEBUG_PRINT("speed is "); DEBUG_PRINTLN(strip.getSpeed());
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
-    Serial.print("brightness is "); Serial.println(strip.getBrightness());
+    DEBUG_PRINT("brightness is "); DEBUG_PRINTLN(strip.getBrightness());
     if (prevmode == SET_MODE) prevmode == HOLD;
     mode = HOLD;
   }
-  if (mode == HOLD or mode == CUSTOM or auto_cycle) {
+  //if (mode == HOLD or mode == CUSTOM or auto_cycle) {
+  if (mode == HOLD or mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
     strip.service();
   }
 
-  if(auto_cycle && (now - auto_last_change > 10000)) { // cycle effect mode every 10 seconds
-    uint8_t next_mode = (strip.getMode() + 1) % strip.getModeCount();
-    if(sizeof(myModes) > 0) { // if custom list of modes exists
-      for(uint8_t i=0; i < sizeof(myModes); i++) {
-        if(myModes[i] == strip.getMode()) {
-          next_mode = ((i + 1) < sizeof(myModes)) ? myModes[i + 1] : myModes[0];
-          break;
-        }
-      }
-    }
-    strip.setMode(next_mode);
-    Serial.print("mode is "); Serial.println(strip.getModeName(strip.getMode()));
-    taskSendMessage.enableIfNot();
-    taskSendMessage.forceNextIteration();
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-    #endif
-    auto_last_change = now;
-  }
+//  if(auto_cycle && (now - auto_last_change > 10000)) { // cycle effect mode every 10 seconds
+//    uint8_t next_mode = (strip.getMode() + 1) % strip.getModeCount();
+//    if(sizeof(myModes) > 0) { // if custom list of modes exists
+//      for(uint8_t i=0; i < sizeof(myModes); i++) {
+//        if(myModes[i] == strip.getMode()) {
+//          next_mode = ((i + 1) < sizeof(myModes)) ? myModes[i + 1] : myModes[0];
+//          break;
+//        }
+//      }
+//    }
+//    strip.setMode(next_mode);
+//    DEBUG_PRINT("mode is "); DEBUG_PRINTLN(strip.getModeName(strip.getMode()));
+//    taskSendMessage.enableIfNot();
+//    taskSendMessage.forceNextIteration();
+//    #ifdef ENABLE_STATE_SAVE_SPIFFS
+//      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+//    #endif
+//    auto_last_change = now;
+//  }
 }

@@ -2,7 +2,7 @@
 #define   MESH_PREFIX     "McLightingMesh"
 #define   MESH_PASSWORD   "mclighting"
 #define   MESH_PORT       5555
-//////////// Must match with server settings ///////////
+//////////// MUST match with server settings ///////////
 
 #define   STATION_WIFI_CHANNEL 2
 ///////////////////////////    ^Enter WiFi Channel set on your ROUTER /////////
@@ -11,26 +11,42 @@
 #define USE_WS2812FX                  // Uses WS2812FX
 //#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
 
-#define LED_PIN 14                    // 0 = GPIO0, 2=GPIO2
+#define LED_PIN 14                    // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24                    // Number of leds in the strip
+#define BUTTON 0                      // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
 ///////// McLighting Settings //////////
 const char HOSTNAME_BASE[] = "MeshyMcLighting";
 const char* HOSTNAME = String(String(HOSTNAME_BASE) + "-" + String(ESP.getChipId())).c_str();
 
-#define ENABLE_STATE_SAVE_SPIFFS
+#define ENABLE_BUTTON                 // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
+#define ENABLE_STATE_SAVE_SPIFFS      // Saves LED state to SPIFFs
 //#define ENABLE_WEBSERVER
+#define SERIALDEBUG                   // Un/comment to enable debug messages in Serial
 
+//////////////////////////////////////////////////////////////////////////////////////
 #define DEFAULT_COLOR 0xFF5900
 #define DEFAULT_BRIGHTNESS 196
 #define DEFAULT_SPEED 1000
 #define DEFAULT_MODE 0
 
-unsigned long auto_last_change = 0;
 String modes = "";
-uint8_t myModes[] = {}; // *** optionally create a custom list of effect/mode numbers
-boolean auto_cycle = false;
 
+///// WS2812FX automode //////
+//unsigned long auto_last_change = 0;
+//uint8_t myModes[] = {}; // *** optionally create a custom list of effect/mode numbers
+//boolean auto_cycle = false;
+
+// parameters for automatically cycling favorite patterns
+uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
+  {0xff0000, 200,  1,  5.0}, // blink red for 5 seconds
+  {0x00ff00, 200,  3, 10.0}, // wipe green for 10 seconds
+  {0x0000ff, 200, 11,  5.0}, // dual scan blue for 5 seconds
+  {0x0000ff, 200, 42, 15.0}  // fireworks for 15 seconds
+};
+int autoCount;
+
+///////////////////////////////////////
 enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, CUSTOM };
 MODE mode = SET_MODE; 
 MODE prevmode = mode;
@@ -54,10 +70,12 @@ typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
 LEDState main_color = { ((DEFAULT_COLOR >> 16) & 0xFF), ((DEFAULT_COLOR >> 8) & 0xFF), (DEFAULT_COLOR & 0xFF) };  // Store the "main color" of the strip used in single color modes
 
-extern const char index_html[];
-extern const char main_js[];
-extern const char uploadspiffs_html[];
-extern const char update_html[];
+#ifdef ENABLE_WEBSERVER
+  extern const char index_html[];
+  extern const char main_js[];
+  extern const char uploadspiffs_html[];
+  extern const char update_html[];
+#endif
 
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
@@ -67,4 +85,41 @@ extern const char update_html[];
 #endif
 #if (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT))
 #error "To use HA, you have enable AsyncMQTT"
+#endif
+
+// Button handling
+#ifdef ENABLE_BUTTON
+  #define BTN_MODE_SHORT  "STA| 1|  0|245|196|255|255|255"   // Static white
+  #define BTN_MODE_MEDIUM "STA| 1| 48|245|196|255|102|  0"   // Fire flicker
+  #define BTN_MODE_LONG   "STA| 1| 46|253|196|255|102|  0"   // Fireworks random
+
+  unsigned long keyPrevMillis = 0;
+  const unsigned long keySampleIntervalMs = 25;
+  byte longKeyPressCountMax = 80;       // 80 * 25 = 2000 ms
+  byte mediumKeyPressCountMin = 20;     // 20 * 25 = 500 ms
+  byte KeyPressCount = 0;
+  byte prevKeyState = HIGH;             // button is active low
+  boolean buttonState = false;
+#endif
+
+#ifdef SERIALDEBUG
+  #define         DEBUG_PRINT(x)                 Serial.print(x)
+  #define         DEBUG_PRINTLN(x)               Serial.println(x)
+  #define         DEBUG_PRINTF(x,y)              Serial.printf(x,y)
+  #define         DEBUG_PRINTF3(x,y,z)           Serial.printf(x,y,z)
+  #define         DEBUG_PRINTF4(x,y,z,a)         Serial.printf(x,y,z,a)
+  #define         DEBUG_PRINTF5(x,y,z,a,b)       Serial.printf(x,y,z,a,b)
+  #define         DEBUG_PRINTF6(x,y,z,a,b,c)     Serial.printf(x,y,z,a,b,c)
+  #define         DEBUG_PRINTF7(x,y,z,a,b,c,d)   Serial.printf(x,y,z,a,b,c,d)
+  #define         DEBUG_PRINTF8(x,y,z,a,b,c,d,e) Serial.printf(x,y,z,a,b,c,d,e)
+#else
+  #define         DEBUG_PRINT(x)
+  #define         DEBUG_PRINTLN(x)
+  #define         DEBUG_PRINTF(x,y)
+  #define         DEBUG_PRINTF3(x,y,z)
+  #define         DEBUG_PRINTF4(x,y,z,a)
+  #define         DEBUG_PRINTF5(x,y,z,a,b)
+  #define         DEBUG_PRINTF6(x,y,z,a,b,c)
+  #define         DEBUG_PRINTF7(x,y,z,a,b,c,d)
+  #define         DEBUG_PRINTF8(x,y,z,a,b,c,d,e)
 #endif

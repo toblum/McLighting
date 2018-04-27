@@ -90,10 +90,10 @@ bool processJson(String &message) {
   JsonObject& root = jsonBuffer.parseObject(message);
   
   if (!root.success()) {
-    Serial.println("parseObject() failed");
+    DEBUG_PRINTLN("parseObject() failed");
     return false;
   }
-  //Serial.println("JSON ParseObject() done!");
+  //DEBUG_PRINTLN("JSON ParseObject() done!");
   
   if (root.containsKey("state")) {
     const char* state_in = root["state"];
@@ -146,7 +146,7 @@ bool processJson(String &message) {
       }
     }
   }
-  Serial.printf("{\"mode\":%d, \"ws2812fx_mode\":%d, \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}\n", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  DEBUG_PRINTF8("{\"mode\":%d, \"ws2812fx_mode\":%d, \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}\n", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   jsonBuffer.clear();
   return true;
 }
@@ -177,7 +177,7 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 
-  Serial.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+  DEBUG_PRINTF4("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
   ws2812fx_mode = FX_MODE_STATIC;
   mode = SET_MODE;
 }
@@ -188,7 +188,7 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  Serial.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
+  DEBUG_PRINTF4("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
   if (led <= strip.numPixels()) {
     char redhex[3];
     char greenhex[3];
@@ -199,9 +199,9 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
-    Serial.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s]\n", redhex, greenhex, bluehex);
-    Serial.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
-    Serial.printf("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
+    DEBUG_PRINTF4("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s]\n", redhex, greenhex, bluehex);
+    DEBUG_PRINTF4("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16));
+    DEBUG_PRINTF6("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
 
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
@@ -234,7 +234,7 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
     strncpy ( colorval, (const char *) &nextCommand[4], 6 );
     int rangebegin = atoi(startled);
     int rangeend = atoi(endled);
-    Serial.printf("Setting RANGE from [%i] to [%i] as color [%s] \n", rangebegin, rangeend, colorval);
+    DEBUG_PRINTF4("Setting RANGE from [%i] to [%i] as color [%s] \n", rangebegin, rangeend, colorval);
 
     while ( rangebegin <= rangeend ) {
       char rangeData[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -273,7 +273,6 @@ char* listStatusJSON(void) {
   return json;
 }
 
-
 String listModesJSON(void) {
   String modes = "[";
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
@@ -287,27 +286,39 @@ String listModesJSON(void) {
   return modes;
 }
 
+// automatic cycling
+
+void handleAutoStart(void) {
+  autoCount = 0;
+  autoModeTask.enableIfNot();
+}
+
+void handleAutoStop(void) {
+  autoModeTask.disable();
+  mode = OFF;
+}
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *payload, size_t len){
   if(type == WS_EVT_CONNECT){
-    Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
+    DEBUG_PRINTF3("ws[%s][%u] connect\n", server->url(), client->id());
     client->printf("Hello Client %u :)", client->id());
     client->ping();
   } else if(type == WS_EVT_DISCONNECT){
-    Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+    DEBUG_PRINTF3("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
   } else if(type == WS_EVT_ERROR){
-    Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)payload);
+    DEBUG_PRINTF4("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)payload);
   } else if(type == WS_EVT_PONG){
-    Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)payload:"");
+    DEBUG_PRINTF5("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)payload:"");
   } else if(type == WS_EVT_DATA){
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
 
     if(info->opcode == WS_TEXT) {
-      Serial.printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), "text", info->len);
+      DEBUG_PRINTF5("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), "text", info->len);
       
       if(payload[0] == '#') { // # ==> Set main color
         stateOn = true;
         handleSetMainColor(payload);
-        Serial.printf("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
+        DEBUG_PRINTF4("Set main color to: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
         client->text("OK");
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
@@ -319,7 +330,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         
         uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         ws2812fx_speed = convertSpeed(constrain(d, 0, 255));
-        Serial.printf("WS: Set speed to: [%u]\n", ws2812fx_speed);
+        DEBUG_PRINTF("WS: Set speed to: [%u]\n", ws2812fx_speed);
         mode = SETSPEED;
         client->text("OK");
 
@@ -332,7 +343,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       
         uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         brightness = ((b >> 0) & 0xFF);
-        Serial.printf("WS: Set brightness to: [%u]\n", brightness);
+        DEBUG_PRINTF("WS: Set brightness to: [%u]\n", brightness);
         mode = BRIGHTNESS;
         client->text("OK");
 
@@ -368,16 +379,16 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         
       } else if (payload[0] == '$') { // $ ==> Get status Info.
       
-        Serial.printf("Get status info.");
+        DEBUG_PRINT("Get status info.");
         String json = listStatusJSON();
-        Serial.println(json);
+        DEBUG_PRINTLN(json);
         client->text(json);
         
       } else if (payload[0] == '~') { // ~ ==> Get WS2812 modes.
       
-        Serial.printf("Get WS2812 modes.");
+        DEBUG_PRINT("Get WS2812 modes.");
         String json = listModesJSON();
-        Serial.println(json);
+        DEBUG_PRINTLN(json);
         client->text(json);
         
       } else if (payload[0] == '/') { // / ==> Set WS2812 mode.
@@ -411,7 +422,7 @@ bool updateFS = false;
 bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
-  Serial.print("Saving cfg: ");
+  DEBUG_PRINT("Saving cfg: ");
   DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8));
 //    StaticJsonBuffer<JSON_OBJECT_SIZE(7)> jsonBuffer;
   JsonObject& json = jsonBuffer.createObject();
@@ -424,14 +435,16 @@ bool writeStateFS(){
   json["green"] = main_color.green;
   json["blue"] = main_color.blue;
 
-//      SPIFFS.remove("/state.json") ? Serial.println("removed file") : Serial.println("failed removing file");
+//      SPIFFS.remove("/state.json") ? DEBUG_PRINTLN("removed file") : DEBUG_PRINTLN("failed removing file");
   File configFile = SPIFFS.open("/stripstate.json", "w");
   if (!configFile) {
-    Serial.println("Failed!");
+    DEBUG_PRINTLN("Failed!");
     updateFS = false;
     return false;
   }
+  #ifdef SERIALDEBUG
   json.printTo(Serial);
+  #endif
   json.printTo(configFile);
   configFile.close();
   updateFS = false;
@@ -445,7 +458,7 @@ bool readStateFS() {
   //if (resetsettings) { SPIFFS.begin(); SPIFFS.remove("/config.json"); SPIFFS.format(); delay(1000);}
   if (SPIFFS.exists("/stripstate.json")) {
     //file exists, reading and loading
-    Serial.print("Read cfg: ");
+    DEBUG_PRINT("Read cfg: ");
     File configFile = SPIFFS.open("/stripstate.json", "r");
     if (configFile) {
       size_t size = configFile.size();
@@ -455,7 +468,9 @@ bool readStateFS() {
       DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8)+200);
 //      StaticJsonBuffer<JSON_OBJECT_SIZE(7)+200> jsonBuffer;
       JsonObject& json = jsonBuffer.parseObject(buf.get());
+      #ifdef SERIALDEBUG
       json.printTo(Serial);
+      #endif
       if (json.success()) {
         stateOn = json["stateOn"];
         mode = static_cast<MODE>((int) json["mode"]);
@@ -474,13 +489,13 @@ bool readStateFS() {
         updateFS = false;
         return true;
       } else {
-        Serial.println("Failed to parse JSON!");
+        DEBUG_PRINTLN("Failed to parse JSON!");
       }
     } else {
-      Serial.println("Failed to open \"/stripstate.json\"");
+      DEBUG_PRINTLN("Failed to open \"/stripstate.json\"");
     }
   } else {
-    Serial.println("Coudnt find \"/stripstate.json\"");
+    DEBUG_PRINTLN("Coudnt find \"/stripstate.json\"");
   }
   //end read
   updateFS = false;
@@ -488,9 +503,197 @@ bool readStateFS() {
 }
 
 void fnSpiffsSaveState(void){
-  Serial.println((writeStateFS()) ? " Success!" : " Failure!");
+  DEBUG_PRINTLN((writeStateFS()) ? " Success!" : " Failure!");
   taskSpiffsSaveState.disable();
 }
+#endif
+
+void modes_setup(void) {
+//  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
+//  uint8_t num_modes = sizeof(myModes) > 0 ? sizeof(myModes) + 1 : strip.getModeCount() + 1;
+//  for(uint8_t i=1; i < num_modes; i++) {
+//    uint8_t m = sizeof(myModes) > 0 ? myModes[i-1] : i;
+//    modes += "<li><a href='#' class='m' id='";
+//    modes += (m);
+//    modes += "'>";
+//    modes += strip.getModeName(m-1);
+//    modes += "</a></li>";
+//  }
+  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
+  for(uint8_t i=1; i < strip.getModeCount() + 1; i++) {
+    modes += "<li><a href='#' class='m' id='";
+    modes += (i);
+    modes += "'>";
+    modes += strip.getModeName(i-1);
+    modes += "</a></li>";
+  }
+}
+
+void autoTick() {
+  main_color.red =   ((autoParams[autoCount][0] >> 16) & 0xFF);
+  main_color.green = ((autoParams[autoCount][0] >>  8) & 0xFF);
+  main_color.blue =  ((autoParams[autoCount][0] >>  0) & 0xFF);
+  ws2812fx_speed = convertSpeed((uint8_t) autoParams[autoCount][1]);
+  ws2812fx_mode = (uint8_t) autoParams[autoCount][2];
+
+  autoModeTask.delay((float) autoParams[autoCount][3]);
+  
+  DEBUG_PRINTF("autoTick %d\n", autoCount);
+  taskSendMessage.enableIfNot();
+  taskSendMessage.forceNextIteration();
+  #ifdef ENABLE_HOMEASSISTANT
+    taskSendHAState.enableIfNot();
+    taskSendHAState.forceNextIteration();
+  #endif
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    taskSpiffsSaveState.enableIfNot();
+    taskSpiffsSaveState.forceNextIteration();
+  #endif
+  //autoCount++;
+  autoCount = (autoCount  + 1) % (sizeof(autoParams) / sizeof(autoParams[0]));
+  
+  mode = SET_MODE;
+}
+
+/////// Button Mode ///////////////
+#ifdef ENABLE_BUTTON
+  String getValue(String &data, char separator, int index) {
+    int found = 0;
+    int strIndex[] = {0, -1};
+    int maxIndex = data.length()-1;
+  
+    for(int i=0; i<=maxIndex && found<=index; i++){
+      if(data.charAt(i)==separator || i==maxIndex){
+          found++;
+          strIndex[0] = strIndex[1]+1;
+          strIndex[1] = (i == maxIndex) ? i+1 : i;
+      }
+    }
+  
+    return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+  }
+
+  void setModeByStateString(String saved_state_string) {
+    String str_mode = getValue(saved_state_string, '|', 1);
+    mode = static_cast<MODE>(str_mode.toInt());
+    String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
+    ws2812fx_mode = str_ws2812fx_mode.toInt();
+    String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
+    ws2812fx_speed = str_ws2812fx_speed.toInt();
+    String str_brightness = getValue(saved_state_string, '|', 4);
+    brightness = str_brightness.toInt();
+    String str_red = getValue(saved_state_string, '|', 5);
+    main_color.red = str_red.toInt();
+    String str_green = getValue(saved_state_string, '|', 6);
+    main_color.green = str_green.toInt();
+    String str_blue = getValue(saved_state_string, '|', 7);
+    main_color.blue = str_blue.toInt();
+  
+    DEBUG_PRINTF("ws2812fx_mode: %d\n", ws2812fx_mode);
+    DEBUG_PRINTF("ws2812fx_speed: %d\n", ws2812fx_speed);
+    DEBUG_PRINTF("brightness: %d\n", brightness);
+    DEBUG_PRINTF("main_color.red: %d\n", main_color.red);
+    DEBUG_PRINTF("main_color.green: %d\n", main_color.green);
+    DEBUG_PRINTF("main_color.blue: %d\n", main_color.blue);
+  
+    mode = SET_MODE;
+  }
+
+  void shortKeyPress() {
+    DEBUG_PRINT("Short button press\n");
+    if (buttonState == false) {
+      setModeByStateString(BTN_MODE_SHORT);
+      buttonState = true;
+      #ifdef ENABLE_AMQTT
+        mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static white").c_str());
+      #endif
+      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_HOMEASSISTANT
+        if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
+    } else {
+      mode = OFF;
+      buttonState = false;
+      stateOn = false;
+      #ifdef ENABLE_AMQTT
+        mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+      #endif
+      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_HOMEASSISTANT
+        if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
+    }
+  }
+
+  // called when button is kept pressed for less than 2 seconds
+  void mediumKeyPress() {
+    DEBUG_PRINT("Medium button press\n");
+    setModeByStateString(BTN_MODE_MEDIUM);
+    stateOn = true;
+    #ifdef ENABLE_AMQTT
+      mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fire flicker").c_str());
+    #endif
+    if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+    #endif
+  }
+
+  // called when button is kept pressed for 2 seconds or more
+  void longKeyPress() {
+    DEBUG_PRINT("Long button press\n");
+    setModeByStateString(BTN_MODE_LONG);
+    stateOn = true;
+    #ifdef ENABLE_AMQTT
+      mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fireworks random").c_str());
+    #endif
+    if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+    #endif
+  }
+
+  void button() {
+    if (millis() - keyPrevMillis >= keySampleIntervalMs) {
+      keyPrevMillis = millis();
+
+      byte currKeyState = digitalRead(BUTTON);
+
+      if ((prevKeyState == HIGH) && (currKeyState == LOW)) {
+        // key goes from not pressed to pressed
+        KeyPressCount = 0;
+      }
+      else if ((prevKeyState == LOW) && (currKeyState == HIGH)) {
+        if (KeyPressCount < longKeyPressCountMax && KeyPressCount >= mediumKeyPressCountMin) {
+          mediumKeyPress();
+        }
+        else {
+          if (KeyPressCount < mediumKeyPressCountMin) {
+            shortKeyPress();
+          }
+        }
+      }
+      else if (currKeyState == LOW) {
+        KeyPressCount++;
+        if (KeyPressCount >= longKeyPressCountMax) {
+          longKeyPress();
+        }
+      }
+      prevKeyState = currKeyState;
+    }
+  }
 #endif
 
 /////// Mesh Stuff //////
@@ -499,30 +702,17 @@ IPAddress getlocalIP() {
   return IPAddress(mesh.getStationIP());
 }
 
-void modes_setup() {
-  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
-  uint8_t num_modes = sizeof(myModes) > 0 ? sizeof(myModes) + 1 : strip.getModeCount() + 1;
-  for(uint8_t i=1; i < num_modes; i++) {
-    uint8_t m = sizeof(myModes) > 0 ? myModes[i-1] : i;
-    modes += "<li><a href='#' class='m' id='";
-    modes += (m);
-    modes += "'>";
-    modes += strip.getModeName(m-1);
-    modes += "</a></li>";
-  }
-}
-
 void sendMessage() {
   String msg = statusLEDs();
   mesh.sendBroadcast(msg);
   taskSendMessage.disable();
-  Serial.println("Broadcasting!");
+  DEBUG_PRINTLN("Broadcasting!");
 }
 
 void receivedCallback(uint32_t from, String & msg) {
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  DEBUG_PRINTF3("startHere: Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
-  else Serial.printf("Processed incoming message from %u successfully!\n", from);
+  else DEBUG_PRINTF("Processed incoming message from %u successfully!\n", from);
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
   #endif
@@ -531,7 +721,7 @@ void receivedCallback(uint32_t from, String & msg) {
 //void newConnectionCallback(uint32_t nodeId) {
 //  String msg = statusLEDs();
 //  mesh.sendSingle(nodeId, msg);
-//  Serial.printf("New Connection, nodeId = %u\n", nodeId);
+//  DEBUG_PRINTF("New Connection, nodeId = %u\n", nodeId);
 //}
 
 void mesh_setup() {
@@ -544,7 +734,7 @@ void mesh_setup() {
   //mesh.onNewConnection(&newConnectionCallback);
   
   myAPIP = IPAddress(mesh.getAPIP());
-  Serial.println("My AP IP is " + myAPIP.toString());
+  DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
 
   userScheduler.addTask(taskSendMessage);
   taskSendMessage.disable();
