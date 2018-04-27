@@ -1,17 +1,16 @@
 #include <FS.h>
-#include <ESP8266mDNS.h>
-#include <WS2812FX.h>
-#include <painlessMesh.h>        //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
-#include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
+//#include <ESP8266mDNS.h>
+#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
+#include <ArduinoJson.h>            //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"
 
 #ifdef ESP8266
 #include <Hash.h>
-#include <ESPAsyncTCP.h>         //https://github.com/me-no-dev/ESPAsyncTCP
+#include <ESPAsyncTCP.h>            //https://github.com/me-no-dev/ESPAsyncTCP
 #else
 #include <AsyncTCP.h>
 #endif
-#include <ESPAsyncWebServer.h>    //https://github.com/me-no-dev/ESPAsyncWebServer
+#include <ESPAsyncWebServer.h>      //https://github.com/me-no-dev/ESPAsyncWebServer
 #ifdef ENABLE_AMQTT
   #include <AsyncMqttClient.h>      //https://github.com/marvinroger/async-mqtt-client
   AsyncMqttClient mqttClient;
@@ -227,6 +226,7 @@ void setup(){
         #ifdef ENABLE_STATE_SAVE_SPIFFS
           if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
         #endif
+        stateOn = true;
         mode = SETCOLOR;
       }
     }
@@ -245,6 +245,7 @@ void setup(){
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
       #endif
+      stateOn = true;
       mode = BRIGHTNESS;
     }
 
@@ -254,6 +255,7 @@ void setup(){
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
       #endif
+      stateOn = true;
       mode = SETSPEED;
     }
 
@@ -273,9 +275,11 @@ void setup(){
       uint8_t tmp = (uint8_t) strtol(modes.c_str(), NULL, 10);
       if(tmp > 0) {
         ws2812fx_mode = (tmp - 1) % strip.getModeCount();
+        stateOn = true;
         mode = SET_MODE;
       } else {
         ws2812fx_mode = FX_MODE_STATIC;
+        stateOn = true;
         mode = OFF;
       }
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
@@ -387,10 +391,10 @@ void setup(){
   server.begin();
   Serial.println("done!");
 
-  Serial.print("Starting MDNS ... ");
-  bool mdns_result = MDNS.begin(HOSTNAME);
-  if (mdns_result) MDNS.addService("http", "tcp", 80);
-  Serial.println("done!");
+//  Serial.print("Starting MDNS ... ");
+//  bool mdns_result = MDNS.begin(HOSTNAME);
+//  if (mdns_result) MDNS.addService("http", "tcp", 80);
+//  Serial.println("done!");
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     Serial.println((readStateFS()) ? " Success!" : " Failure!");

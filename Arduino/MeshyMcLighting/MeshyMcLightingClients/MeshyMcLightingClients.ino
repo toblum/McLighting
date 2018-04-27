@@ -1,6 +1,4 @@
 #include <FS.h>
-#include <ESP8266mDNS.h>
-#include <WS2812FX.h>
 #include <painlessMesh.h>        //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
 #include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"
@@ -12,13 +10,17 @@
 #include <AsyncTCP.h>
 #endif
 #ifdef ENABLE_WEBSERVER
-#include <ESPAsyncWebServer.h>    //https://github.com/me-no-dev/ESPAsyncWebServer
+  //#include <ESP8266mDNS.h>
+  #include <ESPAsyncWebServer.h>    //https://github.com/me-no-dev/ESPAsyncWebServer
+  AsyncWebServer server(80);
+  AsyncWebSocket ws("/ws");
+  File fsUploadFile;
 #endif
 
 // Prototypes
 void sendMessage(void);
 void receivedCallback(uint32_t from, String & msg);
-void newConnectionCallback(uint32_t nodeId);
+//void newConnectionCallback(uint32_t nodeId);
 #ifdef ENABLE_STATE_SAVE_SPIFFS
   void fnSpiffsSaveState(void);
 #endif
@@ -27,13 +29,10 @@ void newConnectionCallback(uint32_t nodeId);
 #define max(a,b) ((a)>(b)?(a):(b))
 
 painlessMesh  mesh;
-AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");
 
 IPAddress getlocalIP();
 IPAddress myIP(0,0,0,0);
 IPAddress myAPIP(0,0,0,0);
-File fsUploadFile;
 
 #ifdef USE_NEOANIMATIONFX
   // ***************************************************************************
@@ -369,10 +368,10 @@ void setup(){
     server.begin();
     Serial.println("done!");
   
-    Serial.print("Starting MDNS ... ");
-    bool mdns_result = MDNS.begin(HOSTNAME);
-    if (mdns_result) MDNS.addService("http", "tcp", 80);
-    Serial.println("done!");
+//    Serial.print("Starting MDNS ... ");
+//    bool mdns_result = MDNS.begin(HOSTNAME);
+//    if (mdns_result) MDNS.addService("http", "tcp", 80);
+//    Serial.println("done!");
   #endif
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS

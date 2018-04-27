@@ -2,11 +2,13 @@
 #define   MESH_PREFIX     "McLightingMesh"
 #define   MESH_PASSWORD   "mclighting"
 #define   MESH_PORT       5555
+//////////// Must match with client ///////////
 
-///////// Settings for WiFi Network for Internet/MQTT etc /////////
-#define   STATION_SSID     "WiFiSSID"
-#define   STATION_PASSWORD "WiFiPassword"
-#define   STATION_WIFI_CHANNEL 6
+///////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
+#define   STATION_SSID     "WiFi_SSID"
+#define   STATION_PASSWORD "WiFi Password"
+#define   STATION_WIFI_CHANNEL 2 
+///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
 #define USE_WS2812FX                  // Uses WS2812FX

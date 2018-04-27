@@ -16,9 +16,15 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 
 ### Limitations/TODO
 
-- No WiFiManager yet, have to think of ways of implementing this
+- No WiFiManager yet for **SERVER**, have to think of ways of implementing this
 - Remove WS2812FX automode and replace with McLighting automode
 - Add McLighting Button mode
+
+### Issues where help is needed
+
+- All issues mentioned in limitations
+- Use Arduino ESP8266 **GIT** version (Can't control what is released currenty : v2.4.1 not memoery optimized)
+- WS2812FX has **delays** meant for ESP32. Track [issue](https://github.com/kitesurfer1404/WS2812FX/issues/89) here.
 
 #### Libraries to install
 

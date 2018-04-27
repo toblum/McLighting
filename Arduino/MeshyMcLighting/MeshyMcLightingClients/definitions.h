@@ -1,8 +1,11 @@
-///////// Settings for Mesh Network ///////////
+/////////////// Settings for Mesh Network //////////////
 #define   MESH_PREFIX     "McLightingMesh"
 #define   MESH_PASSWORD   "mclighting"
 #define   MESH_PORT       5555
-#define   STATION_WIFI_CHANNEL 6
+//////////// Must match with server settings ///////////
+
+#define   STATION_WIFI_CHANNEL 2
+///////////////////////////    ^Enter WiFi Channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
 #define USE_WS2812FX                  // Uses WS2812FX
@@ -16,7 +19,7 @@ const char HOSTNAME_BASE[] = "MeshyMcLighting";
 const char* HOSTNAME = String(String(HOSTNAME_BASE) + "-" + String(ESP.getChipId())).c_str();
 
 #define ENABLE_STATE_SAVE_SPIFFS
-#define ENABLE_WEBSERVER
+//#define ENABLE_WEBSERVER
 
 #define DEFAULT_COLOR 0xFF5900
 #define DEFAULT_BRIGHTNESS 196

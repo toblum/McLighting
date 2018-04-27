@@ -83,8 +83,8 @@ String statusLEDs(void) {
   return String(buffer);
 }
 
-bool processJson(String message) {
-  const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + 150;
+bool processJson(String &message) {
+  const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6) + 150;
   //StaticJsonBuffer<bufferSize> jsonBuffer;
   DynamicJsonBuffer jsonBuffer(bufferSize);
   JsonObject& root = jsonBuffer.parseObject(message);
@@ -97,7 +97,7 @@ bool processJson(String message) {
   
   if (root.containsKey("state")) {
     const char* state_in = root["state"];
-    if (strcmp(state_in, on_cmd) == 0 and !(animation_on)) {
+    if (strcmp(state_in, on_cmd) == 0) {
       stateOn = true;
       mode = SET_MODE;
     }
@@ -105,7 +105,6 @@ bool processJson(String message) {
       stateOn = false;
       animation_on = false;
       mode = OFF;
-      return true;
     }
   }
   
@@ -117,7 +116,7 @@ bool processJson(String message) {
   }
   
   if (root.containsKey("speed")) {
-    uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
+    int json_speed = constrain((int) root["speed"], SPEED_MIN, SPEED_MAX);
     if (json_speed != ws2812fx_speed) {
       ws2812fx_speed = json_speed;
     }
@@ -147,6 +146,7 @@ bool processJson(String message) {
       }
     }
   }
+  Serial.printf("{\"mode\":%d, \"ws2812fx_mode\":%d, \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}\n", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
   jsonBuffer.clear();
   return true;
 }
@@ -412,9 +412,10 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   Serial.print("Saving cfg: ");
-  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7));
+  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8));
 //    StaticJsonBuffer<JSON_OBJECT_SIZE(7)> jsonBuffer;
   JsonObject& json = jsonBuffer.createObject();
+  json["stateOn"] = (stateOn) ? 1 : 0;
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip.getMode();
   json["brightness"] = brightness;
@@ -451,11 +452,12 @@ bool readStateFS() {
       // Allocate a buffer to store contents of the file.
       std::unique_ptr<char[]> buf(new char[size]);
       configFile.readBytes(buf.get(), size);
-      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7)+200);
+      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8)+200);
 //      StaticJsonBuffer<JSON_OBJECT_SIZE(7)+200> jsonBuffer;
       JsonObject& json = jsonBuffer.parseObject(buf.get());
       json.printTo(Serial);
       if (json.success()) {
+        stateOn = json["stateOn"];
         mode = static_cast<MODE>((int) json["mode"]);
         ws2812fx_mode = json["strip_mode"];
         brightness = json["brightness"];
@@ -518,28 +520,28 @@ void sendMessage() {
 }
 
 void receivedCallback(uint32_t from, String & msg) {
-  //Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
-  else Serial.printf("Processed incoming message from %u successfully!", from);
+  else Serial.printf("Processed incoming message from %u successfully!\n", from);
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
   #endif
 }
 
-void newConnectionCallback(uint32_t nodeId) {
-  String msg = statusLEDs();
-  mesh.sendSingle(nodeId, msg);
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-}
+//void newConnectionCallback(uint32_t nodeId) {
+//  String msg = statusLEDs();
+//  mesh.sendSingle(nodeId, msg);
+//  Serial.printf("New Connection, nodeId = %u\n", nodeId);
+//}
 
 void mesh_setup() {
   //WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname("MeshyMcLighting");
   //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
   mesh.setHostname(HOSTNAME);
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
   mesh.onReceive(&receivedCallback);
-  mesh.onNewConnection(&newConnectionCallback);
+  //mesh.onNewConnection(&newConnectionCallback);
   
   myAPIP = IPAddress(mesh.getAPIP());
   Serial.println("My AP IP is " + myAPIP.toString());
