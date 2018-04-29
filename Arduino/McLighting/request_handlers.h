@@ -568,20 +568,20 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '$') {
     String json = listStatusJSON();
     if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
+      DBG_OUTPUT_PORT.print("MQTT: ");
+      #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic, listStatusJSON());
+      #endif
+      #ifdef ENABLE_AMQTT
+        String liststat = (String) listStatusJSON();
+        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, liststat.c_str());
+      #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
+      webSocket.sendTXT(num, json);
     }
     DBG_OUTPUT_PORT.println("Get status info: " + json);
-    webSocket.sendTXT(num, json);
-    #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_outtopic, listStatusJSON());
-    #endif
-    #ifdef ENABLE_AMQTT
-      String liststat = (String) listStatusJSON();
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, liststat.c_str());
-    #endif
   }
 
   // ~ ==> Get WS2812 modes.
@@ -589,30 +589,30 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     String json = listModesJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: "); 
+      #ifdef ENABLE_MQTT
+        // TODO: Fix this, doesn't return anything. Too long?
+        // Hint: https://github.com/knolleary/pubsubclient/issues/110
+        DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
+        mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
+        //String json_modes = listModesJSON();
+        //DBG_OUTPUT_PORT.printf(json_modes.c_str());
+    
+        //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
+        //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
+      #endif
+      #ifdef ENABLE_AMQTT
+        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
+      #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
+      webSocket.sendTXT(num, json);
     }
     DBG_OUTPUT_PORT.println("Get WS2812 modes.");
     DBG_OUTPUT_PORT.println(json);
-    webSocket.sendTXT(num, json);
-    #ifdef ENABLE_MQTT
-      DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-      mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-      //String json_modes = listModesJSON();
-      //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-  
-      //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-      //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
-    #endif
-    #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
-    #endif
   }
 
   // / ==> Set WS2812 mode.
-  // TODO: Fix this, doesn't return anything. Too long?
-  // Hint: https://github.com/knolleary/pubsubclient/issues/110
   if (payload[0] == '/') {
     handleSetWS2812FXMode(payload);
     if (mqtt == true)  {
