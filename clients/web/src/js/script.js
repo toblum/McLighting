@@ -42,23 +42,21 @@ $(function(){
 		$.getJSON("http://" + host + "/status", function(data) {
 		    console.log("status", data);
 			mode  = data.mode;
-			ws2812fx_mode = data.ws2812fx_mode_name;
-		    $("#rng_delay").val(data.speed);
+			ws2812fx_mode = data.ws2812fx_mode;
+            $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
-			$("#rng_white").val(data.color[0]);	
-			$("#rng_red").val(data.color[1]);
-			$("#rng_green").val(data.color[2]);
-			$("#rng_blue").val(data.color[3]);
-			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
+			$("#rng_red").val(data.color[0]);
+			$("#rng_green").val(data.color[1]);
+			$("#rng_blue").val(data.color[2]);
+			var statusColor = "#" + componentToHex(data.color[0]) + componentToHex(data.color[1]) + componentToHex(data.color[2]);
 			$('#status').css("backgroundColor", statusColor);
-			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);
+			$('#status_color').text(statusColor + "- R=" + data.color[0] + ", G=" + data.color[1] + ", B=" + data.color[2]);
 		});
-
 		// Load modes async
 		// List of all color modes
-		// enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, AUTO };
+        // enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
 		$.getJSON("http://" + host + "/get_modes", function(data) {
-		    console.log("modes", data);
+			console.log("modes", data);
 			var modes_html = "";
 			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
 			if (mode == "3") {
@@ -78,10 +76,6 @@ $(function(){
 			modes_html += '<i class="material-icons right">send</i>';
 			modes_html += '</a>';
 			modes_html += '</div>';
-
-			
-			
-			
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
 					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
@@ -99,7 +93,6 @@ $(function(){
 			
 			$('#modes').html(modes_html);
 		});
-						
 		// When the connection is open, send some data to the server
 		connection.onopen = function () {
 			//connection.send('Ping'); // Send the message 'Ping' to the server
@@ -174,12 +167,11 @@ $(function(){
 	}
 	
 	function setMainColor() {
-		var white = $("#rng_white").val();	
 		var red = $("#rng_red").val();
 		var green = $("#rng_green").val();
 		var blue = $("#rng_blue").val();
 		
-		var hexColor = componentToHex(white) + componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		var hexColor = componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		var statusColor = "#" + componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		wsSetMainColor(hexColor);
 		$('#status').css("backgroundColor", statusColor);
@@ -305,14 +297,12 @@ $(function(){
 		//wsSetAll(hexColor);
 		var hexColor = componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
 		wsSetMainColor(hexColor);
-		
 		hexColor = "#" + hexColor;
 		
 		$('#status').css("backgroundColor", hexColor);
-		$('#status_color').text(hexColor + "- R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
+		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
 		
-		$("#rng_white").val(0);
 		$("#rng_red").val(color[0]);
 		$("#rng_green").val(color[1]);
 		$("#rng_blue").val(color[2]);

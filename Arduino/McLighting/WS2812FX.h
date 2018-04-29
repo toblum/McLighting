@@ -42,7 +42,7 @@
 #define DEFAULT_BRIGHTNESS 50
 #define DEFAULT_MODE 0
 #define DEFAULT_SPEED 1000
-#define DEFAULT_COLOR 0xFF0000
+#define DEFAULT_COLOR 0x00FF0000
 
 #define SPEED_MIN 10
 #define SPEED_MAX 65535
@@ -53,7 +53,7 @@
 /* each segment uses 36 bytes of SRAM memory, so if you're application fails because of
   insufficient memory, decreasing MAX_NUM_SEGMENTS may help */
 #define MAX_NUM_SEGMENTS 10
-#define NUM_COLORS 4     /* number of colors per segment */
+#define NUM_COLORS 3     /* number of colors per segment */
 #define SEGMENT          _segments[_segment_index]
 #define SEGMENT_RUNTIME  _segment_runtimes[_segment_index]
 #define SEGMENT_LENGTH   (SEGMENT.stop - SEGMENT.start + 1)

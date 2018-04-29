@@ -6,7 +6,7 @@
 #define NUMLEDS 194        // Number of leds in the strip 
 #define BUILTIN_LED 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON  14         // Input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-//#define BUTTON_GY33 12         // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+#define BUTTON_GY33 12         // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 #define RGBW               // If defined, use RGBW Strips
 
 const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
@@ -15,7 +15,7 @@ const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 //#define ENABLE_OTA           // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
+//#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth

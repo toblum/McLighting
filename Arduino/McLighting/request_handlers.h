@@ -391,17 +391,20 @@ void handleAutoStop() {
   autoTicker.detach();
   strip.stop();
 }
+void Dbg_Prefix(bool mqtt, uint8_t num) {
+  if (mqtt == true)  {
+    DBG_OUTPUT_PORT.print("MQTT: "); 
+  } else {
+    DBG_OUTPUT_PORT.print("WS: ");
+    webSocket.sendTXT(num, "OK");
+  }
+}
 
 void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // # ==> Set main color
   if (payload[0] == '#') {
     handleSetMainColor(payload);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set main color to: W: [%u] R: [%u] G: [%u] B: [%u]\n", main_color.white, main_color.red, main_color.green, main_color.blue);
     #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -423,12 +426,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     ws2812fx_speed = constrain(d, 0, 255);
     strip.setSpeed(convertSpeed(ws2812fx_speed));
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
     #ifdef ENABLE_HOMEASSISTANT
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
@@ -446,12 +444,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     brightness = constrain(b, 0, 255);
     strip.setBrightness(brightness);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -471,12 +464,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // * ==> Set main color and light all LEDs (Shortcut)
   if (payload[0] == '*') {
     handleSetAllMode(payload);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\n", payload);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -496,12 +484,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // ! ==> Set single LED in given color
   if (payload[0] == '!') {
     handleSetSingleLED(payload, 1);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\n", payload);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -514,12 +497,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // + ==> Set multiple LED in the given colors
   if (payload[0] == '+') {
     handleSetDifferentColors(payload);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\n", payload);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -532,12 +510,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // + ==> Set range of LEDs in the given color
   if (payload[0] == 'R') {
     handleRangeDifferentColors(payload);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\n", payload);
     webSocket.sendTXT(num, "OK");
     #ifdef ENABLE_MQTT
@@ -555,12 +528,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       String str_mode = String((char *) &payload[0]);
 
       handleSetNamedMode(str_mode);
-      if (mqtt == true)  {
-        DBG_OUTPUT_PORT.print("MQTT: "); 
-      } else {
-        DBG_OUTPUT_PORT.print("WS: ");
-        webSocket.sendTXT(num, "OK");
-      }
+      Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -580,12 +548,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // $ ==> Get status Info.
   if (payload[0] == '$') {
     String json = listStatusJSON();
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.println("Get status info: " + json);
     webSocket.sendTXT(num, json);
     #ifdef ENABLE_MQTT
@@ -600,12 +563,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // ~ ==> Get WS2812 modes.
   if (payload[0] == '~') {
     String json = listModesJSON();
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.println("Get WS2812 modes.");
     DBG_OUTPUT_PORT.println(json);
     #ifdef ENABLE_MQTT
@@ -618,7 +576,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("ERROR: Not implemented. Message too large for AsyncMQTT.").c_str());
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
     #endif
   }
 
@@ -627,12 +585,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // Hint: https://github.com/knolleary/pubsubclient/issues/110
   if (payload[0] == '/') {
     handleSetWS2812FXMode(payload);
-    if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
-    } else {
-      DBG_OUTPUT_PORT.print("WS: ");
-      webSocket.sendTXT(num, "OK");
-    }
+    Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\n", payload);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -1212,7 +1165,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
   // called when button is kept pressed for less than 2 seconds
   void mediumKeyPress_gy33() {   
-      tcs.setConfig(MCU_LED_07, MCU_WHITE_ON);
+      tcs.setConfig(MCU_LED_06, MCU_WHITE_ON);
   }
 
   // called when button is kept pressed for 2 seconds or more

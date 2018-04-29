@@ -1,152 +1,4 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<!--Import Google Icon Font-->
-		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-		<!--Import materialize.css-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css" media="screen,projection" />
-
-		<!--Let browser know website is optimized for mobile-->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-		<meta name="mobile-web-app-capable" content="yes">
-		<meta charset="utf-8"/>
-		<meta name="mobile-web-app-capable" content="yes">
-		<title>McLighting v2</title>
-	</head>
-
-	<body>
-		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
-			<div class="nav-wrapper container">
-				<a id="logo-container" href="#" class="brand-logo">McLighting v2</a>
-
-				<ul class="right hide-on-med-and-down">
-					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
-					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-				</ul>
-
-				<ul id="nav-mobile" class="side-nav">
-					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
-					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-				</ul>
-				<a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
-			</div>
-		</nav>
-		
-		<div class="container mc_pane" id="pane0">
-			<div class="section">
-				<div class="row" id="mc-wsloader">
-					<div class="col">
-						<div class="preloader-wrapper active">
-							<div class="spinner-layer spinner-blue-only">
-								<div class="circle-clipper left">
-									<div class="circle"></div>
-								</div>
-								<div class="gap-patch">
-									<div class="circle"></div>
-								</div>
-								<div class="circle-clipper right">
-									<div class="circle"></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="row hide" id="mc-wserror">
-					<div class="col">
-						<div>Error on websocket connect.</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<div class="container mc_pane hide" id="pane1">
-			<div class="section">
-				<div class="row">
-					<div class="col s12 m6">
-						<div style="height: 330px; width: 330px;">
-							<canvas id="myCanvas" width="330" height="330" style="-webkit-user-select: none;-webkit-tap-highlight-color: rgba(0,0,0,0);-moz-user-select:none;"></canvas>
-						</div>
-					</div>
-					<div class="col s12 m6">
-						<div class="card-panel" id="status">
-							<div id="status_pos">pick a color</div>
-							<div id="status_color"></div>
-						</div>
-					</div>
-					<div class="col s12 m6">
-						<div class="right switch">Auto:<br>
-							<label>Off 
-								<input id="autoSwitch" type="checkbox"><span class="lever"></span>On 
-							</label>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<div class="container mc_pane hide" id="pane2">
-			<div class="section">
-				<div class="row">
-					<form class="col s12">
-						<div class="row">
-							<div class="input-field col s12 l4">
-								<label for="txt_red">Red</label><br/>
-								<p class="range-field"><input type="range" id="rng_red" min="0" max="255" class="update_colors" /></p>
-							</div>
-							<div class="input-field col s12 l4">
-								<label for="txt_green">Green</label><br/>
-								<p class="range-field"><input type="range" id="rng_green" min="0" max="255" class="update_colors" /></p>
-							</div>
-							<div class="input-field col s12 l4">
-								<label for="txt_blue">Blue</label><br/>
-								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_colors" /></p>
-							</div>
-						</div>
-						
-						<div class="row">
-							<div class="input-field col s12">
-								<label for="txt_delay">Speed</label><br/>
-								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="196" class="update_delay" /></p>
-							</div>
-						</div>
-						
-						<div class="row">
-							<div class="input-field col s12">
-								<label for="txt_delay">Brightness</label><br/>
-								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="196" class="update_brightness" /></p>
-							</div>
-						</div>
-					</form>
-				</div>
-				
-				<div class="row">
-					<div id="modes">
-						<div class="input-field col s12">
-							Loading animations...
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<footer class="page-footer blue">
-			<div class="footer-copyright">
-				<div class="container">© 2017
-				<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project home</a>
-				</div>
-			</div>
-		</footer>
-		
-		<style type="text/css">
-			.btn_grid {
-				margin: 7px 0;
-			}
-		</style>
-	
-		<!--Import jQuery before materialize.js-->
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-		<script type="text/javascript">(function($){
+(function($){
 $(function(){
 	  
 	// Settings
@@ -191,20 +43,22 @@ $(function(){
 		    console.log("status", data);
 			mode  = data.mode;
 			ws2812fx_mode = data.ws2812fx_mode;
-            $("#rng_delay").val(data.speed);
+		    $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
-			$("#rng_red").val(data.color[0]);
-			$("#rng_green").val(data.color[1]);
-			$("#rng_blue").val(data.color[2]);
-			var statusColor = "#" + componentToHex(data.color[0]) + componentToHex(data.color[1]) + componentToHex(data.color[2]);
+			$("#rng_white").val(data.color[0]);	
+			$("#rng_red").val(data.color[1]);
+			$("#rng_green").val(data.color[2]);
+			$("#rng_blue").val(data.color[3]);
+			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
 			$('#status').css("backgroundColor", statusColor);
-			$('#status_color').text(statusColor + "- R=" + data.color[0] + ", G=" + data.color[1] + ", B=" + data.color[2]);
+			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);
 		});
+
 		// Load modes async
 		// List of all color modes
-// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
+		// enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, AUTO };
 		$.getJSON("http://" + host + "/get_modes", function(data) {
-			console.log("modes", data);
+		    console.log("modes", data);
 			var modes_html = "";
 			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
 			if (mode == "3") {
@@ -315,11 +169,12 @@ $(function(){
 	}
 	
 	function setMainColor() {
+		var white = $("#rng_white").val();	
 		var red = $("#rng_red").val();
 		var green = $("#rng_green").val();
 		var blue = $("#rng_blue").val();
 		
-		var hexColor = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		var hexColor = componentToHex(white) + componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		var statusColor = "#" + componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		wsSetMainColor(hexColor);
 		$('#status').css("backgroundColor", statusColor);
@@ -451,6 +306,7 @@ $(function(){
 		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
 		
+		$("#rng_white").val(0);
 		$("#rng_red").val(color[0]);
 		$("#rng_green").val(color[1]);
 		$("#rng_blue").val(color[2]);
@@ -491,6 +347,4 @@ $(function(){
 	init();
 	
 }); // end of document ready
-})(jQuery); // end of jQuery name space</script>
-	</body>
-</html>
+})(jQuery); // end of jQuery name space

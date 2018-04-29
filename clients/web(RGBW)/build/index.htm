@@ -11,13 +11,13 @@
 		<meta name="mobile-web-app-capable" content="yes">
 		<meta charset="utf-8"/>
 		<meta name="mobile-web-app-capable" content="yes">
-		<title>McLighting v2</title>
+		<title>McLighting (RGBW) v2</title>
 	</head>
 
 	<body>
 		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
 			<div class="nav-wrapper container">
-				<a id="logo-container" href="#" class="brand-logo">McLighting v2</a>
+				<a id="logo-container" href="#" class="brand-logo">McLighting (RGBW) v2</a>
 
 				<ul class="right hide-on-med-and-down">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
@@ -100,6 +100,13 @@
 							<div class="input-field col s12 l4">
 								<label for="txt_blue">Blue</label><br/>
 								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_colors" /></p>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="input-field col s12">						
+								<label for="txt_white">White</label><br/>
+								<p class="range-field"><input type="range" id="rng_white" min="0" max="255" class="update_colors" /></p>
 							</div>
 						</div>
 						
@@ -191,20 +198,21 @@ $(function(){
 		    console.log("status", data);
 			mode  = data.mode;
 			ws2812fx_mode = data.ws2812fx_mode;
-            $("#rng_delay").val(data.speed);
+		    $("#rng_delay").val(data.speed);
 			$("#rng_brightness").val(data.brightness);
-			$("#rng_red").val(data.color[0]);
-			$("#rng_green").val(data.color[1]);
-			$("#rng_blue").val(data.color[2]);
-			var statusColor = "#" + componentToHex(data.color[0]) + componentToHex(data.color[1]) + componentToHex(data.color[2]);
+			$("#rng_white").val(data.color[0]);	
+			$("#rng_red").val(data.color[1]);
+			$("#rng_green").val(data.color[2]);
+			$("#rng_blue").val(data.color[3]);
+			var statusColor = "#" + componentToHex(data.color[1]) + componentToHex(data.color[2]) + componentToHex(data.color[3]);
 			$('#status').css("backgroundColor", statusColor);
-			$('#status_color').text(statusColor + "- R=" + data.color[0] + ", G=" + data.color[1] + ", B=" + data.color[2]);
+			$('#status_color').text(statusColor + "- R=" + data.color[1] + ", G=" + data.color[2] + ", B=" + data.color[3]);
 		});
 		// Load modes async
 		// List of all color modes
-// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
+		// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
 		$.getJSON("http://" + host + "/get_modes", function(data) {
-			console.log("modes", data);
+		    console.log("modes", data);
 			var modes_html = "";
 			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
 			if (mode == "3") {
@@ -315,11 +323,12 @@ $(function(){
 	}
 	
 	function setMainColor() {
+		var white = $("#rng_white").val();	
 		var red = $("#rng_red").val();
 		var green = $("#rng_green").val();
 		var blue = $("#rng_blue").val();
 		
-		var hexColor = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		var hexColor = componentToHex(white) + componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		var statusColor = "#" + componentToHex(red) + componentToHex(green) + componentToHex(blue);
 		wsSetMainColor(hexColor);
 		$('#status').css("backgroundColor", statusColor);
@@ -448,9 +457,10 @@ $(function(){
 		hexColor = "#" + hexColor;
 		
 		$('#status').css("backgroundColor", hexColor);
-		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
+		$('#status_color').text(hexColor + "- R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
 		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
 		
+		$("#rng_white").val(0);
 		$("#rng_red").val(color[0]);
 		$("#rng_green").val(color[1]);
 		$("#rng_blue").val(color[2]);
