@@ -114,14 +114,12 @@ void setup(){
     DEBUG_PRINTF3("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
   
-  modes.reserve(5000);
-  modes_setup();
-  
   DEBUG_PRINT("WS2812FX setup ... ");
   strip.init();
   DEBUG_PRINTLN("done!");
   
   DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   //WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname("MeshyMcLighting");
   //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
@@ -138,6 +136,10 @@ void setup(){
   DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   #ifdef ENABLE_WEBSERVER
+  
+  modes.reserve(5000);
+  modes_setup();
+  
   //Async webserver
   DEBUG_PRINT("Async HTTP server starting ... ");
   ws.onEvent(onWsEvent);
@@ -244,9 +246,9 @@ void setup(){
     if (request->hasArg("c")) {
       String brightnesss = request->arg("c");
       if(brightnesss == "-") {
-        brightness = strip.getBrightness() * 0.8;
+        brightness = constrain(strip.getBrightness() * 0.8, 0, 255);
       } else if(brightnesss == " ") {
-        brightness = min(max(strip.getBrightness(), 5) * 1.2, 255);
+        brightness = constrain(strip.getBrightness() * 1.2, 6, 255);
       } else { // set brightness directly
         uint8_t tmp = (uint8_t) strtol(brightnesss.c_str(), NULL, 10);
         brightness = tmp;
@@ -260,7 +262,15 @@ void setup(){
     }
 
     if (request->hasArg("s")) {
-      ws2812fx_speed = (request->arg("s") == "-") ? strip.getSpeed() * 0.8 : max(strip.getSpeed(), 5) * 1.2 ;
+      String http_speed = request->arg("s");
+      if(http_speed == "-") {
+        ws2812fx_speed = constrain(strip.getSpeed() * 0.8, SPEED_MIN, SPEED_MAX);
+      } else if (http_speed == " ") {
+        ws2812fx_speed = constrain(strip.getSpeed() * 1.2, SPEED_MIN, SPEED_MAX);
+      } else {
+        uint8_t tmp = (uint8_t) strtol(http_speed.c_str(), NULL, 10);
+        ws2812fx_speed = convertSpeed(tmp);
+      }
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
@@ -291,7 +301,7 @@ void setup(){
         mode = SET_MODE;
       } else {
         ws2812fx_mode = FX_MODE_STATIC;
-        stateOn = true;
+        stateOn = false;
         mode = OFF;
       }
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);

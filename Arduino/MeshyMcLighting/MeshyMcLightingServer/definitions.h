@@ -6,13 +6,13 @@
 
 ///////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
 #define   STATION_SSID     "WiFi_SSID"
-#define   STATION_PASSWORD "WiFi Password"
+#define   STATION_PASSWORD "WiFi_Password"
 #define   STATION_WIFI_CHANNEL 2
 ///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
-#define USE_WS2812FX                  // Uses WS2812FX
-//#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
+//#define USE_WS2812FX                  // Uses WS2812FX
+#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
 
 #define LED_PIN 14                    // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24                    // Number of leds in the strip
@@ -69,13 +69,14 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   {0x0000ff, 200, 42, 15.0}  // fireworks for 15 seconds
 };
 int autoCount;
-
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
 ///////////////////////////////////////
 enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, CUSTOM };
 MODE mode = SET_MODE; 
 MODE prevmode = mode;
 
-int ws2812fx_speed = DEFAULT_SPEED;   // Global variable for storing the delay between color changes --> smaller == faster
+uint16_t ws2812fx_speed = DEFAULT_SPEED;   // Global variable for storing the delay between color changes --> smaller == faster
 uint8_t brightness = DEFAULT_BRIGHTNESS;       // Global variable for storing the brightness (255 == 100%)
 uint8_t ws2812fx_mode = 0;      // Helper variable to set WS2812FX modes
 const char* on_cmd = "ON";

@@ -446,6 +446,7 @@ void fnSpiffsSaveState(void){
 }
 #endif
 
+#ifdef ENABLE_WEBSERVER
 void modes_setup(void) {
 //  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
 //  uint8_t num_modes = sizeof(myModes) > 0 ? sizeof(myModes) + 1 : strip.getModeCount() + 1;
@@ -466,6 +467,7 @@ void modes_setup(void) {
     modes += "</a></li>";
   }
 }
+#endif
 
 void autoTick(void) {
   main_color.red =   ((autoParams[autoCount][0] >> 16) & 0xFF);
