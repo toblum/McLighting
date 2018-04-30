@@ -139,7 +139,25 @@ void setup(){
   DEBUG_PRINTLN("done!");
   
   DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
-  mesh_setup();
+  //WiFi.mode(WIFI_AP_STA);
+  //WiFi.hostname(HOSTNAME);
+    
+  mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+  //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  //develop
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, STATION_WIFI_CHANNEL);
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+
+  mesh.stationManual(STATION_SSID, STATION_PASSWORD);
+  mesh.setHostname(HOSTNAME);
+  
+  //myAPIP = IPAddress(mesh.getAPIP());  // develop
+  myAPIP = IPAddress(mesh.getAPIP().addr);  //master
+  DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
+
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
   DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   //Async webserver
@@ -435,7 +453,6 @@ void setup(){
 }
 
 void loop() {
-//  unsigned long now = millis();
   #ifdef ENABLE_BUTTON
     button();
   #endif
@@ -448,7 +465,7 @@ void loop() {
       if(myIP != IPAddress(0,0,0,0)) {
       //if (WiFi.isConnected()) {
         //connectToMqtt();
-        taskConnecttMqtt.enable();
+        taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
       }
     #endif
   }
@@ -485,24 +502,4 @@ void loop() {
     if(!strip.isRunning()) strip.start();
     strip.service();
   }
-
-//  if(auto_cycle && (now - auto_last_change > 10000)) { // cycle effect mode every 10 seconds
-//    uint8_t next_mode = (strip.getMode() + 1) % strip.getModeCount();
-//    if(sizeof(myModes) > 0) { // if custom list of modes exists
-//      for(uint8_t i=0; i < sizeof(myModes); i++) {
-//        if(myModes[i] == strip.getMode()) {
-//          next_mode = ((i + 1) < sizeof(myModes)) ? myModes[i + 1] : myModes[0];
-//          break;
-//        }
-//      }
-//    }
-//    strip.setMode(next_mode);
-//    DEBUG_PRINT("mode is "); DEBUG_PRINTLN(strip.getModeName(strip.getMode()));
-//    taskSendMessage.enableIfNot();
-//    taskSendMessage.forceNextIteration();
-//    #ifdef ENABLE_STATE_SAVE_SPIFFS
-//      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-//    #endif
-//    auto_last_change = now;
-//  }
 }

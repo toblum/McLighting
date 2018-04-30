@@ -1,60 +1,3 @@
-LEDState temp2rgb(unsigned int kelvin) {
-  int tmp_internal = kelvin / 100.0;
-  LEDState tmp_color;
-  
-  // red
-  if (tmp_internal <= 66) {
-    tmp_color.red = 255;
-  } else {
-    float tmp_red = 329.698727446 * pow(tmp_internal - 60, -0.1332047592);
-    if (tmp_red < 0) {
-      tmp_color.red = 0;
-    } else if (tmp_red > 255) {
-      tmp_color.red = 255;
-    } else {
-      tmp_color.red = tmp_red;
-    }
-  }
-  
-  // green
-  if (tmp_internal <= 66) {
-    float tmp_green = 99.4708025861 * log(tmp_internal) - 161.1195681661;
-    if (tmp_green < 0) {
-      tmp_color.green = 0;
-    } else if (tmp_green > 255) {
-      tmp_color.green = 255;
-    } else {
-      tmp_color.green = tmp_green;
-    }
-  } else {
-    float tmp_green = 288.1221695283 * pow(tmp_internal - 60, -0.0755148492);
-    if (tmp_green < 0) {
-      tmp_color.green = 0;
-    } else if (tmp_green > 255) {
-      tmp_color.green = 255;
-    } else {
-      tmp_color.green = tmp_green;
-    }
-  }
-  
-  // blue
-  if (tmp_internal >= 66) {
-    tmp_color.blue = 255;
-  } else if (tmp_internal <= 19) {
-    tmp_color.blue = 0;
-  } else {
-    float tmp_blue = 138.5177312231 * log(tmp_internal - 10) - 305.0447927307;
-    if (tmp_blue < 0) {
-      tmp_color.blue = 0;
-    } else if (tmp_blue > 255) {
-      tmp_color.blue = 255;
-    } else {
-      tmp_color.blue = tmp_blue;
-    }
-  }
-  return tmp_color;
-}
-
 String statusLEDs(void) {
   const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
   //StaticJsonBuffer<bufferSize> jsonBuffer;
@@ -68,9 +11,7 @@ String statusLEDs(void) {
   color["b"] = main_color.blue;
   
   root["brightness"] = brightness;
-  
-  root["color_temp"] = color_temp;
-  
+    
   root["speed"] = ws2812fx_speed;
   
   char modeName[30];
@@ -84,7 +25,7 @@ String statusLEDs(void) {
 }
 
 bool processJson(String &message) {
-  const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6) + 150;
+  const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + 150;
   //StaticJsonBuffer<bufferSize> jsonBuffer;
   DynamicJsonBuffer jsonBuffer(bufferSize);
   JsonObject& root = jsonBuffer.parseObject(message);
@@ -122,13 +63,6 @@ bool processJson(String &message) {
     }
   }
   
-  if (root.containsKey("color_temp")) {
-    //temp comes in as mireds, need to convert to kelvin then to RGB
-    color_temp = (uint16_t) root["color_temp"];
-    unsigned int kelvin  = 1000000 / color_temp;
-    main_color = temp2rgb(kelvin);
-  }
-  
   if (root.containsKey("brightness")) {
     const char * brightness_json = root["brightness"];
     uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
@@ -150,15 +84,13 @@ bool processJson(String &message) {
   jsonBuffer.clear();
   return true;
 }
-
+  
 uint16_t convertSpeed(uint8_t mcl_speed) {
   //long ws2812_speed = mcl_speed * 256;
   uint16_t ws2812_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
   ws2812_speed = constrain(SPEED_MAX - ws2812_speed, SPEED_MIN, SPEED_MAX);
   return ws2812_speed;
 }
-
-#ifdef ENABLE_WEBSERVER
 
 void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
@@ -295,9 +227,12 @@ void handleAutoStart(void) {
 
 void handleAutoStop(void) {
   autoModeTask.disable();
+  taskSendMessage.enableIfNot();
+  taskSendMessage.forceNextIteration();
   mode = OFF;
 }
 
+#ifdef ENABLE_WEBSERVER
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *payload, size_t len){
   if(type == WS_EVT_CONNECT){
     DEBUG_PRINTF3("ws[%s][%u] connect\n", server->url(), client->id());
@@ -306,7 +241,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   } else if(type == WS_EVT_DISCONNECT){
     DEBUG_PRINTF3("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
   } else if(type == WS_EVT_ERROR){
-    DEBUG_PRINTF4("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)payload);
+    DEBUG_PRINTF5("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)payload);
   } else if(type == WS_EVT_PONG){
     DEBUG_PRINTF5("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)payload:"");
   } else if(type == WS_EVT_DATA){
@@ -402,12 +337,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         #endif
         
       } else if (strcmp((char *)payload, "start") == 0 ) { // start auto cycling
-        //handleAutoStart();
+        handleAutoStart();
         client->text("OK");
         
       } else if (strcmp((char *)payload, "stop") == 0 ) { // stop auto cycling
         
-        //handleAutoStop();
+        handleAutoStop();
         client->text("OK");
         
       }
@@ -443,7 +378,7 @@ bool writeStateFS(){
     return false;
   }
   #ifdef SERIALDEBUG
-  json.printTo(Serial);
+    json.printTo(Serial);
   #endif
   json.printTo(configFile);
   configFile.close();
@@ -469,7 +404,7 @@ bool readStateFS() {
 //      StaticJsonBuffer<JSON_OBJECT_SIZE(7)+200> jsonBuffer;
       JsonObject& json = jsonBuffer.parseObject(buf.get());
       #ifdef SERIALDEBUG
-      json.printTo(Serial);
+        json.printTo(Serial);
       #endif
       if (json.success()) {
         stateOn = json["stateOn"];
@@ -501,7 +436,9 @@ bool readStateFS() {
   updateFS = false;
   return false;
 }
+#endif
 
+#ifdef ENABLE_STATE_SAVE_SPIFFS
 void fnSpiffsSaveState(void){
   DEBUG_PRINTLN((writeStateFS()) ? " Success!" : " Failure!");
   taskSpiffsSaveState.disable();
@@ -529,7 +466,7 @@ void modes_setup(void) {
   }
 }
 
-void autoTick() {
+void autoTick(void) {
   main_color.red =   ((autoParams[autoCount][0] >> 16) & 0xFF);
   main_color.green = ((autoParams[autoCount][0] >>  8) & 0xFF);
   main_color.blue =  ((autoParams[autoCount][0] >>  0) & 0xFF);
@@ -541,10 +478,6 @@ void autoTick() {
   DEBUG_PRINTF("autoTick %d\n", autoCount);
   taskSendMessage.enableIfNot();
   taskSendMessage.forceNextIteration();
-  #ifdef ENABLE_HOMEASSISTANT
-    taskSendHAState.enableIfNot();
-    taskSendHAState.forceNextIteration();
-  #endif
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     taskSpiffsSaveState.enableIfNot();
     taskSpiffsSaveState.forceNextIteration();
@@ -604,13 +537,7 @@ void autoTick() {
     if (buttonState == false) {
       setModeByStateString(BTN_MODE_SHORT);
       buttonState = true;
-      #ifdef ENABLE_AMQTT
-        mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static white").c_str());
-      #endif
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-      #ifdef ENABLE_HOMEASSISTANT
-        if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
-      #endif
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
       #endif
@@ -618,13 +545,7 @@ void autoTick() {
       mode = OFF;
       buttonState = false;
       stateOn = false;
-      #ifdef ENABLE_AMQTT
-        mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
-      #endif
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-      #ifdef ENABLE_HOMEASSISTANT
-        if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
-      #endif
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
       #endif
@@ -636,13 +557,7 @@ void autoTick() {
     DEBUG_PRINT("Medium button press\n");
     setModeByStateString(BTN_MODE_MEDIUM);
     stateOn = true;
-    #ifdef ENABLE_AMQTT
-      mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fire flicker").c_str());
-    #endif
     if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-    #ifdef ENABLE_HOMEASSISTANT
-      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
-    #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
     #endif
@@ -653,13 +568,7 @@ void autoTick() {
     DEBUG_PRINT("Long button press\n");
     setModeByStateString(BTN_MODE_LONG);
     stateOn = true;
-    #ifdef ENABLE_AMQTT
-      mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fireworks random").c_str());
-    #endif
     if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-    #ifdef ENABLE_HOMEASSISTANT
-      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
-    #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
     #endif
@@ -696,17 +605,19 @@ void autoTick() {
   }
 #endif
 
-/////// Mesh Stuff //////
+///////// Mesh Stuff ///////////
 
 IPAddress getlocalIP() {
-  return IPAddress(mesh.getStationIP());
+  //return IPAddress(mesh.getStationIP()); //develop
+  return IPAddress(mesh.getStationIP().addr);  //master
 }
 
 void sendMessage() {
   String msg = statusLEDs();
   mesh.sendBroadcast(msg);
   taskSendMessage.disable();
-  DEBUG_PRINTLN("Broadcasting!");
+  DEBUG_PRINT("Broadcasting: ");
+  DEBUG_PRINTLN(msg);
 }
 
 void receivedCallback(uint32_t from, String & msg) {
@@ -716,26 +627,4 @@ void receivedCallback(uint32_t from, String & msg) {
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
   #endif
-}
-
-//void newConnectionCallback(uint32_t nodeId) {
-//  String msg = statusLEDs();
-//  mesh.sendSingle(nodeId, msg);
-//  DEBUG_PRINTF("New Connection, nodeId = %u\n", nodeId);
-//}
-
-void mesh_setup() {
-  //WiFi.mode(WIFI_AP_STA);
-  //WiFi.hostname("MeshyMcLighting");
-  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
-  mesh.setHostname(HOSTNAME);
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
-  mesh.onReceive(&receivedCallback);
-  //mesh.onNewConnection(&newConnectionCallback);
-  
-  myAPIP = IPAddress(mesh.getAPIP());
-  DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
-
-  userScheduler.addTask(taskSendMessage);
-  taskSendMessage.disable();
 }

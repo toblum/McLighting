@@ -1,27 +1,23 @@
 #include <FS.h>
-#include <painlessMesh.h>        //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
-#include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
+#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
+#include <ArduinoJson.h>            //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"
 
-#ifdef ESP8266
-#include <Hash.h>
-#include <ESPAsyncTCP.h>         //https://github.com/me-no-dev/ESPAsyncTCP
-#else
-#include <AsyncTCP.h>
-#endif
 #ifdef ENABLE_WEBSERVER
+  #ifdef ESP8266
+  #include <Hash.h>
+  #include <ESPAsyncTCP.h>           //https://github.com/me-no-dev/ESPAsyncTCP
+  #else
+  #include <AsyncTCP.h>
+  #endif
   //#include <ESP8266mDNS.h>
-  #include <ESPAsyncWebServer.h>    //https://github.com/me-no-dev/ESPAsyncWebServer
-  AsyncWebServer server(80);
-  AsyncWebSocket ws("/ws");
-  File fsUploadFile;
+  #include <ESPAsyncWebServer.h>     //https://github.com/me-no-dev/ESPAsyncWebServer
 #endif
 
 // Prototypes
 void autoTick(void);
 void sendMessage(void);
 void receivedCallback(uint32_t from, String & msg);
-//void newConnectionCallback(uint32_t nodeId);
 #ifdef ENABLE_STATE_SAVE_SPIFFS
   void fnSpiffsSaveState(void);
 #endif
@@ -30,10 +26,16 @@ void receivedCallback(uint32_t from, String & msg);
 #define max(a,b) ((a)>(b)?(a):(b))
 
 painlessMesh  mesh;
+#ifdef ENABLE_WEBSERVER
+  AsyncWebServer server(80);
+  AsyncWebSocket ws("/ws");
+  File fsUploadFile;
+#endif
 
 IPAddress getlocalIP();
 IPAddress myIP(0,0,0,0);
 IPAddress myAPIP(0,0,0,0);
+
 
 #ifdef USE_NEOANIMATIONFX
   // ***************************************************************************
@@ -120,57 +122,69 @@ void setup(){
   DEBUG_PRINTLN("done!");
   
   DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
-  mesh_setup();
+  //WiFi.mode(WIFI_AP_STA);
+  //WiFi.hostname("MeshyMcLighting");
+  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+  //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  // painlessMesh-develop
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, STATION_WIFI_CHANNEL );  // painlessMesh-master
+  mesh.onReceive(&receivedCallback);
+  
+  //myAPIP = IPAddress(mesh.getAPIP());  // painlessMesh-develop
+  myAPIP = IPAddress(mesh.getAPIP().addr); // painlessMesh-master
+  DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
+
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.disable();
   DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   #ifdef ENABLE_WEBSERVER
-    //Async webserver
-    DEBUG_PRINT("Async HTTP server starting ... ");
-    ws.onEvent(onWsEvent);
-    server.addHandler(&ws);
+  //Async webserver
+  DEBUG_PRINT("Async HTTP server starting ... ");
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
+
+  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", String(ESP.getFreeHeap()));
+  });
   
-    server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(200, "text/plain", String(ESP.getFreeHeap()));
-    });
-    
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", index_html);
-    });
-  
-    server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", uploadspiffs_html);
-    });
-  
-    server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-      AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "upload success");
-      response->addHeader("Connection", "close");
-      request->send(response);
-    },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-      if(!index){
-        DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
-        if (!filename.startsWith("/")) filename = "/" + filename;
-        if (SPIFFS.exists(filename)) SPIFFS.remove(filename);
-        fsUploadFile = SPIFFS.open(filename, "w");
-      }
-      for(size_t i=0; i<len; i++)
-        fsUploadFile.write(data[i]);
-      if(final){
-        fsUploadFile.close();
-        DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-      }
-    });
-  
-    // Simple Firmware Update Form
-    server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(200, "text/html", update_html);
-    });
-    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
-      bool shouldReboot = !Update.hasError();
-      AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot?"OK":"FAIL");
-      response->addHeader("Connection", "close");
-      request->send(response);
-      if(shouldReboot) ESP.restart();
-    },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", index_html);
+  });
+
+  server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", uploadspiffs_html);
+  });
+
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "upload success");
+    response->addHeader("Connection", "close");
+    request->send(response);
+  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+    if(!index){
+      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
+      if (!filename.startsWith("/")) filename = "/" + filename;
+      if (SPIFFS.exists(filename)) SPIFFS.remove(filename);
+      fsUploadFile = SPIFFS.open(filename, "w");
+    }
+    for(size_t i=0; i<len; i++)
+      fsUploadFile.write(data[i]);
+    if(final){
+      fsUploadFile.close();
+      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+    }
+  });
+
+  // Simple Firmware Update Form
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", update_html);
+  });
+  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+    bool shouldReboot = !Update.hasError();
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot?"OK":"FAIL");
+    response->addHeader("Connection", "close");
+    request->send(response);
+    if(shouldReboot) ESP.restart();
+  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
     if (!filename.endsWith(".bin")) {
       return;
     }
@@ -199,59 +213,62 @@ void setup(){
       #endif
       }
     }
-    });
-    
-    server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "application/javascript", main_js);
-    });
+  });
   
-    server.on("/modes", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(200, "text/plain", modes);
-    });
-  
-    server.on("/setmode", HTTP_GET, [](AsyncWebServerRequest *request){
-      if (request->hasArg("rgb")){
-        String color = request->arg("rgb");
-        uint32_t tmp = (uint32_t) strtol(color.c_str(), NULL, 16);
-        if(tmp >= 0x000000 && tmp <= 0xFFFFFF) {
-          uint8_t r = ((tmp >> 16) & 0xFF);
-          uint8_t g = ((tmp >>  8) & 0xFF);
-          uint8_t b = (tmp         & 0xFF);
-          main_color = {r, g, b};
-          if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-          #ifdef ENABLE_STATE_SAVE_SPIFFS
-            if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-          #endif
-          mode = SETCOLOR;
-        }
-      }
-  
-      if (request->hasArg("c")) {
-        String brightnesss = request->arg("c");
-        if(brightnesss == "-") {
-          brightness = strip.getBrightness() * 0.8;
-        } else if(brightnesss == " ") {
-          brightness = min(max(strip.getBrightness(), 5) * 1.2, 255);
-        } else { // set brightness directly
-          uint8_t tmp = (uint8_t) strtol(brightnesss.c_str(), NULL, 10);
-          brightness = tmp;
-        }
+  server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "application/javascript", main_js);
+  });
+
+  server.on("/modes", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", modes);
+  });
+
+  server.on("/setmode", HTTP_GET, [](AsyncWebServerRequest *request){
+    if (request->hasArg("rgb")){
+      String color = request->arg("rgb");
+      uint32_t tmp = (uint32_t) strtol(color.c_str(), NULL, 16);
+      if(tmp >= 0x000000 && tmp <= 0xFFFFFF) {
+        uint8_t r = ((tmp >> 16) & 0xFF);
+        uint8_t g = ((tmp >>  8) & 0xFF);
+        uint8_t b = (tmp         & 0xFF);
+        main_color = {r, g, b};
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_STATE_SAVE_SPIFFS
           if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
         #endif
-        mode = BRIGHTNESS;
+        stateOn = true;
+        mode = SETCOLOR;
       }
-  
-      if (request->hasArg("s")) {
-        ws2812fx_speed = (request->arg("s") == "-") ? strip.getSpeed() * 0.8 : max(strip.getSpeed(), 5) * 1.2 ;
-        if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-        #endif
-        mode = SETSPEED;
+    }
+
+    if (request->hasArg("c")) {
+      String brightnesss = request->arg("c");
+      if(brightnesss == "-") {
+        brightness = strip.getBrightness() * 0.8;
+      } else if(brightnesss == " ") {
+        brightness = min(max(strip.getBrightness(), 5) * 1.2, 255);
+      } else { // set brightness directly
+        uint8_t tmp = (uint8_t) strtol(brightnesss.c_str(), NULL, 10);
+        brightness = tmp;
       }
-  
+      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
+      stateOn = true;
+      mode = BRIGHTNESS;
+    }
+
+    if (request->hasArg("s")) {
+      ws2812fx_speed = (request->arg("s") == "-") ? strip.getSpeed() * 0.8 : max(strip.getSpeed(), 5) * 1.2 ;
+      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
+      stateOn = true;
+      mode = SETSPEED;
+    }
+
     if (request->hasArg("a")) {
       if(request->arg("a") == "-") {
         //auto_cycle = false;
@@ -264,130 +281,132 @@ void setup(){
         handleAutoStart();
       }
     }
-  
-      if (request->hasArg("m")) {
-        String modes = request->arg("m");
-        uint8_t tmp = (uint8_t) strtol(modes.c_str(), NULL, 10);
-        if(tmp > 0) {
-          ws2812fx_mode = (tmp - 1) % strip.getModeCount();
-          mode = SET_MODE;
-        } else {
-          ws2812fx_mode = FX_MODE_STATIC;
-          mode = OFF;
-        }
-        if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-        #endif
+
+    if (request->hasArg("m")) {
+      String modes = request->arg("m");
+      uint8_t tmp = (uint8_t) strtol(modes.c_str(), NULL, 10);
+      if(tmp > 0) {
+        ws2812fx_mode = (tmp - 1) % strip.getModeCount();
+        stateOn = true;
+        mode = SET_MODE;
+      } else {
+        ws2812fx_mode = FX_MODE_STATIC;
+        stateOn = true;
+        mode = OFF;
       }
-      
-      request->send(200, "text/plain", "OK");
-    });
-  
-    server.onNotFound([](AsyncWebServerRequest *request){
-      String filename = request->url();
-      String ContentType = "text/plain";
-      if (filename.endsWith(".htm"))
-        ContentType = "text/html";
-      else if (filename.endsWith(".html"))
-        ContentType = "text/html";
-      else if (filename.endsWith(".css"))
-        ContentType = "text/css";
-      else if (filename.endsWith(".js"))
-        ContentType = "application/javascript";
-      else if (filename.endsWith(".png"))
-        ContentType = "image/png";
-      else if (filename.endsWith(".gif"))
-        ContentType = "image/gif";
-      else if (filename.endsWith(".jpg"))
-        ContentType = "image/jpeg";
-      else if (filename.endsWith(".ico"))
-        ContentType = "image/x-icon";
-      else if (filename.endsWith(".xml"))
-        ContentType = "text/xml";
-      else if (filename.endsWith(".pdf"))
-        ContentType = "application/x-pdf";
-      else if (filename.endsWith(".zip"))
-        ContentType = "application/x-zip";
-      else if (filename.endsWith(".gz"))
-        ContentType = "application/x-gzip";
-  
-      if (SPIFFS.exists(filename + ".gz") || SPIFFS.exists(filename)) {
-        if (SPIFFS.exists(filename + ".gz")) filename += ".gz";
-        request->send(SPIFFS, filename, ContentType);
-        return true;
-      }
-  
-      DEBUG_PRINT("NOT_FOUND: ");
-      if(request->method() == HTTP_GET)
-        DEBUG_PRINT("GET");
-      else if(request->method() == HTTP_POST)
-        DEBUG_PRINT("POST");
-      else if(request->method() == HTTP_DELETE)
-        DEBUG_PRINT("DELETE");
-      else if(request->method() == HTTP_PUT)
-        DEBUG_PRINT("PUT");
-      else if(request->method() == HTTP_PATCH)
-        DEBUG_PRINT("PATCH");
-      else if(request->method() == HTTP_HEAD)
-        DEBUG_PRINT("HEAD");
-      else if(request->method() == HTTP_OPTIONS)
-        DEBUG_PRINT("OPTIONS");
-      else
-        DEBUG_PRINT("UNKNOWN");
-  
-      DEBUG_PRINTF3(" http://%s%s\n", request->host().c_str(), request->url().c_str());
-  
-      if(request->contentLength()){
-        DEBUG_PRINTF("_CONTENT_TYPE: %s\n", request->contentType().c_str());
-        DEBUG_PRINTF("_CONTENT_LENGTH: %u\n", request->contentLength());
-      }
-  
-      int headers = request->headers();
-      int i;
-      for(i=0;i<headers;i++){
-        AsyncWebHeader* h = request->getHeader(i);
-        DEBUG_PRINTF3("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
-      }
-  
-      int params = request->params();
-      for(i=0;i<params;i++){
-        AsyncWebParameter* p = request->getParam(i);
-        if(p->isFile()){
-          DEBUG_PRINTF4("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());       
-        } else if(p->isPost()){
-          DEBUG_PRINTF3("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-        } else {
-          DEBUG_PRINTF3("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-        }
-      }
-  
-      request->send(404);
-    });
+      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+      #endif
+    }
     
-  //  server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
-  //    File fsUploadFile;
-  //    if(!index){
-  //      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
-  //      fsUploadFile = SPIFFS.open("/" + filename, "w");
-  //    }
-  //    for(size_t i=0; i<len; i++){
-  //      fsUploadFile.write(data[i]);
-  //    }
-  //    if(final){
-  //      fsUploadFile.close();
-  //      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-  //    }
-  //    request->send(200, "text/plain", "Upload " + filename);
-  //  });
-    
-    server.begin();
-    DEBUG_PRINTLN("done!");
+    request->send(200, "text/plain", "OK");
+  });
+
+  server.onNotFound([](AsyncWebServerRequest *request){
+    String filename = request->url();
+    String ContentType = "text/plain";
+    if (filename.endsWith(".htm"))
+      ContentType = "text/html";
+    else if (filename.endsWith(".html"))
+      ContentType = "text/html";
+    else if (filename.endsWith(".css"))
+      ContentType = "text/css";
+    else if (filename.endsWith(".js"))
+      ContentType = "application/javascript";
+    else if (filename.endsWith(".png"))
+      ContentType = "image/png";
+    else if (filename.endsWith(".gif"))
+      ContentType = "image/gif";
+    else if (filename.endsWith(".jpg"))
+      ContentType = "image/jpeg";
+    else if (filename.endsWith(".ico"))
+      ContentType = "image/x-icon";
+    else if (filename.endsWith(".xml"))
+      ContentType = "text/xml";
+    else if (filename.endsWith(".pdf"))
+      ContentType = "application/x-pdf";
+    else if (filename.endsWith(".zip"))
+      ContentType = "application/x-zip";
+    else if (filename.endsWith(".gz"))
+      ContentType = "application/x-gzip";
+
+    if (SPIFFS.exists(filename + ".gz") || SPIFFS.exists(filename)) {
+      if (SPIFFS.exists(filename + ".gz")) filename += ".gz";
+      request->send(SPIFFS, filename, ContentType);
+      return true;
+    }
+
+    DEBUG_PRINT("NOT_FOUND: ");
+    if(request->method() == HTTP_GET)
+      DEBUG_PRINT("GET");
+    else if(request->method() == HTTP_POST)
+      DEBUG_PRINT("POST");
+    else if(request->method() == HTTP_DELETE)
+      DEBUG_PRINT("DELETE");
+    else if(request->method() == HTTP_PUT)
+      DEBUG_PRINT("PUT");
+    else if(request->method() == HTTP_PATCH)
+      DEBUG_PRINT("PATCH");
+    else if(request->method() == HTTP_HEAD)
+      DEBUG_PRINT("HEAD");
+    else if(request->method() == HTTP_OPTIONS)
+      DEBUG_PRINT("OPTIONS");
+    else
+      DEBUG_PRINT("UNKNOWN");
+
+    DEBUG_PRINTF3(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+
+    if(request->contentLength()){
+      DEBUG_PRINTF("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+      DEBUG_PRINTF("_CONTENT_LENGTH: %u\n", request->contentLength());
+    }
+
+    int headers = request->headers();
+    int i;
+    for(i=0;i<headers;i++){
+      AsyncWebHeader* h = request->getHeader(i);
+      DEBUG_PRINTF3("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+    }
+
+    int params = request->params();
+    for(i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isFile()){
+        DEBUG_PRINTF4("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());       
+      } else if(p->isPost()){
+        DEBUG_PRINTF3("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      } else {
+        DEBUG_PRINTF3("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      }
+    }
+
+    request->send(404);
+  });
   
-//    DEBUG_PRINT("Starting MDNS ... ");
-//    bool mdns_result = MDNS.begin(HOSTNAME);
-//    if (mdns_result) MDNS.addService("http", "tcp", 80);
-//    DEBUG_PRINTLN("done!");
+//  server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+//    File fsUploadFile;
+//    if(!index){
+//      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
+//      fsUploadFile = SPIFFS.open("/" + filename, "w");
+//    }
+//    for(size_t i=0; i<len; i++){
+//      fsUploadFile.write(data[i]);
+//    }
+//    if(final){
+//      fsUploadFile.close();
+//      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+//    }
+//    request->send(200, "text/plain", "Upload " + filename);
+//  });
+  
+  server.begin();
+  DEBUG_PRINTLN("done!");
+
+//  DEBUG_PRINT("Starting MDNS ... ");
+//  bool mdns_result = MDNS.begin(HOSTNAME);
+//  if (mdns_result) MDNS.addService("http", "tcp", 80);
+//  DEBUG_PRINTLN("done!");
   #endif
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
@@ -395,23 +414,22 @@ void setup(){
     userScheduler.addTask(taskSpiffsSaveState);
     taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
   #endif
-  
+
   //AutoMode Scheduler
   userScheduler.addTask(autoModeTask);
   autoModeTask.disable();
 }
 
 void loop() {
-//  unsigned long now = millis();
   #ifdef ENABLE_BUTTON
     button();
   #endif
   userScheduler.execute();
   mesh.update();
-//  if(myIP != getlocalIP()){
-//    myIP = getlocalIP();
-//    DEBUG_PRINTLN("Station IP is " + myIP.toString());
-//  }
+  if(myIP != getlocalIP()){
+    myIP = getlocalIP();
+    DEBUG_PRINTLN("Station IP is " + myIP.toString());
+  }
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     strip.setMode(ws2812fx_mode);
@@ -445,24 +463,4 @@ void loop() {
     if(!strip.isRunning()) strip.start();
     strip.service();
   }
-
-//  if(auto_cycle && (now - auto_last_change > 10000)) { // cycle effect mode every 10 seconds
-//    uint8_t next_mode = (strip.getMode() + 1) % strip.getModeCount();
-//    if(sizeof(myModes) > 0) { // if custom list of modes exists
-//      for(uint8_t i=0; i < sizeof(myModes); i++) {
-//        if(myModes[i] == strip.getMode()) {
-//          next_mode = ((i + 1) < sizeof(myModes)) ? myModes[i + 1] : myModes[0];
-//          break;
-//        }
-//      }
-//    }
-//    strip.setMode(next_mode);
-//    DEBUG_PRINT("mode is "); DEBUG_PRINTLN(strip.getModeName(strip.getMode()));
-//    taskSendMessage.enableIfNot();
-//    taskSendMessage.forceNextIteration();
-//    #ifdef ENABLE_STATE_SAVE_SPIFFS
-//      if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-//    #endif
-//    auto_last_change = now;
-//  }
 }

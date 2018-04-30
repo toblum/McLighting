@@ -7,7 +7,7 @@
 ///////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
 #define   STATION_SSID     "WiFi_SSID"
 #define   STATION_PASSWORD "WiFi Password"
-#define   STATION_WIFI_CHANNEL 2 
+#define   STATION_WIFI_CHANNEL 2
 ///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
@@ -60,11 +60,6 @@
 #define DEFAULT_MODE 0
 
 String modes = "";
-
-///// WS2812FX automode //////
-//unsigned long auto_last_change = 0;
-//uint8_t myModes[] = {}; // *** optionally create a custom list of effect/mode numbers
-//boolean auto_cycle = false;
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)

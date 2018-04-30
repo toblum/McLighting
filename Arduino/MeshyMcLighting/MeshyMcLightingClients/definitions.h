@@ -1,11 +1,11 @@
-/////////////// Settings for Mesh Network //////////////
+///////// Settings for Mesh Network ///////////
 #define   MESH_PREFIX     "McLightingMesh"
 #define   MESH_PASSWORD   "mclighting"
 #define   MESH_PORT       5555
-//////////// MUST match with server settings ///////////
+//////////// MUST match with client ///////////
 
-#define   STATION_WIFI_CHANNEL 2
-///////////////////////////    ^Enter WiFi Channel set on your ROUTER /////////
+#define   STATION_WIFI_CHANNEL 2 
+///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
 #define USE_WS2812FX                  // Uses WS2812FX
@@ -16,26 +16,21 @@
 #define BUTTON 0                      // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
 ///////// McLighting Settings //////////
-const char HOSTNAME_BASE[] = "MeshyMcLighting";
-const char* HOSTNAME = String(String(HOSTNAME_BASE) + "-" + String(ESP.getChipId())).c_str();
+#define HOSTNAME "MeshyMcLighting"    // Name that shows up on WiFi router once connected to STATION_SSID
 
 #define ENABLE_BUTTON                 // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-#define ENABLE_STATE_SAVE_SPIFFS      // Saves LED state to SPIFFs
 //#define ENABLE_WEBSERVER
+#define ENABLE_STATE_SAVE_SPIFFS      // Saves LED state to SPIFFs
 #define SERIALDEBUG                   // Un/comment to enable debug messages in Serial
 
 //////////////////////////////////////////////////////////////////////////////////////
+
 #define DEFAULT_COLOR 0xFF5900
 #define DEFAULT_BRIGHTNESS 196
 #define DEFAULT_SPEED 1000
 #define DEFAULT_MODE 0
 
 String modes = "";
-
-///// WS2812FX automode //////
-//unsigned long auto_last_change = 0;
-//uint8_t myModes[] = {}; // *** optionally create a custom list of effect/mode numbers
-//boolean auto_cycle = false;
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
@@ -70,21 +65,16 @@ typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
 LEDState main_color = { ((DEFAULT_COLOR >> 16) & 0xFF), ((DEFAULT_COLOR >> 8) & 0xFF), (DEFAULT_COLOR & 0xFF) };  // Store the "main color" of the strip used in single color modes
 
-#ifdef ENABLE_WEBSERVER
-  extern const char index_html[];
-  extern const char main_js[];
-  extern const char uploadspiffs_html[];
-  extern const char update_html[];
-#endif
+extern const char index_html[];
+extern const char main_js[];
+extern const char uploadspiffs_html[];
+extern const char update_html[];
 
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
 #endif
 #if !defined(USE_NEOANIMATIONFX) and !defined(USE_WS2812FX)
 #error "Need to either use NeoAnimationFX and WS2812FX mode."
-#endif
-#if (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT))
-#error "To use HA, you have enable AsyncMQTT"
 #endif
 
 // Button handling

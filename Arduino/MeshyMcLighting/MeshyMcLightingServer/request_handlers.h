@@ -55,8 +55,12 @@ LEDState temp2rgb(unsigned int kelvin) {
   return tmp_color;
 }
 
-String statusLEDs(void) {
-  const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
+String statusLEDs(bool haflag = false) {
+  size_t bufferSize;
+  if(haflag)
+    bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
+  else
+    bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
   //StaticJsonBuffer<bufferSize> jsonBuffer;
   DynamicJsonBuffer jsonBuffer(bufferSize);
   JsonObject& root = jsonBuffer.createObject();
@@ -68,8 +72,8 @@ String statusLEDs(void) {
   color["b"] = main_color.blue;
   
   root["brightness"] = brightness;
-  
-  root["color_temp"] = color_temp;
+
+  if(haflag) root["color_temp"] = color_temp;
   
   root["speed"] = ws2812fx_speed;
   
@@ -120,13 +124,6 @@ bool processJson(String &message) {
     if (json_speed != ws2812fx_speed) {
       ws2812fx_speed = json_speed;
     }
-  }
-  
-  if (root.containsKey("color_temp")) {
-    //temp comes in as mireds, need to convert to kelvin then to RGB
-    color_temp = (uint16_t) root["color_temp"];
-    unsigned int kelvin  = 1000000 / color_temp;
-    main_color = temp2rgb(kelvin);
   }
   
   if (root.containsKey("brightness")) {
@@ -370,6 +367,8 @@ void handleAutoStart(void) {
 
 void handleAutoStop(void) {
   autoModeTask.disable();
+  taskSendMessage.enableIfNot();
+  taskSendMessage.forceNextIteration();
   mode = OFF;
 }
 
@@ -599,10 +598,10 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       DEBUG_PRINTLN("Not enough space on esp8266.");
     }
     
-    //if (WiFi.isConnected()) {
-    if(mesh.getStationIP() != IPAddress(0,0,0,0)) {
-      //taskConnecttMqtt.enableDelayed(TASK_SECOND * 2);
-      taskConnecttMqtt.enable();
+    if (WiFi.isConnected()) {
+    //if(getlocalIP() != IPAddress(0,0,0,0)) {
+      taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
+      //taskConnecttMqtt.enable();
     } else {
       taskConnecttMqtt.disable();
     }
@@ -908,7 +907,7 @@ void async_mqtt_setup(void){
 
 #ifdef ENABLE_HOMEASSISTANT
 void fnSendHAState(void){
-  String json = statusLEDs();
+  String json = statusLEDs(true);
   mqttClient.publish(mqtt_ha_state_out.c_str(), 1, true, json.c_str());
   DEBUG_PRINTF3("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), json.c_str());
   taskSendHAState.disable();
@@ -949,7 +948,7 @@ void autoTick(void) {
   ws2812fx_speed = convertSpeed((uint8_t) autoParams[autoCount][1]);
   ws2812fx_mode = (uint8_t) autoParams[autoCount][2];
 
-  autoModeTask.delay((float) autoParams[autoCount][3]);
+  autoModeTask.delay(((int) autoParams[autoCount][3]) * TASK_SECOND);
   
   DEBUG_PRINTF("autoTick %d\n", autoCount);
   taskSendMessage.enableIfNot();
@@ -1112,7 +1111,8 @@ void autoTick(void) {
 ///////// Mesh Stuff ///////////
 
 IPAddress getlocalIP() {
-  return IPAddress(mesh.getStationIP());
+  //return IPAddress(mesh.getStationIP()); //develop
+  return IPAddress(mesh.getStationIP().addr);  //master
 }
 
 void sendMessage() {
@@ -1152,22 +1152,4 @@ void changedConnectionCallback() {
   DEBUG_PRINTLN();
 
   if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-}
-
-void mesh_setup() {
-  //WiFi.mode(WIFI_AP_STA);
-  //WiFi.hostname("MeshyMcLighting");
-  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
-  mesh.onReceive(&receivedCallback);
-  mesh.onNewConnection(&newConnectionCallback);
-  mesh.onChangedConnections(&changedConnectionCallback);
-
-  mesh.setHostname(HOSTNAME);
-  mesh.stationManual(STATION_SSID, STATION_PASSWORD);
-  myAPIP = IPAddress(mesh.getAPIP());
-  DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
-
-  userScheduler.addTask(taskSendMessage);
-  taskSendMessage.enable();
 }
