@@ -19,7 +19,7 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 ### Limitations/TODO
 
 - Use Arduino ESP8266 **GIT** version (Issues with v2.4.1: not memory optimized)
-- For **SERVER**, compile with IwIP v1.4 Higher Bandwidth for now, painlessMesh doesnt work properly on IwIP v2 (Low Memory/Bandwidth)
+- ~~For **SERVER**, compile with IwIP v1.4 Higher Bandwidth for now, painlessMesh doesnt work properly on IwIP v2 (Low Memory/Bandwidth)~~ Cant reproduce this issue now, everything magically is working!
 - WS2812FX has **delays** meant for ESP32. Track [issue here](https://github.com/kitesurfer1404/WS2812FX/issues/89) NeoAnimationFX has no delays.
 
 ### Issues where help is needed
