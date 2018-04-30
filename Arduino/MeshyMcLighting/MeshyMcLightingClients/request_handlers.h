@@ -227,6 +227,7 @@ void handleAutoStart(void) {
 
 void handleAutoStop(void) {
   autoModeTask.disable();
+  stateOn = false;
   taskSendMessage.enableIfNot();
   taskSendMessage.forceNextIteration();
   mode = OFF;
