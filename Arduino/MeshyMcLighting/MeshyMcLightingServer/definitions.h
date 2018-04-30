@@ -6,8 +6,8 @@
 
 ///////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
 #define   STATION_SSID     "WiFi_SSID"
-#define   STATION_PASSWORD "WiFi_Password"
-#define   STATION_WIFI_CHANNEL 2
+#define   STATION_PASSWORD "WiFi Password"
+#define   STATION_WIFI_CHANNEL 6
 ///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
@@ -69,8 +69,7 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   {0x0000ff, 200, 42, 15.0}  // fireworks for 15 seconds
 };
 int autoCount;
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
+
 ///////////////////////////////////////
 enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, CUSTOM };
 MODE mode = SET_MODE; 
