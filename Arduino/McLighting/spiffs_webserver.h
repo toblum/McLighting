@@ -69,6 +69,7 @@ bool handleFileRead(String path) {
 		if (SPIFFS.exists(pathWithGz))
 			path += ".gz";
 		File file = SPIFFS.open(path, "r");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
 		size_t sent = server.streamFile(file, contentType);
 		file.close();
 		return true;
@@ -153,5 +154,6 @@ void handleFileList() {
 	}
 	
 	output += "]";
+  server.sendHeader("Access-Control-Allow-Origin", "*");
 	server.send(200, "text/json", output);
 }

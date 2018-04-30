@@ -483,6 +483,7 @@ void setup() {
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
   server.on("/edit", HTTP_POST, []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "");
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
@@ -492,6 +493,7 @@ void setup() {
     // json += ", \"analog\":" + String(analogRead(A0));
     // json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
     json += "}";
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/json", json);
     json = String();
   });
@@ -508,12 +510,14 @@ void setup() {
 
   server.on("/restart", []() {
     DBG_OUTPUT_PORT.printf("/restart\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "restarting..." );
     ESP.restart();
   });
 
   server.on("/reset_wlan", []() {
     DBG_OUTPUT_PORT.printf("/reset_wlan\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "Resetting WLAN and restarting..." );
     WiFiManager wifiManager;
     wifiManager.resetSettings();
@@ -522,6 +526,7 @@ void setup() {
 
   server.on("/start_config_ap", []() {
     DBG_OUTPUT_PORT.printf("/start_config_ap\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "Starting config AP ..." );
     WiFiManager wifiManager;
     wifiManager.startConfigPortal(HOSTNAME);
@@ -552,6 +557,7 @@ void setup() {
 
   server.on("/get_brightness", []() {
     String str_brightness = String((int) (brightness / 2.55));
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_brightness );
     DBG_OUTPUT_PORT.print("/get_brightness: ");
     DBG_OUTPUT_PORT.println(str_brightness);
@@ -578,12 +584,14 @@ void setup() {
 
   server.on("/get_speed", []() {
     String str_speed = String(ws2812fx_speed);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_speed );
     DBG_OUTPUT_PORT.print("/get_speed: ");
     DBG_OUTPUT_PORT.println(str_speed);
   });
 
   server.on("/get_switch", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
     DBG_OUTPUT_PORT.printf("/get_switch: %s\n", (mode == OFF) ? "0" : "1");
   });
@@ -591,6 +599,7 @@ void setup() {
   server.on("/get_color", []() {
     char rgbcolor[7];
     snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X", main_color.red, main_color.green, main_color.blue);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
     DBG_OUTPUT_PORT.println(rgbcolor);

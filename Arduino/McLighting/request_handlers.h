@@ -290,6 +290,7 @@ char* listStatusJSON() {
 }
 
 void getStatusJSON() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", listStatusJSON() );
 }
 
@@ -307,6 +308,7 @@ String listModesJSON() {
 }
 
 void getModesJSON() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", listModesJSON() );
 }
 
@@ -333,7 +335,8 @@ void handleMinimalUpload() {
          </form>\
       </body>\
     </html>"
-           );
+  );
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "text/html", temp );
 }
 
@@ -1315,7 +1318,7 @@ bool readStateFS() {
       DBG_OUTPUT_PORT.println("Failed to open \"/stripstate.json\"");
     }
   } else {
-    DBG_OUTPUT_PORT.println("Coudnt find \"/stripstate.json\"");
+    DBG_OUTPUT_PORT.println("Couldn't find \"/stripstate.json\"");
   }
   //end read
   updateFS = false;
