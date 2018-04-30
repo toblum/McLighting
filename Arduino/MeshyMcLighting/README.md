@@ -44,6 +44,7 @@ In definitions.h: `#define USE_WS2812FX`
 * [Adafruit NeoPixels](https://github.com/adafruit/Adafruit_NeoPixel/archive/master.zip)
 
 or
+
 In definitions.h: `#define USE_NEOANIMATIONFX`
 * [NeoAnimationFX](https://github.com/debsahu/NeoAnimationFX/archive/master.zip)
 * [NeoPixelBus](https://github.com/Makuna/NeoPixelBus/archive/master.zip)

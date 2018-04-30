@@ -48,8 +48,8 @@
     const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
   #endif
   
-  char mqtt_host[64] = "debsahu.ddns.net";
-  char mqtt_port[6] = "1884";
+  char mqtt_host[64] = "";
+  char mqtt_port[6] = "";
   char mqtt_user[32] = "";
   char mqtt_pass[32] = "";
 #endif
