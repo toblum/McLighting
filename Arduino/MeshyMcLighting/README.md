@@ -25,7 +25,7 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 ### Issues where help is needed
 
 - All issues mentioned in limitations
-- No WiFiManager yet for **SERVER**, have to think of ways of implementing this
+- No WiFiManager yet for **SERVER**, have to think of ways of implementing this - **High Priority**
 
 #### Libraries to install
 
@@ -39,9 +39,11 @@ In Arduino, Goto Sketch -> Include Library -> Add .ZIP Library... and point to t
 * [Async MQTT Client](https://github.com/marvinroger/async-mqtt-client/archive/master.zip)
 
 #### LED libraries
+In definitions.h: `#define USE_WS2812FX`
 * [WS2812FX](https://github.com/kitesurfer1404/WS2812FX/archive/master.zip)
 * [Adafruit NeoPixels](https://github.com/adafruit/Adafruit_NeoPixel/archive/master.zip)
 
-      or
+or
+In definitions.h: `#define USE_NEOANIMATIONFX`
 * [NeoAnimationFX](https://github.com/debsahu/NeoAnimationFX/archive/master.zip)
 * [NeoPixelBus](https://github.com/Makuna/NeoPixelBus/archive/master.zip)
