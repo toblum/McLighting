@@ -30,11 +30,16 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 
 ## How to use this?
 
+**SERVER** (Connects to outside world:  WiFi/MQTT/HA)
+
 * Compile **SERVER** first and upload.
 * Using a phone, connect to WiFi named "MeshyMcLighting" or whatever is set as **HOSTNAME** in `definitions.h`
 * Enter router WiFi SSID and Password
 * After sucessful connection, look in "Serial Monitor" for WiFi channel of the connected WiFi. It will be same channel set on your WiFi router.
-* Take a note of this WiFi channel and enter it in `#define STATION_WIFI_CHANNEL wifi_channel_from_previous_step` in `definitions.h`
+
+**CLIENTS** (Connects to Server)
+
+* Take a note of this WiFi channel and enter it in `#define STATION_WIFI_CHANNEL wifi_channel_from_previous_step` in `definitions.h` in clients
 * Compile **Clients** with this updated value
 
 
@@ -48,7 +53,7 @@ In Arduino, Goto Sketch -> Include Library -> Add .ZIP Library... and point to t
 * [Async TCP](https://github.com/me-no-dev/ESPAsyncTCP/archive/master.zip)
 * [Async Web Server](https://github.com/me-no-dev/ESPAsyncWebServer/archive/master.zip)
 * [Async MQTT Client](https://github.com/marvinroger/async-mqtt-client/archive/master.zip)
-* [Async WiFiManager](https://github.com/alanswx/ESPAsyncWiFiManager)
+* [Async WiFiManager](https://github.com/alanswx/ESPAsyncWiFiManager/archive/master.zip)
 
 #### LED libraries
 In definitions.h: `#define USE_WS2812FX` See changes needed with [WS2818FX](https://github.com/kitesurfer1404/WS2812FX/issues/89)
