@@ -2,6 +2,8 @@
 
 Wouldn't be cool for many McLighting to talk to each other and synchronize? Here is my naive attempt at this, which requires McLighting to be served as stand-alone webclient.
 
+## Features
+
 - Uses painlessMesh to create mesh network and broadcasts state to every node
 - Connects to known wifi network predefined in code (no WiFiManager yet)
 - Does not need WiFi connection to internet, standalone mode + mesh
@@ -15,17 +17,26 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 - Async MQTT/Home Assistant Intergration (Only **SERVER** connects to outside world)
 - Auto Mode (same as McLighting)
 - Button Mode (same as McLighting)
+- Async WiFiManager for **SERVER**
 
 ### Limitations/TODO
 
 - Use Arduino ESP8266 **GIT** version (Issues with v2.4.1: not memory optimized)
-- ~~For **SERVER**, compile with IwIP v1.4 Higher Bandwidth for now, painlessMesh doesnt work properly on IwIP v2 (Low Memory/Bandwidth)~~ Cant reproduce this issue now, everything magically is working!
 - WS2812FX has **delays** meant for ESP32. Track [issue here](https://github.com/kitesurfer1404/WS2812FX/issues/89) NeoAnimationFX has no delays.
 
 ### Issues where help is needed
 
 - All issues mentioned in limitations
-- No WiFiManager yet for **SERVER**, have to think of ways of implementing this - **High Priority**
+
+## How to use this?
+
+* Compile **SERVER** first and upload.
+* Using a phone, connect to WiFi named "MeshyMcLighting" or whatever is set as **HOSTNAME** in `definitions.h`
+* Enter router WiFi SSID and Password
+* After sucessful connection, look in "Serial Monitor" for WiFi channel of the connected WiFi. It will be same channel set on your WiFi router.
+* Take a note of this WiFi channel and enter it in `#define STATION_WIFI_CHANNEL wifi_channel_from_previous_step` in `definitions.h`
+* Compile **Clients** with this updated value
+
 
 #### Libraries to install
 
@@ -37,9 +48,11 @@ In Arduino, Goto Sketch -> Include Library -> Add .ZIP Library... and point to t
 * [Async TCP](https://github.com/me-no-dev/ESPAsyncTCP/archive/master.zip)
 * [Async Web Server](https://github.com/me-no-dev/ESPAsyncWebServer/archive/master.zip)
 * [Async MQTT Client](https://github.com/marvinroger/async-mqtt-client/archive/master.zip)
+* [Async WiFiManager](https://github.com/alanswx/ESPAsyncWiFiManager)
 
 #### LED libraries
-In definitions.h: `#define USE_WS2812FX`
+In definitions.h: `#define USE_WS2812FX` See changes needed with [WS2818FX](https://github.com/kitesurfer1404/WS2812FX/issues/89)
+
 * [WS2812FX](https://github.com/kitesurfer1404/WS2812FX/archive/master.zip)
 * [Adafruit NeoPixels](https://github.com/adafruit/Adafruit_NeoPixel/archive/master.zip)
 

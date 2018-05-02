@@ -4,7 +4,8 @@
 #define   MESH_PORT       5555
 //////////// MUST match with client ///////////
 
-///////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
+/////////// Settings for WiFi Network for Internet/MQTT etc //////////////////////
+// Enter values below, but not necessary as AsyncWiFiManager takes care of this //
 #define   STATION_SSID     "WiFi_SSID"
 #define   STATION_PASSWORD "WiFi Password"
 #define   STATION_WIFI_CHANNEL 6
@@ -59,8 +60,6 @@
 #define DEFAULT_SPEED 1000
 #define DEFAULT_MODE 0
 
-String modes = "";
-
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
   {0xff0000, 200,  1,  5.0}, // blink red for 5 seconds
@@ -94,6 +93,10 @@ typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
 LEDState main_color = { ((DEFAULT_COLOR >> 16) & 0xFF), ((DEFAULT_COLOR >> 8) & 0xFF), (DEFAULT_COLOR & 0xFF) };  // Store the "main color" of the strip used in single color modes
 
+String wifi_ssid = STATION_SSID;
+String wifi_pwd = STATION_PASSWORD;
+uint8_t wifi_channel = STATION_WIFI_CHANNEL;
+
 extern const char index_html[];
 extern const char main_js[];
 extern const char uploadspiffs_html[];
@@ -107,6 +110,9 @@ extern const char update_html[];
 #endif
 #if (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT))
 #error "To use HA, you have enable AsyncMQTT"
+#endif
+#ifdef ENABLE_STATE_SAVE_SPIFFS
+bool updateFS = false;
 #endif
 
 // Button handling

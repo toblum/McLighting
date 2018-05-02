@@ -735,82 +735,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 #endif
 
 #ifdef ENABLE_STATE_SAVE_SPIFFS
-bool updateFS = false;
-#ifdef ENABLE_AMQTT
-// Write configuration to FS JSON
-bool writeConfigFS(bool saveConfig){
-  if (saveConfig) {
-    //FS save
-    updateFS = true;
-    DEBUG_PRINT("Saving config: ");
-    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(4));
-//    StaticJsonBuffer<JSON_OBJECT_SIZE(4)> jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
-    json["mqtt_host"] = mqtt_host;
-    json["mqtt_port"] = mqtt_port;
-    json["mqtt_user"] = mqtt_user;
-    json["mqtt_pass"] = mqtt_pass;
-  
-//      SPIFFS.remove("/config.json") ? DEBUG_PRINTLN("removed file") : DEBUG_PRINTLN("failed removing file");
-    File configFile = SPIFFS.open("/config.json", "w");
-    if (!configFile) DEBUG_PRINTLN("failed to open config file for writing");
-    #ifdef SERIALDEBUG
-      json.printTo(Serial);
-    #endif
-    json.printTo(configFile);
-    configFile.close();
-    updateFS = false;
-    return true;
-    //end save
-  } else {
-    DEBUG_PRINTLN("SaveConfig is False!");
-    return false;
-  }
-}
-
-// Read search_str to FS
-bool readConfigFS() {
-  //read configuration from FS JSON
-  updateFS = true;
-  if (SPIFFS.exists("/config.json")) {
-    //file exists, reading and loading
-    DEBUG_PRINT("Reading config file... ");
-    File configFile = SPIFFS.open("/config.json", "r");
-    if (configFile) {
-      DEBUG_PRINTLN("Opened!");
-      size_t size = configFile.size();
-      std::unique_ptr<char[]> buf(new char[size]);
-      configFile.readBytes(buf.get(), size);
-      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(4)+300);
-//      StaticJsonBuffer<JSON_OBJECT_SIZE(4)+300> jsonBuffer;
-      JsonObject& json = jsonBuffer.parseObject(buf.get());
-      DEBUG_PRINT("Config: ");
-      #ifdef SERIALDEBUG
-        json.printTo(Serial);
-      #endif
-      if (json.success()) {
-        DEBUG_PRINTLN(" Parsed!");
-        strcpy(mqtt_host, json["mqtt_host"]);
-        strcpy(mqtt_port, json["mqtt_port"]);
-        strcpy(mqtt_user, json["mqtt_user"]);
-        strcpy(mqtt_pass, json["mqtt_pass"]);
-        updateFS = false;
-        return true;
-      } else {
-        DEBUG_PRINTLN("Failed to load json config");
-      }
-    } else {
-      DEBUG_PRINTLN("Failed to open /config.json");
-    }
-  } else {
-    DEBUG_PRINTLN("Coudnt find config.json");
-  }
-  //end read
-  updateFS = false;
-  return false;
-}
-#endif
-
 bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
@@ -893,16 +817,101 @@ bool readStateFS() {
   updateFS = false;
   return false;
 }
+
+bool writeConfigFS(bool saveConfig){
+  if (saveConfig) {
+    //FS save
+    updateFS = true;
+    DEBUG_PRINT("Saving config: ");
+    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7));
+    //StaticJsonBuffer<JSON_OBJECT_SIZE(7)> jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+    #ifdef ENABLE_AMQTT
+      json["mqtt_host"] = mqtt_host;
+      json["mqtt_port"] = mqtt_port;
+      json["mqtt_user"] = mqtt_user;
+      json["mqtt_pass"] = mqtt_pass;
+    #endif
+    json["wifi_ssid"] = wifi_ssid;
+    json["wifi_pwd"]  = wifi_pwd;
+    json["wifi_channel"] = wifi_channel;
+  
+    //SPIFFS.remove("/config.json") ? DEBUG_PRINTLN("removed file") : DEBUG_PRINTLN("failed removing file");
+    File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile) DEBUG_PRINTLN("failed to open config file for writing");
+
+    #ifdef SERIALDEBUG
+      json.printTo(Serial);
+    #endif
+    json.printTo(configFile);
+    configFile.close();
+    updateFS = false;
+    return true;
+    //end save
+  } else {
+    DEBUG_PRINTLN("SaveConfig is False!");
+    return false;
+  }
+}
+
+// Read search_str to FS
+bool readConfigFS() {
+  //read configuration from FS JSON
+  updateFS = true;
+  if (SPIFFS.exists("/config.json")) {
+    //file exists, reading and loading
+    DEBUG_PRINT("Reading config file... ");
+    File configFile = SPIFFS.open("/config.json", "r");
+    if (configFile) {
+      DEBUG_PRINTLN("Opened!");
+      size_t size = configFile.size();
+      std::unique_ptr<char[]> buf(new char[size]);
+      configFile.readBytes(buf.get(), size);
+      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7)+600);
+      //StaticJsonBuffer<JSON_OBJECT_SIZE(7)+600> jsonBuffer;
+      JsonObject& json = jsonBuffer.parseObject(buf.get());
+      DEBUG_PRINT("Config: ");
+      #ifdef SERIALDEBUG
+        json.printTo(Serial);
+      #endif
+      if (json.success()) {
+        DEBUG_PRINTLN(" Parsed!");
+        #ifdef ENABLE_AMQTT
+          strcpy(mqtt_host, json["mqtt_host"]);
+          strcpy(mqtt_port, json["mqtt_port"]);
+          strcpy(mqtt_user, json["mqtt_user"]);
+          strcpy(mqtt_pass, json["mqtt_pass"]);
+        #endif
+        wifi_ssid = json["wifi_ssid"].as<String>();
+        wifi_pwd  = json["wifi_pwd"].as<String>();
+        wifi_channel = atoi(json["wifi_channel"]);
+        updateFS = false;
+        return true;
+      } else {
+        DEBUG_PRINTLN("Failed to load json config");
+      }
+    } else {
+      DEBUG_PRINTLN("Failed to open /config.json");
+    }
+  } else {
+    DEBUG_PRINTLN("Coudnt find config.json");
+  }
+  //end read
+  updateFS = false;
+  return false;
+}
 #endif
 
 #ifdef ENABLE_AMQTT
-void async_mqtt_setup(void){
-  mqttClient.onConnect(onMqttConnect);
-  mqttClient.onDisconnect(onMqttDisconnect);
-  mqttClient.onMessage(onMqttMessage);
-  mqttClient.setServer(mqtt_host, atoi(mqtt_port));
-  if (mqtt_user != "" or mqtt_pass != "") mqttClient.setCredentials(mqtt_user, mqtt_pass);
-  mqttClient.setClientId(HOSTNAME);  
+void async_mqtt_setup(void){ 
+  if (mqtt_host != "" && atoi(mqtt_port) > 0) {
+    mqttClient.onConnect(onMqttConnect);
+    mqttClient.onDisconnect(onMqttDisconnect);
+    mqttClient.onMessage(onMqttMessage);
+    mqttClient.setServer(mqtt_host, atoi(mqtt_port));
+    if(mqtt_user != "" or mqtt_pass != "") mqttClient.setCredentials(mqtt_user, mqtt_pass);
+    mqttClient.setClientId(mqtt_clientid);
+  }
 }
 #endif
 
@@ -921,17 +930,10 @@ void fnSpiffsSaveState(void){
 }
 #endif
 
-void modes_setup(void) {
-//  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
-//  uint8_t num_modes = sizeof(myModes) > 0 ? sizeof(myModes) + 1 : strip.getModeCount() + 1;
-//  for(uint8_t i=1; i < num_modes; i++) {
-//    uint8_t m = sizeof(myModes) > 0 ? myModes[i-1] : i;
-//    modes += "<li><a href='#' class='m' id='";
-//    modes += (m);
-//    modes += "'>";
-//    modes += strip.getModeName(m-1);
-//    modes += "</a></li>";
-//  }
+void modes_write_to_spiffs(void) {
+  DEBUG_PRINTLN("Writing Modes to SPIFFS");
+  String modes;
+  modes.reserve(5000);
   modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
   for(uint8_t i=1; i < strip.getModeCount() + 1; i++) {
     modes += "<li><a href='#' class='m' id='";
@@ -940,6 +942,12 @@ void modes_setup(void) {
     modes += strip.getModeName(i-1);
     modes += "</a></li>";
   }
+
+  File modeFile = SPIFFS.open("/modes", "w");
+  if (!modeFile) DEBUG_PRINTLN("failed to open mode file for writing");
+  modeFile.print(modes);
+  modeFile.close();
+  modes=String();
 }
 
 void autoTick(void) {

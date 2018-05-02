@@ -105,6 +105,7 @@ Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage );
 Task autoModeTask(TASK_SECOND * (int) autoParams[0][3], TASK_FOREVER, &autoTick);
 
 #include "request_handlers.h"
+#include "WiFiHelper.h"
 
 void setup(){
   #ifdef SERIALDEBUG
@@ -126,31 +127,26 @@ void setup(){
     SPIFFS.info(fs_info);
     DEBUG_PRINTF3("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
-  
-  modes.reserve(5000);
-  modes_setup();
 
-  #ifdef ENABLE_AMQTT
-    async_mqtt_setup();
-  #endif
+  connectToWiFi();
   
   DEBUG_PRINT("WS2812FX setup ... ");
   strip.init();
   DEBUG_PRINTLN("done!");
-  
+
   DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  //WiFi.setSleepMode(WIFI_NONE_SLEEP);
   //WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname(HOSTNAME);
     
-  mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
   //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  //develop
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, STATION_WIFI_CHANNEL);
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, wifi_channel);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
 
-  mesh.stationManual(STATION_SSID, STATION_PASSWORD);
+  mesh.stationManual(wifi_ssid, wifi_pwd);
   mesh.setHostname(HOSTNAME);
   
   //myAPIP = IPAddress(mesh.getAPIP());  // develop
@@ -162,274 +158,27 @@ void setup(){
   DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   //Async webserver
+  //modes.reserve(5000);
+  modes_write_to_spiffs();
+  
   DEBUG_PRINT("Async HTTP server starting ... ");
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
-  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/plain", String(ESP.getFreeHeap()));
-  });
-  
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/html", index_html);
-  });
-
-  server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/html", uploadspiffs_html);
-  });
-
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "upload success");
-    response->addHeader("Connection", "close");
-    request->send(response);
-  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-    if(!index){
-      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
-      if (!filename.startsWith("/")) filename = "/" + filename;
-      if (SPIFFS.exists(filename)) SPIFFS.remove(filename);
-      fsUploadFile = SPIFFS.open(filename, "w");
-    }
-    for(size_t i=0; i<len; i++)
-      fsUploadFile.write(data[i]);
-    if(final){
-      fsUploadFile.close();
-      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-    }
-  });
-
-  // Simple Firmware Update Form
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", update_html);
-  });
-  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
-    bool shouldReboot = !Update.hasError();
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot?"OK":"FAIL");
-    response->addHeader("Connection", "close");
-    request->send(response);
-    if(shouldReboot) ESP.restart();
-  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-    if (!filename.endsWith(".bin")) {
-      return;
-    }
-    if(!index){
-      DEBUG_PRINTF("Update Start: %s\n", filename.c_str());
-      Update.runAsync(true);
-      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
-      #ifdef SERIALDEBUG
-        Update.printError(Serial);
-      #endif
-      }
-    }
-    if(!Update.hasError()){
-      if(Update.write(data, len) != len) {
-      #ifdef SERIALDEBUG
-        Update.printError(Serial);
-      #endif
-      }
-    }
-    if(final){
-      if(Update.end(true)) 
-        DEBUG_PRINTF("Update Success: %uB\n", index+len);
-      else {
-      #ifdef SERIALDEBUG
-        Update.printError(Serial);
-      #endif
-      }
-    }
-  });
-  
-  server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "application/javascript", main_js);
-  });
-
-  server.on("/modes", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/plain", modes);
-  });
-
-  server.on("/setmode", HTTP_GET, [](AsyncWebServerRequest *request){
-    if (request->hasArg("rgb")){
-      String color = request->arg("rgb");
-      uint32_t tmp = (uint32_t) strtol(color.c_str(), NULL, 16);
-      if(tmp >= 0x000000 && tmp <= 0xFFFFFF) {
-        uint8_t r = ((tmp >> 16) & 0xFF);
-        uint8_t g = ((tmp >>  8) & 0xFF);
-        uint8_t b = (tmp         & 0xFF);
-        main_color = {r, g, b};
-        if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-        #ifdef ENABLE_STATE_SAVE_SPIFFS
-          if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-        #endif
-        stateOn = true;
-        mode = SETCOLOR;
-      }
-    }
-
-    if (request->hasArg("c")) {
-      String brightnesss = request->arg("c");
-      if(brightnesss == "-") {
-        brightness = constrain(strip.getBrightness() * 0.8, 0, 255);
-      } else if(brightnesss == " ") {
-        brightness = constrain(strip.getBrightness() * 1.2, 6, 255);
-      } else { // set brightness directly
-        uint8_t tmp = (uint8_t) strtol(brightnesss.c_str(), NULL, 10);
-        brightness = tmp;
-      }
-      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-      #endif
-      stateOn = true;
-      mode = BRIGHTNESS;
-    }
-
-    if (request->hasArg("s")) {
-      String http_speed = request->arg("s");
-      if(http_speed == "-") {
-        ws2812fx_speed = constrain(strip.getSpeed() * 0.8, SPEED_MIN, SPEED_MAX);
-      } else if (http_speed == " ") {
-        ws2812fx_speed = constrain(strip.getSpeed() * 1.2, SPEED_MIN, SPEED_MAX);
-      } else {
-        uint8_t tmp = (uint8_t) strtol(http_speed.c_str(), NULL, 10);
-        ws2812fx_speed = convertSpeed(tmp);
-      }
-      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-      #endif
-      stateOn = true;
-      mode = SETSPEED;
-    }
-
-    if (request->hasArg("a")) {
-      if(request->arg("a") == "-") {
-        //auto_cycle = false;
-        //mode = HOLD;
-        handleAutoStop();
-      } else {
-        //auto_cycle = true;
-        //auto_last_change = 0;
-        //mode = HOLD;
-        handleAutoStart();
-      }
-    }
-
-    if (request->hasArg("m")) {
-      String modes = request->arg("m");
-      uint8_t tmp = (uint8_t) strtol(modes.c_str(), NULL, 10);
-      if(tmp > 0) {
-        ws2812fx_mode = (tmp - 1) % strip.getModeCount();
-        stateOn = true;
-        mode = SET_MODE;
-      } else {
-        ws2812fx_mode = FX_MODE_STATIC;
-        stateOn = false;
-        mode = OFF;
-      }
-      if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
-      #endif
-    }
-    
-    request->send(200, "text/plain", "OK");
-  });
-
-  server.onNotFound([](AsyncWebServerRequest *request){
-    String filename = request->url();
-    String ContentType = "text/plain";
-    if (filename.endsWith(".htm"))
-      ContentType = "text/html";
-    else if (filename.endsWith(".html"))
-      ContentType = "text/html";
-    else if (filename.endsWith(".css"))
-      ContentType = "text/css";
-    else if (filename.endsWith(".js"))
-      ContentType = "application/javascript";
-    else if (filename.endsWith(".png"))
-      ContentType = "image/png";
-    else if (filename.endsWith(".gif"))
-      ContentType = "image/gif";
-    else if (filename.endsWith(".jpg"))
-      ContentType = "image/jpeg";
-    else if (filename.endsWith(".ico"))
-      ContentType = "image/x-icon";
-    else if (filename.endsWith(".xml"))
-      ContentType = "text/xml";
-    else if (filename.endsWith(".pdf"))
-      ContentType = "application/x-pdf";
-    else if (filename.endsWith(".zip"))
-      ContentType = "application/x-zip";
-    else if (filename.endsWith(".gz"))
-      ContentType = "application/x-gzip";
-
-    if (SPIFFS.exists(filename + ".gz") || SPIFFS.exists(filename)) {
-      if (SPIFFS.exists(filename + ".gz")) filename += ".gz";
-      request->send(SPIFFS, filename, ContentType);
-      return true;
-    }
-
-    DEBUG_PRINT("NOT_FOUND: ");
-    if(request->method() == HTTP_GET)
-      DEBUG_PRINT("GET");
-    else if(request->method() == HTTP_POST)
-      DEBUG_PRINT("POST");
-    else if(request->method() == HTTP_DELETE)
-      DEBUG_PRINT("DELETE");
-    else if(request->method() == HTTP_PUT)
-      DEBUG_PRINT("PUT");
-    else if(request->method() == HTTP_PATCH)
-      DEBUG_PRINT("PATCH");
-    else if(request->method() == HTTP_HEAD)
-      DEBUG_PRINT("HEAD");
-    else if(request->method() == HTTP_OPTIONS)
-      DEBUG_PRINT("OPTIONS");
-    else
-      DEBUG_PRINT("UNKNOWN");
-
-    DEBUG_PRINTF3(" http://%s%s\n", request->host().c_str(), request->url().c_str());
-
-    if(request->contentLength()){
-      DEBUG_PRINTF("_CONTENT_TYPE: %s\n", request->contentType().c_str());
-      DEBUG_PRINTF("_CONTENT_LENGTH: %u\n", request->contentLength());
-    }
-
-    int headers = request->headers();
-    int i;
-    for(i=0;i<headers;i++){
-      AsyncWebHeader* h = request->getHeader(i);
-      DEBUG_PRINTF3("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
-    }
-
-    int params = request->params();
-    for(i=0;i<params;i++){
-      AsyncWebParameter* p = request->getParam(i);
-      if(p->isFile()){
-        DEBUG_PRINTF4("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());       
-      } else if(p->isPost()){
-        DEBUG_PRINTF3("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-      } else {
-        DEBUG_PRINTF3("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-      }
-    }
-
-    request->send(404);
-  });
-  
-//  server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
-//    File fsUploadFile;
-//    if(!index){
-//      DEBUG_PRINTF("UploadStart: %s\n", filename.c_str());
-//      fsUploadFile = SPIFFS.open("/" + filename, "w");
-//    }
-//    for(size_t i=0; i<len; i++){
-//      fsUploadFile.write(data[i]);
-//    }
-//    if(final){
-//      fsUploadFile.close();
-//      DEBUG_PRINTF3("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-//    }
-//    request->send(200, "text/plain", "Upload " + filename);
-//  });
+  /// everything called is present in WiFiHelper.h
+  server.on("/heap", HTTP_GET, handleHeap);
+  server.on("/", HTTP_GET, handleRoot);
+  //server.on("/scan", HTTP_GET, handleScanNet);   //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
+  //server.on("/scan", HTTP_POST, processScanNet); //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
+  server.on("/upload", HTTP_GET, handleUpload);
+  server.on("/upload", HTTP_POST, processUploadReply, processUpload);
+  server.on("/update", HTTP_GET, handleUpdate);
+  server.on("/update", HTTP_POST, processUpdateReply, processUpdate);
+  server.on("/main.js", HTTP_GET, handlemainjs);
+  server.on("/modes", HTTP_GET, handleModes);
+  server.on("/setmode", HTTP_GET, handleSetMode);
+  server.onNotFound(handleNotFound);
+  //server.onFileUpload(handleUpload);            //Not safe
   
   server.begin();
   DEBUG_PRINTLN("done!");
@@ -444,6 +193,7 @@ void setup(){
   #endif
 
   #ifdef ENABLE_AMQTT
+    async_mqtt_setup();
     userScheduler.addTask(taskConnecttMqtt);
     taskConnecttMqtt.disable();
   #endif
