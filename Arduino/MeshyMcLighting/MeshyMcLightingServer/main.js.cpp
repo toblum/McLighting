@@ -20,7 +20,7 @@ function handle_M_B_S(e) {
 
 function submitVal(name, val) {
   var xhttp = new XMLHttpRequest();
-  xhttp.open('GET', 'setmode?' + name + '=' + val, true);
+  xhttp.open('GET', 'set_mode?' + name + '=' + val + '&web=1', true);
   xhttp.send();
 }
 

@@ -12,8 +12,8 @@
 ///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
-//#define USE_WS2812FX                  // Uses WS2812FX
-#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
+#define USE_WS2812FX                  // Uses WS2812FX
+//#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
 
 #define LED_PIN 14                    // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24                    // Number of leds in the strip

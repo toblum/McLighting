@@ -5,14 +5,13 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 ## Features
 
 - Uses painlessMesh to create mesh network and broadcasts state to every node
-- Connects to known wifi network predefined in code (no WiFiManager yet)
 - Does not need WiFi connection to internet, standalone mode + mesh
 - Web interface is borrowed from "WS2812FX esp8266" example, completely served on ESP8266
 - Can do minimal file upload to SPIFFs
 - Completely Async!
 - Uses Task Scheduler, no more tickers
 - No delays in entire code
-- Has RESTful API (same API as McLighting, not all status are returned now)
+- Has RESTful API (same API as McLighting, use set_mode for setting mode, speed, brighness)
 - Async Websockets (ws://**HOSTNAME**/ws on port 80, same API as McLighting)
 - Async MQTT/Home Assistant Intergration (Only **SERVER** connects to outside world)
 - Auto Mode (same as McLighting)

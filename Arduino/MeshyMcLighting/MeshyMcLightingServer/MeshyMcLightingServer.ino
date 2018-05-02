@@ -15,6 +15,7 @@
   #include <AsyncMqttClient.h>      //https://github.com/marvinroger/async-mqtt-client
   AsyncMqttClient mqttClient;
 #endif
+#include <ESPAsyncWiFiManager.h>    //https://github.com/alanswx/ESPAsyncWiFiManager
 
 // Prototypes
 void autoTick(void);
@@ -22,6 +23,8 @@ void sendMessage(void);
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
+bool readConfigFS();
+bool writeConfigFS(bool saveConfig);
 #ifdef ENABLE_AMQTT
   void connectToMqtt(void);
 #endif
@@ -38,6 +41,7 @@ void changedConnectionCallback();
 painlessMesh  mesh;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+DNSServer dns;
 
 IPAddress getlocalIP();
 IPAddress myIP(0,0,0,0);
@@ -166,7 +170,7 @@ void setup(){
   server.addHandler(&ws);
 
   /// everything called is present in WiFiHelper.h
-  server.on("/heap", HTTP_GET, handleHeap);
+  server.on("/esp_status", HTTP_GET, handleHeap);
   server.on("/", HTTP_GET, handleRoot);
   //server.on("/scan", HTTP_GET, handleScanNet);   //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
   //server.on("/scan", HTTP_POST, processScanNet); //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
@@ -176,7 +180,18 @@ void setup(){
   server.on("/update", HTTP_POST, processUpdateReply, processUpdate);
   server.on("/main.js", HTTP_GET, handlemainjs);
   server.on("/modes", HTTP_GET, handleModes);
-  server.on("/setmode", HTTP_GET, handleSetMode);
+  server.on("/status", HTTP_GET, handleStatus);
+  server.on("/restart", HTTP_GET, handleRestart);
+  server.on("/reset_wlan", HTTP_GET, handleResetWLAN);
+  server.on("/start_config_ap", HTTP_GET, handleStartAP);
+  //Light States
+  server.on("/get_brightness", HTTP_GET, handleGetBrightness);
+  server.on("/get_speed", HTTP_GET, handleGetSpeed);
+  server.on("/get_color", HTTP_GET, handleGetColor);
+  server.on("/get_switch", HTTP_GET, handleGetSwitch);
+  server.on("/off", HTTP_GET, handleOff);
+  server.on("/get_modes", HTTP_GET, handleGetModes);
+  server.on("/set_mode", HTTP_GET, handleSetMode);
   server.onNotFound(handleNotFound);
   //server.onFileUpload(handleUpload);            //Not safe
   
@@ -224,7 +239,7 @@ void loop() {
       if(myIP != IPAddress(0,0,0,0)) {
       //if (WiFi.isConnected()) {
         //connectToMqtt();
-        taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
+        if(!taskConnecttMqtt.isEnabled()) taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
       }
     #endif
   }

@@ -35,7 +35,7 @@ void handleScanNet(AsyncWebServerRequest *request){
   reply += "</script>";
   reply += "<br>";  
   reply += "<form action='/scan' method='POST' id='scan'>";
-  reply += "<center><select name='wifi_ssid_list' form_id='scan' onClick='select_wifi_channel(this.value);' onChange='wifi_ssid.value=this.value;wifi_channel.value=wifi_channel_list.options[this.selectedIndex].value;'>";
+  reply += "<center><select name='wifi_ssid_list' form_id='scan' onClick='select_wifi_channel(this.value);wifi_ssid.value=this.value;wifi_channel.value=wifi_channel_list.options[this.selectedIndex].value;' onChange='wifi_ssid.value=this.value;wifi_channel.value=wifi_channel_list.options[this.selectedIndex].value;'>";
   
   int n = WiFi.scanComplete();
   String channel_number = "<select name='wifi_channel_list' form_id='scan'>";
@@ -236,6 +236,9 @@ void handleSetMode(AsyncWebServerRequest *request){
       uint8_t b = (tmp         & 0xFF);
       main_color = {r, g, b};
       if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+      #ifdef ENABLE_HOMEASSISTANT
+        if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+      #endif
       #ifdef ENABLE_STATE_SAVE_SPIFFS
         if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
       #endif
@@ -255,6 +258,9 @@ void handleSetMode(AsyncWebServerRequest *request){
       brightness = tmp;
     }
     if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+    #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
     #endif
@@ -273,6 +279,9 @@ void handleSetMode(AsyncWebServerRequest *request){
       ws2812fx_speed = convertSpeed(tmp);
     }
     if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+    #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
     #endif
@@ -296,6 +305,7 @@ void handleSetMode(AsyncWebServerRequest *request){
   if (request->hasArg("m")) {
     String modes = request->arg("m");
     uint8_t tmp = (uint8_t) strtol(modes.c_str(), NULL, 10);
+    if(!(request->hasArg("web"))) tmp++;
     if(tmp > 0) {
       ws2812fx_mode = (tmp - 1) % strip.getModeCount();
       stateOn = true;
@@ -306,6 +316,9 @@ void handleSetMode(AsyncWebServerRequest *request){
       mode = OFF;
     }
     if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+    #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
     #endif
@@ -417,14 +430,78 @@ void handleNotFound(AsyncWebServerRequest *request){
 //    request->send(200, "text/plain", "Upload " + filename);
 //  }
 
-#include <ESPAsyncWiFiManager.h>            //https://github.com/alanswx/ESPAsyncWiFiManager
 
-DNSServer dns;
+void handleStatus(AsyncWebServerRequest *request){
+  request->send(200, "application/json", listStatusJSON());
+}
+
+void handleRestart(AsyncWebServerRequest *request){
+  DEBUG_PRINTLN("/restart");
+  request->send(200, "text/plain", "restarting..." );
+  ESP.restart();
+}
+
+void handleResetWLAN(AsyncWebServerRequest *request){
+  DEBUG_PRINTLN("/reset_wlan");
+  request->send(200, "text/plain", "Resetting WLAN and restarting..." );
+  AsyncWiFiManager wifiManager(&server, &dns);
+  wifiManager.resetSettings();
+  DEBUG_PRINTLN((SPIFFS.remove("/config.json")) ? "Removed /config.json" : "Failed removing /config.json");
+  ESP.restart();
+}
+
+void handleStartAP(AsyncWebServerRequest *request){
+  DEBUG_PRINTLN("/start_config_ap");
+  request->send(200, "text/plain", "Starting config AP ..." );
+  AsyncWiFiManager wifiManager(&server, &dns);
+  wifiManager.startConfigPortal(HOSTNAME);
+}
+
+void handleGetBrightness(AsyncWebServerRequest *request){
+  String str_brightness = String((int) (brightness / 2.55));
+  request->send(200, "text/plain", str_brightness );
+  DEBUG_PRINT("/get_brightness: ");
+  DEBUG_PRINTLN(str_brightness);
+}
+
+void handleGetSpeed(AsyncWebServerRequest *request){
+  String str_speed = String(ws2812fx_speed);
+  request->send(200, "text/plain", str_speed );
+  DEBUG_PRINT("/get_speed: ");
+  DEBUG_PRINTLN(str_speed);
+}
+
+void handleGetColor(AsyncWebServerRequest *request){
+  char rgbcolor[7];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X", main_color.red, main_color.green, main_color.blue);
+  request->send(200, "text/plain", rgbcolor );
+  DEBUG_PRINT("/get_color: ");
+  DEBUG_PRINTLN(rgbcolor);
+}
+
+void handleGetSwitch(AsyncWebServerRequest *request){
+  request->send(200, "text/plain", (mode == OFF) ? "0" : "1" );
+  DEBUG_PRINTF("/get_switch: %s\n", (mode == OFF) ? "0" : "1");
+}
+
+void handleOff(AsyncWebServerRequest *request){
+  stateOn = false;
+  mode = OFF;
+  request->send(200, "application/json", listStatusJSON());
+  if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+  #ifdef ENABLE_HOMEASSISTANT
+    if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+  #endif
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
+  #endif
+}
+
+void handleGetModes(AsyncWebServerRequest *request){
+  request->send(200, "application/json", listModesJSON());
+}
 
 bool shouldSaveConfig = false;
-
-bool readConfigFS();
-bool writeConfigFS(bool saveConfig);
 
 void configModeCallback(AsyncWiFiManager *myWiFiManager) {
   // ***************************************************************************

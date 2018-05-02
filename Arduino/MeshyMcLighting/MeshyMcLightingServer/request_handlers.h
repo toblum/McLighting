@@ -536,6 +536,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   void connectToMqtt(void) {
     DEBUG_PRINTLN("MQTT connecting...");
     mqttClient.connect();
+    taskConnecttMqtt.delay(TASK_SECOND * 5);
   }
   
   void onMqttConnect(bool sessionPresent) {
