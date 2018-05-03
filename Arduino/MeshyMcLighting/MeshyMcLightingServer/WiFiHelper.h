@@ -549,11 +549,8 @@ void connectToWiFi(void) {
   #endif
   
   if (!wifiManager.autoConnect(HOSTNAME)) {
-    DEBUG_PRINTLN("failed to connect and hit timeout");
-    //reset and try again, or maybe put it to deep sleep
-    delay(3000);
-    ESP.reset();
-    delay(5000);
+    DEBUG_PRINTLN("Failed to connect and hit timeout");
+    //Did not connect to WiFi, entering stand-alone mode
   }
 
   wifi_ssid = WiFi.SSID();
