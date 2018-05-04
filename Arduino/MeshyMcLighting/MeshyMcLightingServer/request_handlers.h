@@ -389,6 +389,21 @@ String listModesJSON(void) {
 //  return String(json);
 }
 
+void modes_write_to_spiffs_mclighting(bool overWrite = false) {
+  if( !SPIFFS.exists("/modes_mclighting") or overWrite) {
+    DEBUG_PRINT("Writing Modes to SPIFFs ");
+    String modes = listModesJSON();
+    File modeFile = SPIFFS.open("/modes_mclighting", "w");
+    if (!modeFile) DEBUG_PRINTLN("failed to open mode file for writing");
+    modeFile.print(modes);
+    modeFile.close();
+    modes=String();
+    DEBUG_PRINTLN(" done!");
+  } else {
+    DEBUG_PRINTLN("'/modes_mclighting' already exists on SPIFFs, not overwriting");
+  }
+}
+
 // automatic cycling
 
 void handleAutoStart(void) {
@@ -429,7 +444,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
          #ifdef ENABLE_HOMEASSISTANT
           if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
@@ -448,7 +463,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
         #ifdef ENABLE_HOMEASSISTANT
           if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
@@ -467,7 +482,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
         #ifdef ENABLE_HOMEASSISTANT
           if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
@@ -483,7 +498,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
         #ifdef ENABLE_HOMEASSISTANT
           if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
@@ -498,7 +513,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         client->text("OK");
 
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
               
       } else if (payload[0] == '+') { // + ==> Set multiple LED in the given colors
@@ -507,7 +522,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         client->text("OK");
 
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
                 
       } else if (payload[0] == 'R') { // R ==> Set range of LEDs in the given color
@@ -516,7 +531,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         client->text("OK");
 
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
         
       } else if (payload[0] == '$') { // $ ==> Get status Info.
@@ -540,7 +555,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
         if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
         #ifdef ENABLE_AMQTT
-          mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+          if(mqttClient.connected()) mqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
         #endif
         #ifdef ENABLE_HOMEASSISTANT
           if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
@@ -565,11 +580,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
 #ifdef ENABLE_AMQTT
   void connectToMqtt(void) {
-    DEBUG_PRINTLN("MQTT connecting...");
-    if(WiFi.isConnected()){
+    DEBUG_PRINT("ConnectToMqtt() called: ");
+    if(WiFi.status() == WL_CONNECTED or getlocalIP() != IPAddress(0,0,0,0)){
+      DEBUG_PRINTLN("connecting . ");
       mqttClient.connect();
-      taskConnecttMqtt.delay(TASK_SECOND * 5);
     } else {
+      DEBUG_PRINTLN("WiFi disconnected!");
       taskConnecttMqtt.disable();
     }
   }
@@ -636,11 +652,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       DEBUG_PRINTLN("Not enough space on esp8266.");
     }
     
-    if (WiFi.isConnected()) {
-    //if(getlocalIP() != IPAddress(0,0,0,0)) {
-      taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
+    if (WiFi.status() != WL_CONNECTED or getlocalIP() != IPAddress(0,0,0,0)) {
+      DEBUG_PRINTLN("WiFi is connected: Calling ConnectToMqtt() Task");
+      taskConnecttMqtt.enableIfNot();
       //taskConnecttMqtt.enable();
     } else {
+      DEBUG_PRINTLN("WiFi Disconnected!");
       taskConnecttMqtt.disable();
     }
   }
@@ -1192,7 +1209,8 @@ void receivedCallback(uint32_t from, String & msg) {
 void newConnectionCallback(uint32_t nodeId) {
   String msg = statusLEDs();
   mesh.sendSingle(nodeId, msg);
-  DEBUG_PRINTF("$$$$$$$$$$$ New Connection, nodeId = %u\n", nodeId);
+  DEBUG_PRINTF("$$$$$$$$$$$ New Connection, nodeId = %u >>> Sending: ", nodeId);
+  DEBUG_PRINTLN(msg);
 }
 
 void changedConnectionCallback() {
@@ -1208,5 +1226,6 @@ void changedConnectionCallback() {
   }
   DEBUG_PRINTLN();
 
-  if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+  //no need to re-broadcast data, taken care of in newConnectionCallback()
+  //if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
 }

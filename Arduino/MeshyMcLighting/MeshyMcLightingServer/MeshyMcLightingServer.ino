@@ -35,16 +35,14 @@ bool writeConfigFS(bool saveConfig);
 #ifdef ENABLE_STATE_SAVE_SPIFFS
   void fnSpiffsSaveState(void);
 #endif
-
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
+IPAddress getlocalIP();
 
 painlessMesh  mesh;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 DNSServer dns;
+const byte DNS_PORT = 53;          // Capture DNS requests on port 53
 
-IPAddress getlocalIP();
 IPAddress myIP(0,0,0,0);
 IPAddress myAPIP(0,0,0,0);
 File fsUploadFile;
@@ -99,7 +97,7 @@ SimpleList<uint32_t> nodes;
 Scheduler userScheduler; // to control your personal task
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage );
 #ifdef ENABLE_AMQTT
-  Task taskConnecttMqtt( TASK_SECOND * 1, TASK_FOREVER, &connectToMqtt ); 
+  Task taskConnecttMqtt( TASK_SECOND * 5, MAX_MQTT_RETRIES, &connectToMqtt ); // max connect MAX_MQTT_RETRIES times to MQTT server and this Task can be restarted upon successful StationIP
 #endif
 #ifdef ENABLE_STATE_SAVE_SPIFFS
   Task taskSpiffsSaveState(TASK_SECOND * 1, TASK_FOREVER, &fnSpiffsSaveState);
@@ -144,7 +142,7 @@ void setup(){
   WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname(HOSTNAME);
     
-  //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+  mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
   //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  //develop
   mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, wifi_channel);
   mesh.onReceive(&receivedCallback);
@@ -164,8 +162,10 @@ void setup(){
 
   //Async webserver
   modes_write_to_spiffs();
+  modes_write_to_spiffs_mclighting();
 
   DEBUG_PRINT("Starting mDNS ");
+  dns.start(DNS_PORT, "*", myAPIP);   // Start DNS server and redirect every request from port 53 to MeshIP
   bool mdns_result = MDNS.begin(HOSTNAME); DEBUG_PRINT(".");
   if (mdns_result) MDNS.addService("http", "tcp", 80); DEBUG_PRINT(".");
   DEBUG_PRINTLN(" done!");
@@ -240,14 +240,24 @@ void loop() {
       if(myIP != IPAddress(0,0,0,0)) {
       //if (WiFi.isConnected()) {
         //connectToMqtt();
-        if(!taskConnecttMqtt.isEnabled()) taskConnecttMqtt.enableDelayed(TASK_SECOND * 5);
+        dns.stop();
+        dns = DNSServer();              // Don't know if this will mess with mDNS
+        dns.start(DNS_PORT, "*", myIP); // Start DNS server and redirect every request from port 53 to our newly obtained IP
+        taskConnecttMqtt.restart();
+        taskConnecttMqtt.enableIfNot();
+      } else {
+        if(taskConnecttMqtt.isEnabled()) taskConnecttMqtt.disable();
       }
     #endif
   }
-  if(!WiFi.isConnected() and taskConnecttMqtt.isEnabled()){
-  //if(getlocalIP() == IPAddress(0,0,0,0) and taskConnecttMqtt.isEnabled()){
-    taskConnecttMqtt.disable(); // No need to connect to MQTT if there is no connection to WiFi Router
-  }
+  #ifdef ENABLE_AMQTT
+    if((WiFi.status() != WL_CONNECTED or getlocalIP() == IPAddress(0,0,0,0)) and taskConnecttMqtt.isEnabled()){
+      taskConnecttMqtt.disable(); // No need to connect to MQTT if there is no connection to WiFi Router
+      dns.stop();
+      dns = DNSServer();                // Don't know if this will mess with mDNS
+      dns.start(DNS_PORT, "*", myAPIP); // Start DNS server and redirect every request from port 53 to MeshIP
+    }
+  #endif
   
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {

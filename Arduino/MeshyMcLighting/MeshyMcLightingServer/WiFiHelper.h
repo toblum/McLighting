@@ -1,6 +1,9 @@
 void handleESPStatus(AsyncWebServerRequest *request){
+//  AsyncJsonResponse * response = new AsyncJsonResponse();
+//  JsonObject& json = response->getRoot();
   DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8));
   JsonObject& json = jsonBuffer.createObject();
+
   json["HOSTNAME"] = HOSTNAME;
   json["version"] = SKETCH_VERSION;
   json["heap"] = ESP.getFreeHeap();
@@ -23,7 +26,7 @@ void handleESPStatus(AsyncWebServerRequest *request){
   #endif
   char buffer[json.measureLength() + 1];
   json.printTo(buffer, sizeof(buffer));
-  request->send(200, "text/plain", String(buffer));
+  request->send(200, "application/json", buffer);
 }
 
 void handleRoot(AsyncWebServerRequest *request){
@@ -522,7 +525,8 @@ void handleOff(AsyncWebServerRequest *request){
 }
 
 void handleGetModes(AsyncWebServerRequest *request){
-  request->send(200, "application/json", listModesJSON());
+  request->send(SPIFFS, "/modes_mclighting", "application/json");  // send modes required for McLighting from SPIFFs - faster
+  //request->send(200, "application/json", listModesJSON());
 }
 
 void handleVersion(AsyncWebServerRequest *request){

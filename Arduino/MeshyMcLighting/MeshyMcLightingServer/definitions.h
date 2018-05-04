@@ -31,6 +31,8 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_AMQTT
+  #define MAX_MQTT_RETRIES 3          // Number of MQTT reconnects until it gives up
+  
   String mqtt_intopic = String(HOSTNAME) + "/in";
   String mqtt_outtopic = String(HOSTNAME) + "/out";
   uint8_t qossub = 0; // AMQTT can sub qos 0 or 1 or 2
