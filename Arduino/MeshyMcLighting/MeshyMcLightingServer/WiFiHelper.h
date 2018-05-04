@@ -1,5 +1,29 @@
-void handleHeap(AsyncWebServerRequest *request){
-  request->send(200, "text/plain", String(ESP.getFreeHeap()));
+void handleESPStatus(AsyncWebServerRequest *request){
+  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(8));
+  JsonObject& json = jsonBuffer.createObject();
+  json["HOSTNAME"] = HOSTNAME;
+  json["version"] = SKETCH_VERSION;
+  json["heap"] = ESP.getFreeHeap();
+  json["pin"] = LED_PIN;
+  json["number_leds"] = NUMLEDS;
+  #ifdef ENABLE_BUTTON
+    json["button_mode"] = "ON";
+  #else
+    json["button_mode"] = "OFF";
+  #endif
+  #ifdef ENABLE_AMQTT
+    json["mqtt"] = "ON";
+  #else
+    json["mqtt"] = "OFF";
+  #endif
+  #ifdef ENABLE_HOMEASSISTANT
+    json["home_assistant"] = "ON";
+  #else
+    json["home_assistant"] = "OFF";
+  #endif
+  char buffer[json.measureLength() + 1];
+  json.printTo(buffer, sizeof(buffer));
+  request->send(200, "text/plain", String(buffer));
 }
 
 void handleRoot(AsyncWebServerRequest *request){
@@ -61,7 +85,7 @@ void handleScanNet(AsyncWebServerRequest *request){
   reply += "</select>";
   reply += channel_number;
   reply += "</select></center><br>";
-  reply += "<center><input type='text' name='wifi_ssid' value='" + wifi_ssid + "placeholder='WiFi SSID' size='20' style='text-align:center;' autofocus>";
+  reply += "<center><input type='text' name='wifi_ssid' value='" + wifi_ssid + "' placeholder='WiFi SSID' size='20' style='text-align:center;' autofocus>";
   reply += "<input type='text' name='wifi_channel' value='" + String(wifi_channel) + "'placeholder='Channel' size='2' style='text-align:center;'></center><br>";
   reply += "<center><input type='password' name='wifi_pwd' value='" + wifi_pwd + "' placeholder='WiFi Password' size='27' style='text-align:center;'></center><br>";
   #ifdef ENABLE_AMQTT
@@ -501,6 +525,10 @@ void handleGetModes(AsyncWebServerRequest *request){
   request->send(200, "application/json", listModesJSON());
 }
 
+void handleVersion(AsyncWebServerRequest *request){
+  request->send(200, "text/plain", SKETCH_VERSION);
+}
+
 bool shouldSaveConfig = false;
 
 void configModeCallback(AsyncWiFiManager *myWiFiManager) {
@@ -526,7 +554,7 @@ void connectToWiFi(void) {
   // ***************************************************************************
   // Setup: AsyncWiFiManager
   // ***************************************************************************
-  DEBUG_PRINTLN((readConfigFS()) ? "WiFiManager config FS Read success!": "WiFiManager config FS Read failure!");
+  DEBUG_PRINTLN((readConfigFS()) ? "AsyncWiFiManager config FS Read success!": "AsyncWiFiManager config FS Read failure!");
   
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.begin(wifi_ssid.c_str(), wifi_pwd.c_str());
@@ -581,8 +609,7 @@ void connectToWiFi(void) {
   ETS_UART_INTR_DISABLE();
   wifi_station_disconnect(); // We disconnect from current WiFi so that Mesh networking will work
   ETS_UART_INTR_ENABLE();
-  
-  dns=DNSServer();
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.mode(WIFI_AP_STA);
+
+  dns=DNSServer();     // destroy DNS used by AsyncWiFiManager
+  server.reset();      // destroy server used by AsyncWiFiManager
 }

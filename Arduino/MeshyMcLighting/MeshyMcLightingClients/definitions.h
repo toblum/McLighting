@@ -8,8 +8,8 @@
 ///////////////////////////    ^Enter WiFi channel set on your ROUTER /////////
 
 ///////// LED Settings ////////////////
-//#define USE_WS2812FX                  // Uses WS2812FX
-#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
+#define USE_WS2812FX                  // Uses WS2812FX
+//#define USE_NEOANIMATIONFX            // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3
 
 #define LED_PIN 14                    // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24                    // Number of leds in the strip
@@ -19,7 +19,7 @@
 #define HOSTNAME "MeshyMcLighting"    // Name that shows up on WiFi router once connected to STATION_SSID
 
 #define ENABLE_BUTTON                 // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-//#define ENABLE_WEBSERVER
+///////////#define ENABLE_WEBSERVER//////////// DO NOT ENABLE THIS
 #define ENABLE_STATE_SAVE_SPIFFS      // Saves LED state to SPIFFs
 #define SERIALDEBUG                   // Un/comment to enable debug messages in Serial
 

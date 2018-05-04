@@ -1,8 +1,9 @@
 #include <FS.h>
-//#include <ESP8266mDNS.h>
+#include <ESP8266mDNS.h>
 #include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
 #include <ArduinoJson.h>            //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"            //https://github.com/arkhipenko/TaskScheduler
+#include "version.h"
 
 #ifdef ESP8266
 #include <Hash.h>
@@ -134,13 +135,13 @@ void setup(){
 
   connectToWiFi();
   
-  DEBUG_PRINT("WS2812FX setup ... ");
-  strip.init();
-  DEBUG_PRINTLN("done!");
+  DEBUG_PRINT("WS28xx strip setup ");
+  strip.init(); DEBUG_PRINT(".");
+  DEBUG_PRINTLN(" done!");
 
   DEBUG_PRINTLN("---------- WiFi Mesh Setup ---------");
-  //WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  //WiFi.mode(WIFI_AP_STA);
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname(HOSTNAME);
     
   //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
@@ -162,46 +163,46 @@ void setup(){
   DEBUG_PRINTLN("----- WiFi Mesh Setup complete -----");
 
   //Async webserver
-  //modes.reserve(5000);
   modes_write_to_spiffs();
+
+  DEBUG_PRINT("Starting mDNS ");
+  bool mdns_result = MDNS.begin(HOSTNAME); DEBUG_PRINT(".");
+  if (mdns_result) MDNS.addService("http", "tcp", 80); DEBUG_PRINT(".");
+  DEBUG_PRINTLN(" done!");
   
-  DEBUG_PRINT("Async HTTP server starting ... ");
+  DEBUG_PRINT("Async HTTP server starting ");
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
   /// everything called is present in WiFiHelper.h
-  server.on("/esp_status", HTTP_GET, handleHeap);
-  server.on("/", HTTP_GET, handleRoot);
+  server.on("/esp_status", HTTP_GET, handleESPStatus); DEBUG_PRINT(".");
+  server.on("/", HTTP_GET, handleRoot); DEBUG_PRINT(".");
   //server.on("/scan", HTTP_GET, handleScanNet);   //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
   //server.on("/scan", HTTP_POST, processScanNet); //Custom WiFi Scanning Webpage attempt by @debsahu for AsyncWebServer
-  server.on("/upload", HTTP_GET, handleUpload);
-  server.on("/upload", HTTP_POST, processUploadReply, processUpload);
-  server.on("/update", HTTP_GET, handleUpdate);
-  server.on("/update", HTTP_POST, processUpdateReply, processUpdate);
-  server.on("/main.js", HTTP_GET, handlemainjs);
-  server.on("/modes", HTTP_GET, handleModes);
-  server.on("/status", HTTP_GET, handleStatus);
-  server.on("/restart", HTTP_GET, handleRestart);
-  server.on("/reset_wlan", HTTP_GET, handleResetWLAN);
-  server.on("/start_config_ap", HTTP_GET, handleStartAP);
+  server.on("/upload", HTTP_GET, handleUpload); DEBUG_PRINT(".");
+  server.on("/upload", HTTP_POST, processUploadReply, processUpload); DEBUG_PRINT(".");
+  server.on("/update", HTTP_GET, handleUpdate); DEBUG_PRINT(".");
+  server.on("/update", HTTP_POST, processUpdateReply, processUpdate); DEBUG_PRINT(".");
+  server.on("/main.js", HTTP_GET, handlemainjs); DEBUG_PRINT(".");
+  server.on("/modes", HTTP_GET, handleModes); DEBUG_PRINT(".");
+  server.on("/status", HTTP_GET, handleStatus); DEBUG_PRINT(".");
+  server.on("/restart", HTTP_GET, handleRestart); DEBUG_PRINT(".");
+  server.on("/reset_wlan", HTTP_GET, handleResetWLAN); DEBUG_PRINT(".");
+  server.on("/start_config_ap", HTTP_GET, handleStartAP); DEBUG_PRINT(".");
+  server.on("/version", HTTP_GET, handleVersion); DEBUG_PRINT(".");
   //Light States
-  server.on("/get_brightness", HTTP_GET, handleGetBrightness);
-  server.on("/get_speed", HTTP_GET, handleGetSpeed);
-  server.on("/get_color", HTTP_GET, handleGetColor);
-  server.on("/get_switch", HTTP_GET, handleGetSwitch);
-  server.on("/off", HTTP_GET, handleOff);
-  server.on("/get_modes", HTTP_GET, handleGetModes);
-  server.on("/set_mode", HTTP_GET, handleSetMode);
-  server.onNotFound(handleNotFound);
+  server.on("/get_brightness", HTTP_GET, handleGetBrightness); DEBUG_PRINT(".");
+  server.on("/get_speed", HTTP_GET, handleGetSpeed); DEBUG_PRINT(".");
+  server.on("/get_color", HTTP_GET, handleGetColor); DEBUG_PRINT(".");
+  server.on("/get_switch", HTTP_GET, handleGetSwitch); DEBUG_PRINT(".");
+  server.on("/off", HTTP_GET, handleOff); DEBUG_PRINT(".");
+  server.on("/get_modes", HTTP_GET, handleGetModes); DEBUG_PRINT(".");
+  server.on("/set_mode", HTTP_GET, handleSetMode); DEBUG_PRINT(".");
+  server.onNotFound(handleNotFound); DEBUG_PRINT(".");
   //server.onFileUpload(handleUpload);            //Not safe
   
   server.begin();
-  DEBUG_PRINTLN("done!");
-
-//  DEBUG_PRINT("Starting MDNS ... ");
-//  bool mdns_result = MDNS.begin(HOSTNAME);
-//  if (mdns_result) MDNS.addService("http", "tcp", 80);
-//  DEBUG_PRINTLN("done!");
+  DEBUG_PRINTLN(" done!");
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     DEBUG_PRINTLN((readStateFS()) ? " Success!" : " Failure!");
@@ -243,6 +244,11 @@ void loop() {
       }
     #endif
   }
+  if(!WiFi.isConnected() and taskConnecttMqtt.isEnabled()){
+  //if(getlocalIP() == IPAddress(0,0,0,0) and taskConnecttMqtt.isEnabled()){
+    taskConnecttMqtt.disable(); // No need to connect to MQTT if there is no connection to WiFi Router
+  }
+  
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     strip.setMode(ws2812fx_mode);

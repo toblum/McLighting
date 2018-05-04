@@ -624,7 +624,7 @@ void sendMessage() {
 }
 
 void receivedCallback(uint32_t from, String & msg) {
-  DEBUG_PRINTF3("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  DEBUG_PRINTF3(">>>>>>>>>> Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
   else DEBUG_PRINTF("Processed incoming message from %u successfully!\n", from);
   #ifdef ENABLE_STATE_SAVE_SPIFFS

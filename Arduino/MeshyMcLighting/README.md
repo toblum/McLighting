@@ -40,6 +40,7 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 
 * Take a note of this WiFi channel and enter it in `#define STATION_WIFI_CHANNEL wifi_channel_from_previous_step` in `definitions.h` in clients
 * Compile **Clients** with this updated value
+* Do not enable webserver for clients
 
 
 #### Libraries to install

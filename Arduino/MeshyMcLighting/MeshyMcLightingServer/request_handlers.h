@@ -340,8 +340,25 @@ char* listStatusJSON(void) {
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
   strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-           mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+  
+  //snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+  //         mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+    
+  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  JsonObject& root = jsonBuffer.createObject();
+  root["mode"] = (uint8_t) mode;
+  root["ws2812fx_mode"] = tmp_mode;
+  root["ws2812fx_mode_name"] = modeName;
+  root["speed"] = ws2812fx_speed;
+  root["brightness"] = brightness;
+  JsonArray& color = root.createNestedArray("color");
+  color.add(main_color.red);
+  color.add(main_color.green);
+  color.add(main_color.blue);
+  
+  root.printTo(json, root.measureLength() + 1);
+
   return json;
 }
 
@@ -356,6 +373,20 @@ String listModesJSON(void) {
   }
   modes += "{}]";
   return modes;
+
+//  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
+//  DynamicJsonBuffer jsonBuffer(bufferSize);
+//  JsonArray& json = jsonBuffer.createArray();
+//  JsonObject&<strip.getModeCount()> object[strip.getModeCount()];
+//  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+//    object[i].add("mode", i);
+//    object[i].add("name", strip.getModeName(i));
+//    json.add(object[i]);
+//  }
+//  char json[root.measureLength() + 1];
+//  root.printTo(json, sizeof(json));
+//
+//  return String(json);
 }
 
 // automatic cycling
@@ -535,8 +566,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 #ifdef ENABLE_AMQTT
   void connectToMqtt(void) {
     DEBUG_PRINTLN("MQTT connecting...");
-    mqttClient.connect();
-    taskConnecttMqtt.delay(TASK_SECOND * 5);
+    if(WiFi.isConnected()){
+      mqttClient.connect();
+      taskConnecttMqtt.delay(TASK_SECOND * 5);
+    } else {
+      taskConnecttMqtt.disable();
+    }
   }
   
   void onMqttConnect(bool sessionPresent) {
@@ -552,6 +587,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     uint16_t packetIdSub1 = mqttClient.subscribe((char *)mqtt_intopic.c_str(), qossub);
     DEBUG_PRINTF("Subscribing at QoS %d, packetId: ", qossub); DEBUG_PRINTLN(packetIdSub1);
     #ifdef ENABLE_HOMEASSISTANT
+      if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
       uint16_t packetIdSub2 = mqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
       DEBUG_PRINTF("Subscribing at QoS %d, packetId: ", qossub); DEBUG_PRINTLN(packetIdSub2);
       #ifdef MQTT_HOME_ASSISTANT_SUPPORT
@@ -919,8 +955,12 @@ void async_mqtt_setup(void){
 #ifdef ENABLE_HOMEASSISTANT
 void fnSendHAState(void){
   String json = statusLEDs(true);
-  mqttClient.publish(mqtt_ha_state_out.c_str(), 1, true, json.c_str());
-  DEBUG_PRINTF3("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), json.c_str());
+  if(mqttClient.connected()) {
+    mqttClient.publish(mqtt_ha_state_out.c_str(), 1, true, json.c_str());
+    DEBUG_PRINTF3("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), json.c_str());
+  } else {
+    DEBUG_PRINTLN("MQTT is disonnected, not sending HA status.");
+  }
   taskSendHAState.disable();
 }
 #endif
@@ -931,24 +971,28 @@ void fnSpiffsSaveState(void){
 }
 #endif
 
-void modes_write_to_spiffs(void) {
-  DEBUG_PRINTLN("Writing Modes to SPIFFS");
-  String modes;
-  modes.reserve(5000);
-  modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
-  for(uint8_t i=1; i < strip.getModeCount() + 1; i++) {
-    modes += "<li><a href='#' class='m' id='";
-    modes += (i);
-    modes += "'>";
-    modes += strip.getModeName(i-1);
-    modes += "</a></li>";
+void modes_write_to_spiffs(bool overWrite = false) {
+  if( !SPIFFS.exists("/modes") or overWrite) {
+    DEBUG_PRINT("Writing Modes to SPIFFs ");
+    String modes = "<li><a href='#' class='m' id='0'>OFF</a></li>";
+    for(uint8_t i=1; i < strip.getModeCount() + 1; i++) {
+      modes += "<li><a href='#' class='m' id='";
+      modes += (i);
+      modes += "'>";
+      modes += strip.getModeName(i-1);
+      modes += "</a></li>";
+      DEBUG_PRINT(".");
+    }
+  
+    File modeFile = SPIFFS.open("/modes", "w");
+    if (!modeFile) DEBUG_PRINTLN("failed to open mode file for writing");
+    modeFile.print(modes);
+    modeFile.close();
+    modes=String();
+    DEBUG_PRINTLN(" done!");
+  } else {
+    DEBUG_PRINTLN("'/modes' already exists on SPIFFs, not overwriting");
   }
-
-  File modeFile = SPIFFS.open("/modes", "w");
-  if (!modeFile) DEBUG_PRINTLN("failed to open mode file for writing");
-  modeFile.print(modes);
-  modeFile.close();
-  modes=String();
 }
 
 void autoTick(void) {
@@ -1134,9 +1178,12 @@ void sendMessage() {
 }
 
 void receivedCallback(uint32_t from, String & msg) {
-  DEBUG_PRINTF3("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  DEBUG_PRINTF3(">>>>>>>>>> Received from %u msg=%s\n", from, msg.c_str());
   if(!processJson(msg)) return;
   else DEBUG_PRINTF("Processed incoming message from %u successfully!\n", from);
+  #ifdef ENABLE_HOMEASSISTANT
+    if(!taskSendHAState.isEnabled()) taskSendHAState.enableDelayed(TASK_SECOND * 4);
+  #endif
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     if(!taskSpiffsSaveState.isEnabled()) taskSpiffsSaveState.enableDelayed(TASK_SECOND * 3);
   #endif
@@ -1145,11 +1192,11 @@ void receivedCallback(uint32_t from, String & msg) {
 void newConnectionCallback(uint32_t nodeId) {
   String msg = statusLEDs();
   mesh.sendSingle(nodeId, msg);
-  DEBUG_PRINTF("--> New Connection, nodeId = %u\n", nodeId);
+  DEBUG_PRINTF("$$$$$$$$$$$ New Connection, nodeId = %u\n", nodeId);
 }
 
 void changedConnectionCallback() {
-  DEBUG_PRINTF("Changed connections %s\n", mesh.subConnectionJson().c_str());
+  DEBUG_PRINTF("~~~~~~~~~~~ Changed connections %s\n", mesh.subConnectionJson().c_str());
   nodes = mesh.getNodeList();
   DEBUG_PRINTF("Num nodes: %d\n", nodes.size());
   DEBUG_PRINT("Connection list:");
