@@ -26,7 +26,7 @@ void handleESPStatus(AsyncWebServerRequest *request){
   #endif
   char buffer[json.measureLength() + 1];
   json.printTo(buffer, sizeof(buffer));
-  request->send(200, "application/json", buffer);
+  request->send(200, "application/json", String(buffer));
 }
 
 void handleRoot(AsyncWebServerRequest *request){

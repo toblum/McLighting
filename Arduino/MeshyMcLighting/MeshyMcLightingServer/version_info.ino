@@ -10,7 +10,7 @@
  * - Fixed more MQTT hangups, max MQTT retries is set to 3
  * - Only send MQTT message if connected to MQTT server
  * - Fixed: When connection topology has changed, no need to re-broadcast
- * - Added DNS support
+ * - Added DNS support - retracted, not messing with DNS with mesh. messes with everything
  * 
  * 
  * 

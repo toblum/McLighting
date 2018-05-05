@@ -580,9 +580,10 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
 #ifdef ENABLE_AMQTT
   void connectToMqtt(void) {
+    DEBUG_PRINTLN(getlocalIP());
     DEBUG_PRINT("ConnectToMqtt() called: ");
-    if(WiFi.status() == WL_CONNECTED or getlocalIP() != IPAddress(0,0,0,0)){
-      DEBUG_PRINTLN("connecting . ");
+    if(getlocalIP() != IPAddress(0,0,0,0)){
+      DEBUG_PRINTLN("Connecting ... ");
       mqttClient.connect();
     } else {
       DEBUG_PRINTLN("WiFi disconnected!");
@@ -592,7 +593,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   
   void onMqttConnect(bool sessionPresent) {
     taskConnecttMqtt.disable();
-    DEBUG_PRINTLN("MQTT connected!");
+    DEBUG_PRINT("MQTT connected!\n");
     DEBUG_PRINT("Session present: ");
     DEBUG_PRINTLN(sessionPresent);
     char * message = new char[18 + strlen(HOSTNAME) + 1];
@@ -652,7 +653,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       DEBUG_PRINTLN("Not enough space on esp8266.");
     }
     
-    if (WiFi.status() != WL_CONNECTED or getlocalIP() != IPAddress(0,0,0,0)) {
+    if (getlocalIP() != IPAddress(0,0,0,0)) {
       DEBUG_PRINTLN("WiFi is connected: Calling ConnectToMqtt() Task");
       taskConnecttMqtt.enableIfNot();
       //taskConnecttMqtt.enable();

@@ -165,7 +165,7 @@ void setup(){
   modes_write_to_spiffs_mclighting();
 
   DEBUG_PRINT("Starting mDNS ");
-  dns.start(DNS_PORT, "*", myAPIP);   // Start DNS server and redirect every request from port 53 to MeshIP
+  //dns.start(DNS_PORT, "*", myAPIP);   // Start DNS server and redirect every request from port 53 to MeshIP
   bool mdns_result = MDNS.begin(HOSTNAME); DEBUG_PRINT(".");
   if (mdns_result) MDNS.addService("http", "tcp", 80); DEBUG_PRINT(".");
   DEBUG_PRINTLN(" done!");
@@ -240,9 +240,8 @@ void loop() {
       if(myIP != IPAddress(0,0,0,0)) {
       //if (WiFi.isConnected()) {
         //connectToMqtt();
-        dns.stop();
-        dns = DNSServer();              // Don't know if this will mess with mDNS
-        dns.start(DNS_PORT, "*", myIP); // Start DNS server and redirect every request from port 53 to our newly obtained IP
+        //dns = DNSServer();              // Don't know if this will mess with mDNS
+        //dns.start(DNS_PORT, "*", myIP); // Start DNS server and redirect every request from port 53 to our newly obtained IP
         taskConnecttMqtt.restart();
         taskConnecttMqtt.enableIfNot();
       } else {
@@ -251,11 +250,10 @@ void loop() {
     #endif
   }
   #ifdef ENABLE_AMQTT
-    if((WiFi.status() != WL_CONNECTED or getlocalIP() == IPAddress(0,0,0,0)) and taskConnecttMqtt.isEnabled()){
+    if((getlocalIP() == IPAddress(0,0,0,0)) and taskConnecttMqtt.isEnabled()){
       taskConnecttMqtt.disable(); // No need to connect to MQTT if there is no connection to WiFi Router
-      dns.stop();
-      dns = DNSServer();                // Don't know if this will mess with mDNS
-      dns.start(DNS_PORT, "*", myAPIP); // Start DNS server and redirect every request from port 53 to MeshIP
+      //dns = DNSServer();                // Don't know if this will mess with mDNS
+      //dns.start(DNS_PORT, "*", myAPIP); // Start DNS server and redirect every request from port 53 to MeshIP
     }
   #endif
   
