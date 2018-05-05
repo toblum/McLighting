@@ -20,6 +20,7 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 
 ### Limitations/TODO
 
+- For stability, compile both **SERVER** and **CLIENTS** on IwIP variant 1.4 Higher Bandwidth (very flaky in IwIP v2)
 - Use Arduino ESP8266 **GIT** version (Issues with v2.4.1: not memory optimized)
 - WS2812FX has **delays** meant for ESP32. Track [issue here](https://github.com/kitesurfer1404/WS2812FX/issues/89) NeoAnimationFX has no delays.
 
@@ -28,6 +29,8 @@ Wouldn't be cool for many McLighting to talk to each other and synchronize? Here
 - All issues mentioned in limitations
 
 ## How to use this?
+
+For stability reasons, compile both **SERVER** and **CLIENTS** on IwIP variant 1.4 Higher Bandwidth
 
 **SERVER** (Connects to outside world:  WiFi/MQTT/HA)
 
