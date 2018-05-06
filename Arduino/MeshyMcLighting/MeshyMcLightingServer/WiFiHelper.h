@@ -485,10 +485,10 @@ void handleStartAP(AsyncWebServerRequest *request){
 }
 
 void handleGetBrightness(AsyncWebServerRequest *request){
-  String str_brightness = String((int) (brightness / 2.55));
-  request->send(200, "text/plain", str_brightness );
+  //String str_brightness = String((int) (brightness / 2.55)); // no need to rescale 0-255 to 0-100
+  request->send(200, "text/plain", String(brightness) );
   DEBUG_PRINT("/get_brightness: ");
-  DEBUG_PRINTLN(str_brightness);
+  DEBUG_PRINTLN(brightness);
 }
 
 void handleGetSpeed(AsyncWebServerRequest *request){

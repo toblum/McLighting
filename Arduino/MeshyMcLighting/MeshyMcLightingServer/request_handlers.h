@@ -1228,5 +1228,5 @@ void changedConnectionCallback() {
   DEBUG_PRINTLN();
 
   //no need to re-broadcast data, taken care of in newConnectionCallback()
-  //if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
+  if(!taskSendMessage.isEnabled()) taskSendMessage.enableDelayed(TASK_SECOND * 5);
 }
