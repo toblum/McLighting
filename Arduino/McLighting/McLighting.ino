@@ -1,5 +1,5 @@
 #include "definitions.h"
-
+#include "version.h"
 // ***************************************************************************
 // Load libraries for: WebServer / WiFiManager / WebSockets
 // ***************************************************************************
@@ -488,14 +488,46 @@ void setup() {
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    String json = "{";
-    json += "\"heap\":" + String(ESP.getFreeHeap());
-    // json += ", \"analog\":" + String(analogRead(A0));
-    // json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
-    json += "}";
+    //String json = "{";
+    //json += "\"heap\":" + String(ESP.getFreeHeap());
+    //// json += ", \"analog\":" + String(analogRead(A0));
+    //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
+    //json += "}";
+    
+    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(9));
+    JsonObject& json = jsonBuffer.createObject();
+  
+    json["HOSTNAME"] = HOSTNAME;
+    json["version"] = SKETCH_VERSION;
+    json["heap"] = ESP.getFreeHeap();
+    #ifndef USE_NEOANIMATIONFX
+    json["animation_lib"] = "WS2812FX";
+    json["pin"] = PIN;
+    #else
+    json["animation_lib"] = "NeoAnimationFX";
+    json["pin"] = "Ignored, check NEOMETHOD";
+    #endif
+    json["number_leds"] = NUMLEDS;
+    #ifdef ENABLE_BUTTON
+      json["button_mode"] = "ON";
+    #else
+      json["button_mode"] = "OFF";
+    #endif
+    #ifdef ENABLE_AMQTT
+      json["mqtt"] = "ON";
+    #else
+      json["mqtt"] = "OFF";
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      json["home_assistant"] = "ON";
+    #else
+      json["home_assistant"] = "OFF";
+    #endif
+    char buffer[json.measureLength() + 1];
+    json.printTo(buffer, sizeof(buffer));
     server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/json", json);
-    json = String();
+    server.send(200, "application/json", String(buffer));
+    //json = String();
   });
 
 
