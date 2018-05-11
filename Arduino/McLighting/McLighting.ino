@@ -523,11 +523,13 @@ void setup() {
     #else
       json["home_assistant"] = "OFF";
     #endif
-    char buffer[json.measureLength() + 1];
-    json.printTo(buffer, sizeof(buffer));
+    //char buffer[json.measureLength() + 1];
+    //json.printTo(buffer, sizeof(buffer));
+    String json_str;
+    json.printTo(json_str);
     server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", String(buffer));
-    //json = String();
+    server.send(200, "application/json", json_str);
+    //json_str = String();
   });
 
 
@@ -914,6 +916,7 @@ void loop() {
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setMode(ws2812fx_mode);
+    strip.trigger();
     prevmode = SET_MODE;
     mode = SETCOLOR;
   }
@@ -923,14 +926,17 @@ void loop() {
   }
   if (mode == SETCOLOR) {
     strip.setColor(main_color.red, main_color.green, main_color.blue);
+    strip.trigger();
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
+    strip.trigger();
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
+    strip.trigger();
     if (prevmode == SET_MODE) prevmode == HOLD;
     mode = HOLD;
   }
@@ -938,28 +944,34 @@ void loop() {
     if (mode == WIPE) {
       strip.setColor(main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_COLOR_WIPE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == RAINBOW) {
       strip.setMode(FX_MODE_RAINBOW);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == RAINBOWCYCLE) {
       strip.setMode(FX_MODE_RAINBOW_CYCLE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
       strip.setColor(main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_THEATER_CHASE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
       strip.setColor(main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASERAINBOW) {
       strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+      strip.trigger();
       mode = HOLD;
     }
   #endif
