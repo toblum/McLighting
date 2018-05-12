@@ -937,7 +937,7 @@ void loop() {
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
     strip.trigger();
-    if (prevmode == SET_MODE) prevmode == HOLD;
+    if (prevmode == SET_MODE) prevmode = HOLD;
     mode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
