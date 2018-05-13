@@ -11,6 +11,9 @@
 [![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
 
 ___
+Update 13.05.2018:
+I've worked on a new web UI for the last weeks. It's now available as an early preview. There is a [video](https://youtu.be/lryDPMA2qpY) that shows the new features. [Try it out](https://github.com/toblum/McLightingUI) if you want and leave some feedback.
+
 Update 07.04.2018:  
 And even more changes to McLighting! Most of them were contributed by user @debsahu. Thank you!
 - Update arduino-esp8266 to latest, at least version 2.4.1
