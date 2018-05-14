@@ -30,6 +30,9 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #if ( (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_MQTT)) and (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT)) )
 #error "To use HA, you have to either enable PubCubClient or AsyncMQTT"
 #endif
+#if ( !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOME_ASSISTANT_SUPPORT) )
+#error "To use HA support, you have to either enable Homeassistant component"
+#endif
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
