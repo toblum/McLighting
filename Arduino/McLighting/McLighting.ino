@@ -1,5 +1,6 @@
 #include "definitions.h"
 
+#include "version.h"
 // ***************************************************************************
 // Load libraries for: WebServer / WiFiManager / WebSockets
 // ***************************************************************************
@@ -510,17 +511,53 @@ DBG_OUTPUT_PORT.println("Starting....");
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
   server.on("/edit", HTTP_POST, []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "");
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    String json = "{";
-    json += "\"heap\":" + String(ESP.getFreeHeap());
-    // json += ", \"analog\":" + String(analogRead(A0));
-    // json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
-    json += "}";
-    server.send(200, "text/json", json);
-    json = String();
+    //String json = "{";
+    //json += "\"heap\":" + String(ESP.getFreeHeap());
+    //// json += ", \"analog\":" + String(analogRead(A0));
+    //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
+    //json += "}";
+    
+    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(9));
+    JsonObject& json = jsonBuffer.createObject();
+  
+    json["HOSTNAME"] = HOSTNAME;
+    json["version"] = SKETCH_VERSION;
+    json["heap"] = ESP.getFreeHeap();
+    #ifndef USE_NEOANIMATIONFX
+    json["animation_lib"] = "WS2812FX";
+    json["pin"] = PIN;
+    #else
+    json["animation_lib"] = "NeoAnimationFX";
+    json["pin"] = "Ignored, check NEOMETHOD";
+    #endif
+    json["number_leds"] = NUMLEDS;
+    #ifdef ENABLE_BUTTON
+      json["button_mode"] = "ON";
+    #else
+      json["button_mode"] = "OFF";
+    #endif
+    #ifdef ENABLE_AMQTT
+      json["mqtt"] = "ON";
+    #else
+      json["mqtt"] = "OFF";
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      json["home_assistant"] = "ON";
+    #else
+      json["home_assistant"] = "OFF";
+    #endif
+    //char buffer[json.measureLength() + 1];
+    //json.printTo(buffer, sizeof(buffer));
+    String json_str;
+    json.printTo(json_str);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", json_str);
+    //json_str = String();
   });
 
 
@@ -535,12 +572,14 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   server.on("/restart", []() {
     DBG_OUTPUT_PORT.printf("/restart\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "restarting..." );
     ESP.restart();
   });
 
   server.on("/reset_wlan", []() {
     DBG_OUTPUT_PORT.printf("/reset_wlan\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "Resetting WLAN and restarting..." );
     WiFiManager wifiManager;
     wifiManager.resetSettings();
@@ -549,6 +588,7 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   server.on("/start_config_ap", []() {
     DBG_OUTPUT_PORT.printf("/start_config_ap\n");
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "Starting config AP ..." );
     WiFiManager wifiManager;
     wifiManager.startConfigPortal(HOSTNAME);
@@ -586,6 +626,7 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   server.on("/get_brightness", []() {
     String str_brightness = String((int) (brightness / 2.55));
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_brightness );
     DBG_OUTPUT_PORT.print("/get_brightness: ");
     DBG_OUTPUT_PORT.println(str_brightness);
@@ -612,12 +653,14 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   server.on("/get_speed", []() {
     String str_speed = String(ws2812fx_speed);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_speed );
     DBG_OUTPUT_PORT.print("/get_speed: ");
     DBG_OUTPUT_PORT.println(str_speed);
   });
 
   server.on("/get_switch", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
     DBG_OUTPUT_PORT.printf("/get_switch: %s\n", (mode == OFF) ? "0" : "1");
   });
@@ -625,6 +668,7 @@ DBG_OUTPUT_PORT.println("Starting....");
   server.on("/get_color", []() {
     char rgbcolor[9];
     snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
     DBG_OUTPUT_PORT.println(rgbcolor);
@@ -646,6 +690,27 @@ DBG_OUTPUT_PORT.println("Starting....");
     #endif
     #ifdef ENABLE_AMQTT
     amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = false;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+  });
+
+    server.on("/auto", []() {
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      exit_func = true;
+    #endif
+    mode = OFF;
+    //getArgs();
+    getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =auto").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =auto").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = false;
@@ -918,6 +983,7 @@ void loop() {
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setMode(ws2812fx_mode);
+    strip.trigger();
     prevmode = SET_MODE;
     mode = SETCOLOR;
   }
@@ -927,40 +993,52 @@ void loop() {
   }
   if (mode == SETCOLOR) {
     strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+    strip.trigger();
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
+    strip.trigger();
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
-    if (prevmode == SET_MODE) prevmode == HOLD;
+    strip.trigger();
+    if (prevmode == SET_MODE) prevmode = HOLD;
     mode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_COLOR_WIPE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == RAINBOW) {
       strip.setMode(FX_MODE_RAINBOW);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == RAINBOWCYCLE) {
       strip.setMode(FX_MODE_RAINBOW_CYCLE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_THEATER_CHASE);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
+      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
+      strip.trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASERAINBOW) {
       strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+      strip.trigger();
       mode = HOLD;
     }
   #endif
@@ -1007,7 +1085,7 @@ void loop() {
     if (state_save_requested && time_statechange + timeout_statechange_save <= millis()) {
       time_statechange = 0;
       state_save_requested = false;
-      writeEEPROM(256, 36, last_state); // 256 --> last_state (reserved 32 bytes)
+      writeEEPROM(256, 36, last_state); // 256 --> last_state (reserved 36 bytes)
       EEPROM.commit();
     }
   #endif

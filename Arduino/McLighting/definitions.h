@@ -17,7 +17,7 @@ const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 //#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 //#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-//#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
+#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 #define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
@@ -36,6 +36,9 @@ const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 #endif
 #if ( (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_MQTT)) and (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT)) )
 #error "To use HA, you have to either enable PubCubClient or AsyncMQTT"
+#endif
+#if ( !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOME_ASSISTANT_SUPPORT) )
+#error "To use HA support, you have to either enable Homeassistant component"
 #endif
 
 // parameters for automatically cycling favorite patterns

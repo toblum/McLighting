@@ -231,6 +231,12 @@ void setModeByStateString(String saved_state_string) {
         stateOn = false;
       #endif
     }
+    if (str_mode.startsWith("=auto")) {
+      mode = AUTO;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
     if (str_mode.startsWith("=all")) {
       ws2812fx_mode = FX_MODE_STATIC;
       mode = SET_MODE;
@@ -289,35 +295,73 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
 }
 
-char* listStatusJSON() {
-  char json[255];
-  char modeName[30];
+String listStatusJSON(void) {
+  //char json[255];
+  //char modeName[30];
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
-  strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d, %d]}",
-           mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
+  //strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
+  
+  //snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
+  //         mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+
+  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  JsonObject& root = jsonBuffer.createObject();
+  root["mode"] = (uint8_t) mode;
+  root["ws2812fx_mode"] = tmp_mode;
+  root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
+  root["speed"] = ws2812fx_speed;
+  root["brightness"] = brightness;
+  JsonArray& color = root.createNestedArray("color");
+  color.add(main_color.white);
+  color.add(main_color.red);
+  color.add(main_color.green);
+  color.add(main_color.blue);
+  
+//  char* json = (char*) malloc(root.measureLength() + 1);
+//  root.printTo(json, sizeof(json));
+
+  String json;
+  root.printTo(json);
+  
   return json;
 }
 
 void getStatusJSON() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", listStatusJSON() );
 }
 
-String listModesJSON() {
-  String modes = "[";
+String listModesJSON(void) {
+//  String modes = "[";
+//  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+//    modes += "{\"mode\":";
+//    modes += i;
+//    modes += ", \"name\":\"";
+//    modes += strip.getModeName(i);
+//    modes += "\"},";
+//  }
+//  modes += "{}]";
+//  return modes;
+
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  JsonArray& json = jsonBuffer.createArray();
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-    modes += "{\"mode\":";
-    modes += i;
-    modes += ", \"name\":\"";
-    modes += strip.getModeName(i);
-    modes += "\"},";
+    JsonObject& object = json.createNestedObject();
+    object["mode"] = i;
+    object["name"] = strip.getModeName(i);
   }
-  modes += "{}]";
-  return modes;
+  JsonObject& object = json.createNestedObject();
+  
+  String json_str;
+  json.printTo(json_str);
+  return json_str;
 }
 
 void getModesJSON() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", listModesJSON() );
 }
 
@@ -344,7 +388,8 @@ void handleMinimalUpload() {
          </form>\
       </body>\
     </html>"
-           );
+  );
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "text/html", temp );
 }
 
@@ -445,7 +490,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     brightness = constrain(b, 0, 255);
     strip.setBrightness(brightness);
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", brightness);
+    DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\n", brightness);
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
