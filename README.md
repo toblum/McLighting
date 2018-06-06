@@ -133,7 +133,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 ## Todos
 - [x] MQTT support
 - [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
+- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
@@ -152,6 +152,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
 - [x] Make a set of NodeRed nodes.
+- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
