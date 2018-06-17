@@ -494,8 +494,8 @@ void setup() {
     //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
     //json += "}";
     
-    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(9));
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(9));
+    JsonObject& json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
@@ -526,7 +526,7 @@ void setup() {
     //char buffer[json.measureLength() + 1];
     //json.printTo(buffer, sizeof(buffer));
     String json_str;
-    json.printTo(json_str);
+    serializeJson(json, json_str);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", json_str);
     //json_str = String();
