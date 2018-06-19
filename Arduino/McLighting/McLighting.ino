@@ -320,6 +320,10 @@ void setup() {
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
+  // Uncomment if you want to set static IP 
+  // Order is: IP, Gateway and Subnet 
+  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,128), IPAddress(192,168,0,1), IPAddress(255,255,255,0));   
+
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
   //here  "AutoConnectAP"
