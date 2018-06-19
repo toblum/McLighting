@@ -492,12 +492,6 @@ void setup() {
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    //String json = "{";
-    //json += "\"heap\":" + String(ESP.getFreeHeap());
-    //// json += ", \"analog\":" + String(analogRead(A0));
-    //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
-    //json += "}";
-    
     DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(9));
     JsonObject& json = jsonBuffer.to<JsonObject>();
   
@@ -527,13 +521,11 @@ void setup() {
     #else
       json["home_assistant"] = "OFF";
     #endif
-    //char buffer[json.measureLength() + 1];
-    //json.printTo(buffer, sizeof(buffer));
+    
     String json_str;
     serializeJson(json, json_str);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", json_str);
-    //json_str = String();
   });
 
 

@@ -80,7 +80,6 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
     const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
   #endif
 
-
   char mqtt_host[64] = "";
   char mqtt_port[6] = "";
   char mqtt_user[32] = "";

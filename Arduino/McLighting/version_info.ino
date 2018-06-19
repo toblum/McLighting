@@ -9,4 +9,5 @@
  * 
  * 17 Jun 2018 v 2.1.2
  * - Upgrade to ArduinoJSON 6.xx from ArduinoJSON 5.xx
+ * - Added example for static IP
   */

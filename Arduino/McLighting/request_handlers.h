@@ -92,10 +92,6 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 
-//  for (int i = 0; i < strip.numPixels(); i++) {
-//    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
-//  }
-//  strip.show();
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
   #ifdef ENABLE_LEGACY_ANIMATIONS
     exit_func = true;
@@ -279,15 +275,8 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
 }
 
 String listStatusJSON(void) {
-  //char json[255];
-  //char modeName[30];
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
-  //strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
-  
-  //snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-  //         mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
-
   const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject& root = jsonBuffer.to<JsonObject>();
@@ -301,9 +290,6 @@ String listStatusJSON(void) {
   color.add(main_color.green);
   color.add(main_color.blue);
   
-//  char* json = (char*) malloc(root.measureLength() + 1);
-//  root.printTo(json, sizeof(json));
-
   String json;
   serializeJson(root, json);
   
@@ -316,17 +302,6 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-//  String modes = "[";
-//  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-//    modes += "{\"mode\":";
-//    modes += i;
-//    modes += ", \"name\":\"";
-//    modes += strip.getModeName(i);
-//    modes += "\"},";
-//  }
-//  modes += "{}]";
-//  return modes;
-
   const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray& json = jsonBuffer.to<JsonArray>();
@@ -354,7 +329,7 @@ void handleMinimalUpload() {
   char temp[1500];
 
   snprintf ( temp, 1500,
-             "<!DOCTYPE html>\
+   "<!DOCTYPE html>\
     <html>\
       <head>\
         <title>ESP8266 Upload</title>\
