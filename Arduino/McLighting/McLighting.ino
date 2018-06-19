@@ -498,6 +498,15 @@ void setup() {
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
     json["heap"] = ESP.getFreeHeap();
+    json["sketch_size"] = ESP.getSketchSize();
+    json["free_sketch_space"] = ESP.getFreeSketchSpace();
+    json["flash_chip_size"] = ESP.getFlashChipSize();
+    json["flash_chip_real_size"] = ESP.getFlashChipRealSize();
+    json["flash_chip_speed"] = ESP.getFlashChipSpeed();
+    json["sdk_version"] = ESP.getSdkVersion();
+    json["core_version"] = ESP.getCoreVersion();
+    json["cpu_freq"] = ESP.getCpuFreqMHz();
+    json["chip_id"] = ESP.getFlashChipId();
     #ifndef USE_NEOANIMATIONFX
     json["animation_lib"] = "WS2812FX";
     json["pin"] = PIN;
@@ -512,14 +521,32 @@ void setup() {
       json["button_mode"] = "OFF";
     #endif
     #ifdef ENABLE_AMQTT
+      json["amqtt"] = "ON";
+    #endif
+    #ifdef ENABLE_MQTT
       json["mqtt"] = "ON";
-    #else
-      json["mqtt"] = "OFF";
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       json["home_assistant"] = "ON";
     #else
       json["home_assistant"] = "OFF";
+    #endif
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      json["legacy_animations"] = "ON";
+    #else
+      json["legacy_animations"] = "OFF";
+    #endif
+    #ifdef HTTP_OTA
+      json["esp8266_http_updateserver"] = "ON";
+    #endif
+    #ifdef ENABLE_OTA
+      json["arduino_ota"] = "ON";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      json["state_save"] = "SPIFFS";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_EEPROM
+      json["state_save"] = "EEPROM";
     #endif
     
     String json_str;
