@@ -492,7 +492,7 @@ void setup() {
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(9));
+    DynamicJsonDocument jsonBuffer;
     JsonObject& json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
