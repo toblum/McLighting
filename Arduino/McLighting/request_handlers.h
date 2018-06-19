@@ -92,10 +92,6 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 
-//  for (int i = 0; i < strip.numPixels(); i++) {
-//    strip.setPixelColor(i, main_color.red, main_color.green, main_color.blue);
-//  }
-//  strip.show();
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", main_color.red, main_color.green, main_color.blue);
   #ifdef ENABLE_LEGACY_ANIMATIONS
     exit_func = true;
@@ -279,18 +275,11 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
 }
 
 String listStatusJSON(void) {
-  //char json[255];
-  //char modeName[30];
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
-  //strncpy_P(modeName, (PGM_P)strip.getModeName(tmp_mode), sizeof(modeName)); // copy from progmem
-  
-  //snprintf(json, sizeof(json), "{\"mode\":%d, \"ws2812fx_mode\":%d, \"ws2812fx_mode_name\":\"%s\", \"speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d]}",
-  //         mode, tmp_mode, modeName, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
-
   const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-  JsonObject& root = jsonBuffer.createObject();
+  DynamicJsonDocument jsonBuffer(bufferSize);
+  JsonObject& root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = tmp_mode;
   root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
@@ -301,11 +290,8 @@ String listStatusJSON(void) {
   color.add(main_color.green);
   color.add(main_color.blue);
   
-//  char* json = (char*) malloc(root.measureLength() + 1);
-//  root.printTo(json, sizeof(json));
-
   String json;
-  root.printTo(json);
+  serializeJson(root, json);
   
   return json;
 }
@@ -316,20 +302,9 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-//  String modes = "[";
-//  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-//    modes += "{\"mode\":";
-//    modes += i;
-//    modes += ", \"name\":\"";
-//    modes += strip.getModeName(i);
-//    modes += "\"},";
-//  }
-//  modes += "{}]";
-//  return modes;
-
   const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-  JsonArray& json = jsonBuffer.createArray();
+  DynamicJsonDocument jsonBuffer(bufferSize);
+  JsonArray& json = jsonBuffer.to<JsonArray>();
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
     JsonObject& object = json.createNestedObject();
     object["mode"] = i;
@@ -338,7 +313,7 @@ String listModesJSON(void) {
   JsonObject& object = json.createNestedObject();
   
   String json_str;
-  json.printTo(json_str);
+  serializeJson(json, json_str);
   return json_str;
 }
 
@@ -354,7 +329,7 @@ void handleMinimalUpload() {
   char temp[1500];
 
   snprintf ( temp, 1500,
-             "<!DOCTYPE html>\
+   "<!DOCTYPE html>\
     <html>\
       <head>\
         <title>ESP8266 Upload</title>\
@@ -790,9 +765,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
     void sendState() {
       const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
-      //StaticJsonBuffer<bufferSize> jsonBuffer;
-      DynamicJsonBuffer jsonBuffer(bufferSize);
-      JsonObject& root = jsonBuffer.createObject();
+      DynamicJsonDocument jsonBuffer(bufferSize);
+      JsonObject& root = jsonBuffer.to<JsonObject>();
 
       root["state"] = (stateOn) ? on_cmd : off_cmd;
       JsonObject& color = root.createNestedObject("color");
@@ -810,8 +784,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
       root["effect"] = modeName;
 
-      char buffer[root.measureLength() + 1];
-      root.printTo(buffer, sizeof(buffer));
+      char buffer[measureJson(root) + 1];
+      serializeJson(root, buffer, sizeof(buffer));
 
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
@@ -828,16 +802,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
     bool processJson(char* message) {
       const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + 150;
-      //StaticJsonBuffer<bufferSize> jsonBuffer;
-      DynamicJsonBuffer jsonBuffer(bufferSize);
-      JsonObject& root = jsonBuffer.parseObject(message);
-
-      if (!root.success()) {
-        DBG_OUTPUT_PORT.println("parseObject() failed");
+      DynamicJsonDocument jsonBuffer(bufferSize);
+      DeserializationError error = deserializeJson(jsonBuffer, message);
+      if (error) {
+        DBG_OUTPUT_PORT.print("parseObject() failed: ");
+        DBG_OUTPUT_PORT.println(error.c_str());
         return false;
       }
       //DBG_OUTPUT_PORT.println("JSON ParseObject() done!");
-
+      JsonObject& root = jsonBuffer.as<JsonObject>();
+      
       if (root.containsKey("state")) {
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0 and !(animation_on)) {
@@ -886,7 +860,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       if (root.containsKey("effect")) {
         animation_on = true;
-        String effectString = root["effect"].asString();
+        String effectString = root["effect"].as<String>();
 
         for (uint8_t i = 0; i < strip.getModeCount(); i++) {
           if(String(strip.getModeName(i)) == effectString) {
@@ -963,8 +937,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-            DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
-            JsonObject& json = jsonBuffer.createObject();
+            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+            JsonObject& json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
             json["platform"] = "mqtt_json";
             json["state_topic"] = mqtt_ha_state_out;
@@ -979,8 +953,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             for (uint8_t i = 0; i < strip.getModeCount(); i++) {
               effect_list.add(strip.getModeName(i));
             }
-            char buffer[json.measureLength() + 1];
-            json.printTo(buffer, sizeof(buffer));
+            char buffer[json.measureJson() + 1];
+            serializeJson(json, buffer, sizeof(buffer));
             mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
           #endif
         #endif
@@ -1043,8 +1017,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
-          JsonObject& json = jsonBuffer.createObject();
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+          JsonObject& json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
           json["platform"] = "mqtt_json";
           json["state_topic"] = mqtt_ha_state_out;
@@ -1059,8 +1033,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           for (uint8_t i = 0; i < strip.getModeCount(); i++) {
             effect_list.add(strip.getModeName(i));
           }
-          char buffer[json.measureLength() + 1];
-          json.printTo(buffer, sizeof(buffer));
+          char buffer[json.measureJson() + 1];
+          serializeJson(json, buffer, sizeof(buffer));
           DBG_OUTPUT_PORT.println(buffer);
           amqttClient.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), qospub, true, buffer);
         #endif
@@ -1213,9 +1187,8 @@ bool writeConfigFS(bool saveConfig){
     //FS save
     updateFS = true;
     DBG_OUTPUT_PORT.print("Saving config: ");
-    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(4));
-//    StaticJsonBuffer<JSON_OBJECT_SIZE(4)> jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4));
+    JsonObject& json = jsonBuffer.to<JsonObject>();
     json["mqtt_host"] = mqtt_host;
     json["mqtt_port"] = mqtt_port;
     json["mqtt_user"] = mqtt_user;
@@ -1225,8 +1198,8 @@ bool writeConfigFS(bool saveConfig){
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
 
-    json.printTo(DBG_OUTPUT_PORT);
-    json.printTo(configFile);
+    serializeJson(json, DBG_OUTPUT_PORT);
+    serializeJson(json, configFile);
     configFile.close();
     updateFS = false;
     return true;
@@ -1250,13 +1223,13 @@ bool readConfigFS() {
       size_t size = configFile.size();
       std::unique_ptr<char[]> buf(new char[size]);
       configFile.readBytes(buf.get(), size);
-      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(4)+300);
-//      StaticJsonBuffer<JSON_OBJECT_SIZE(4)+300> jsonBuffer;
-      JsonObject& json = jsonBuffer.parseObject(buf.get());
+      DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
+      DeserializationError error = deserializeJson(jsonBuffer, buf.get());
       DBG_OUTPUT_PORT.print("Config: ");
-      json.printTo(DBG_OUTPUT_PORT);
-      if (json.success()) {
+      if (!error) {
         DBG_OUTPUT_PORT.println(" Parsed!");
+        JsonObject& json = jsonBuffer.as<JsonObject>();
+        serializeJson(json, DBG_OUTPUT_PORT);
         strcpy(mqtt_host, json["mqtt_host"]);
         strcpy(mqtt_port, json["mqtt_port"]);
         strcpy(mqtt_user, json["mqtt_user"]);
@@ -1264,7 +1237,8 @@ bool readConfigFS() {
         updateFS = false;
         return true;
       } else {
-        DBG_OUTPUT_PORT.println("Failed to load json config");
+        DBG_OUTPUT_PORT.print("Failed to load json config: ");
+        DBG_OUTPUT_PORT.println(error.c_str());
       }
     } else {
       DBG_OUTPUT_PORT.println("Failed to open /config.json");
@@ -1282,9 +1256,8 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7));
-//    StaticJsonBuffer<JSON_OBJECT_SIZE(7)> jsonBuffer;
-  JsonObject& json = jsonBuffer.createObject();
+  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7));
+  JsonObject& json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip.getMode();
   json["brightness"] = brightness;
@@ -1302,8 +1275,8 @@ bool writeStateFS(){
     updateStateFS = false;
     return false;
   }
-  json.printTo(DBG_OUTPUT_PORT);
-  json.printTo(configFile);
+  serializeJson(json, DBG_OUTPUT_PORT);
+  serializeJson(json, configFile);
   configFile.close();
   updateFS = false;
   spiffs_save_state.detach();
@@ -1325,11 +1298,11 @@ bool readStateFS() {
       // Allocate a buffer to store contents of the file.
       std::unique_ptr<char[]> buf(new char[size]);
       configFile.readBytes(buf.get(), size);
-      DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(7)+200);
-//      StaticJsonBuffer<JSON_OBJECT_SIZE(7)+200> jsonBuffer;
-      JsonObject& json = jsonBuffer.parseObject(buf.get());
-      json.printTo(DBG_OUTPUT_PORT);
-      if (json.success()) {
+      DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7)+200);
+      DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+      if (!error) {
+        JsonObject& json = jsonBuffer.as<JsonObject>();
+        serializeJson(json, DBG_OUTPUT_PORT);
         mode = static_cast<MODE>((int) json["mode"]);
         ws2812fx_mode = json["strip_mode"];
         brightness = json["brightness"];

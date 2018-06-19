@@ -320,6 +320,10 @@ void setup() {
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
+  // Uncomment if you want to set static IP 
+  // Order is: IP, Gateway and Subnet 
+  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,128), IPAddress(192,168,0,1), IPAddress(255,255,255,0));   
+
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
   //here  "AutoConnectAP"
@@ -488,18 +492,21 @@ void setup() {
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    //String json = "{";
-    //json += "\"heap\":" + String(ESP.getFreeHeap());
-    //// json += ", \"analog\":" + String(analogRead(A0));
-    //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
-    //json += "}";
-    
-    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(9));
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(9));
+    JsonObject& json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
     json["heap"] = ESP.getFreeHeap();
+    json["sketch_size"] = ESP.getSketchSize();
+    json["free_sketch_space"] = ESP.getFreeSketchSpace();
+    json["flash_chip_size"] = ESP.getFlashChipSize();
+    json["flash_chip_real_size"] = ESP.getFlashChipRealSize();
+    json["flash_chip_speed"] = ESP.getFlashChipSpeed();
+    json["sdk_version"] = ESP.getSdkVersion();
+    json["core_version"] = ESP.getCoreVersion();
+    json["cpu_freq"] = ESP.getCpuFreqMHz();
+    json["chip_id"] = ESP.getFlashChipId();
     #ifndef USE_NEOANIMATIONFX
     json["animation_lib"] = "WS2812FX";
     json["pin"] = PIN;
@@ -514,22 +521,38 @@ void setup() {
       json["button_mode"] = "OFF";
     #endif
     #ifdef ENABLE_AMQTT
+      json["amqtt"] = "ON";
+    #endif
+    #ifdef ENABLE_MQTT
       json["mqtt"] = "ON";
-    #else
-      json["mqtt"] = "OFF";
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       json["home_assistant"] = "ON";
     #else
       json["home_assistant"] = "OFF";
     #endif
-    //char buffer[json.measureLength() + 1];
-    //json.printTo(buffer, sizeof(buffer));
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      json["legacy_animations"] = "ON";
+    #else
+      json["legacy_animations"] = "OFF";
+    #endif
+    #ifdef HTTP_OTA
+      json["esp8266_http_updateserver"] = "ON";
+    #endif
+    #ifdef ENABLE_OTA
+      json["arduino_ota"] = "ON";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      json["state_save"] = "SPIFFS";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_EEPROM
+      json["state_save"] = "EEPROM";
+    #endif
+    
     String json_str;
-    json.printTo(json_str);
+    serializeJson(json, json_str);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", json_str);
-    //json_str = String();
   });
 
 
