@@ -497,7 +497,7 @@ void setup() {
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
     DynamicJsonDocument jsonBuffer;
-    JsonObject& json = jsonBuffer.to<JsonObject>();
+    JsonObject json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
