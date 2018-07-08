@@ -70,8 +70,8 @@ ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 #ifdef HTTP_OTA
-  #include <ESP8266HTTPUpdateServer.h>
-  ESP8266HTTPUpdateServer httpUpdater;
+#include <ESP8266HTTPUpdateServer.h>
+ESP8266HTTPUpdateServer httpUpdater;
 #endif
 
 #ifdef USE_NEOANIMATIONFX
@@ -100,11 +100,11 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
 #endif
 
 #ifdef USE_WS2812FX
-  // ***************************************************************************
-  // Load libraries / Instanciate WS2812FX library
-  // ***************************************************************************
-  // https://github.com/kitesurfer1404/WS2812FX
-  #include "WS2812FX.h"
+// ***************************************************************************
+// Load libraries / Instanciate WS2812FX library
+// ***************************************************************************
+// https://github.com/kitesurfer1404/WS2812FX
+#include "WS2812FX.h"
 
   #ifdef RGBW
     WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
@@ -112,13 +112,13 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
     WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
   #endif
 
-  // Parameter 1 = number of pixels in strip
-  // Parameter 2 = Arduino pin number (most are valid)
-  // Parameter 3 = pixel type flags, add together as needed:
-  //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-  //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-  //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-  //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+// Parameter 1 = number of pixels in strip
+// Parameter 2 = Arduino pin number (most are valid)
+// Parameter 3 = pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -348,6 +348,10 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
+  // Uncomment if you want to set static IP 
+  // Order is: IP, Gateway and Subnet 
+  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,128), IPAddress(192,168,0,1), IPAddress(255,255,255,0));   
+
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
   //here  "AutoConnectAP"
@@ -516,18 +520,21 @@ DBG_OUTPUT_PORT.println("Starting....");
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    //String json = "{";
-    //json += "\"heap\":" + String(ESP.getFreeHeap());
-    //// json += ", \"analog\":" + String(analogRead(A0));
-    //// json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
-    //json += "}";
-    
-    DynamicJsonBuffer jsonBuffer(JSON_OBJECT_SIZE(9));
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument jsonBuffer;
+    JsonObject& json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
     json["heap"] = ESP.getFreeHeap();
+    json["sketch_size"] = ESP.getSketchSize();
+    json["free_sketch_space"] = ESP.getFreeSketchSpace();
+    json["flash_chip_size"] = ESP.getFlashChipSize();
+    json["flash_chip_real_size"] = ESP.getFlashChipRealSize();
+    json["flash_chip_speed"] = ESP.getFlashChipSpeed();
+    json["sdk_version"] = ESP.getSdkVersion();
+    json["core_version"] = ESP.getCoreVersion();
+    json["cpu_freq"] = ESP.getCpuFreqMHz();
+    json["chip_id"] = ESP.getFlashChipId();
     #ifndef USE_NEOANIMATIONFX
     json["animation_lib"] = "WS2812FX";
     json["pin"] = PIN;
@@ -542,22 +549,38 @@ DBG_OUTPUT_PORT.println("Starting....");
       json["button_mode"] = "OFF";
     #endif
     #ifdef ENABLE_AMQTT
+      json["amqtt"] = "ON";
+    #endif
+    #ifdef ENABLE_MQTT
       json["mqtt"] = "ON";
-    #else
-      json["mqtt"] = "OFF";
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       json["home_assistant"] = "ON";
     #else
       json["home_assistant"] = "OFF";
     #endif
-    //char buffer[json.measureLength() + 1];
-    //json.printTo(buffer, sizeof(buffer));
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      json["legacy_animations"] = "ON";
+    #else
+      json["legacy_animations"] = "OFF";
+    #endif
+    #ifdef HTTP_OTA
+      json["esp8266_http_updateserver"] = "ON";
+    #endif
+    #ifdef ENABLE_OTA
+      json["arduino_ota"] = "ON";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      json["state_save"] = "SPIFFS";
+    #endif
+    #ifdef ENABLE_STATE_SAVE_EEPROM
+      json["state_save"] = "EEPROM";
+    #endif
+    
     String json_str;
-    json.printTo(json_str);
+    serializeJson(json, json_str);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", json_str);
-    //json_str = String();
   });
 
 
