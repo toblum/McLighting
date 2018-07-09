@@ -279,13 +279,13 @@ String listStatusJSON(void) {
   
   const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
   DynamicJsonDocument jsonBuffer(bufferSize);
-  JsonObject& root = jsonBuffer.to<JsonObject>();
+  JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = tmp_mode;
   root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
-  JsonArray& color = root.createNestedArray("color");
+  JsonArray color = root.createNestedArray("color");
   color.add(main_color.red);
   color.add(main_color.green);
   color.add(main_color.blue);
@@ -304,13 +304,13 @@ void getStatusJSON() {
 String listModesJSON(void) {
   const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
   DynamicJsonDocument jsonBuffer(bufferSize);
-  JsonArray& json = jsonBuffer.to<JsonArray>();
+  JsonArray json = jsonBuffer.to<JsonArray>();
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-    JsonObject& object = json.createNestedObject();
+    JsonObject object = json.createNestedObject();
     object["mode"] = i;
     object["name"] = strip.getModeName(i);
   }
-  JsonObject& object = json.createNestedObject();
+  JsonObject object = json.createNestedObject();
   
   String json_str;
   serializeJson(json, json_str);
@@ -766,10 +766,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     void sendState() {
       const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
       DynamicJsonDocument jsonBuffer(bufferSize);
-      JsonObject& root = jsonBuffer.to<JsonObject>();
+      JsonObject root = jsonBuffer.to<JsonObject>();
 
       root["state"] = (stateOn) ? on_cmd : off_cmd;
-      JsonObject& color = root.createNestedObject("color");
+      JsonObject color = root.createNestedObject("color");
       color["r"] = main_color.red;
       color["g"] = main_color.green;
       color["b"] = main_color.blue;
@@ -810,7 +810,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         return false;
       }
       //DBG_OUTPUT_PORT.println("JSON ParseObject() done!");
-      JsonObject& root = jsonBuffer.as<JsonObject>();
+      JsonObject root = jsonBuffer.as<JsonObject>();
       
       if (root.containsKey("state")) {
         const char* state_in = root["state"];
@@ -828,7 +828,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
 
       if (root.containsKey("color")) {
-        JsonObject& color = root["color"];
+        JsonObject color = root["color"];
         main_color.red = (uint8_t) color["r"];
         main_color.green = (uint8_t) color["g"];
         main_color.blue = (uint8_t) color["b"];
@@ -938,7 +938,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
             DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
-            JsonObject& json = jsonBuffer.to<JsonObject>();
+            JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
             json["platform"] = "mqtt_json";
             json["state_topic"] = mqtt_ha_state_out;
@@ -949,7 +949,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             json["optimistic"] = "false";
             json["color_temp"] = "true";
             json["effect"] = "true";
-            JsonArray& effect_list = json.createNestedArray("effect_list");
+            JsonArray effect_list = json.createNestedArray("effect_list");
             for (uint8_t i = 0; i < strip.getModeCount(); i++) {
               effect_list.add(strip.getModeName(i));
             }
@@ -1018,7 +1018,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
           DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
-          JsonObject& json = jsonBuffer.to<JsonObject>();
+          JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
           json["platform"] = "mqtt_json";
           json["state_topic"] = mqtt_ha_state_out;
@@ -1029,7 +1029,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           json["optimistic"] = "false";
           json["color_temp"] = "true";
           json["effect"] = "true";
-          JsonArray& effect_list = json.createNestedArray("effect_list");
+          JsonArray effect_list = json.createNestedArray("effect_list");
           for (uint8_t i = 0; i < strip.getModeCount(); i++) {
             effect_list.add(strip.getModeName(i));
           }
@@ -1188,7 +1188,7 @@ bool writeConfigFS(bool saveConfig){
     updateFS = true;
     DBG_OUTPUT_PORT.print("Saving config: ");
     DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4));
-    JsonObject& json = jsonBuffer.to<JsonObject>();
+    JsonObject json = jsonBuffer.to<JsonObject>();
     json["mqtt_host"] = mqtt_host;
     json["mqtt_port"] = mqtt_port;
     json["mqtt_user"] = mqtt_user;
@@ -1228,7 +1228,7 @@ bool readConfigFS() {
       DBG_OUTPUT_PORT.print("Config: ");
       if (!error) {
         DBG_OUTPUT_PORT.println(" Parsed!");
-        JsonObject& json = jsonBuffer.as<JsonObject>();
+        JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
         strcpy(mqtt_host, json["mqtt_host"]);
         strcpy(mqtt_port, json["mqtt_port"]);
@@ -1257,7 +1257,7 @@ bool writeStateFS(){
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
   DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7));
-  JsonObject& json = jsonBuffer.to<JsonObject>();
+  JsonObject json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip.getMode();
   json["brightness"] = brightness;
@@ -1301,7 +1301,7 @@ bool readStateFS() {
       DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7)+200);
       DeserializationError error = deserializeJson(jsonBuffer, buf.get());
       if (!error) {
-        JsonObject& json = jsonBuffer.as<JsonObject>();
+        JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
         mode = static_cast<MODE>((int) json["mode"]);
         ws2812fx_mode = json["strip_mode"];

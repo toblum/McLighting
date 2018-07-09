@@ -319,6 +319,10 @@ void setup() {
   #endif
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  
+  // Uncomment if you want to restart ESP8266 if it cannot connect to WiFi.
+  // Value in brackets is in seconds that WiFiManger waits until restart
+  //wifiManager.setConfigPortalTimeout(180);
 
   // Uncomment if you want to set static IP 
   // Order is: IP, Gateway and Subnet 
@@ -331,8 +335,8 @@ void setup() {
   if (!wifiManager.autoConnect(HOSTNAME)) {
     DBG_OUTPUT_PORT.println("failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
-    ESP.reset();
-    delay(1000);
+    ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
+    delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
 
   #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
@@ -493,7 +497,7 @@ void setup() {
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
     DynamicJsonDocument jsonBuffer;
-    JsonObject& json = jsonBuffer.to<JsonObject>();
+    JsonObject json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
     json["version"] = SKETCH_VERSION;
