@@ -953,7 +953,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             for (uint8_t i = 0; i < strip.getModeCount(); i++) {
               effect_list.add(strip.getModeName(i));
             }
-            char buffer[json.measureJson() + 1];
+            char buffer[measureJson(json) + 1];
             serializeJson(json, buffer, sizeof(buffer));
             mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
           #endif
@@ -1033,7 +1033,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           for (uint8_t i = 0; i < strip.getModeCount(); i++) {
             effect_list.add(strip.getModeName(i));
           }
-          char buffer[json.measureJson() + 1];
+          char buffer[measureJson(json) + 1];
           serializeJson(json, buffer, sizeof(buffer));
           DBG_OUTPUT_PORT.println(buffer);
           amqttClient.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), qospub, true, buffer);
