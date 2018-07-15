@@ -52,6 +52,17 @@
   WiFiEventHandler wifiDisconnectHandler;
 #endif
 
+#ifdef DS18B20
+  #include <OneWire.h>                   //https://github.com/PaulStoffregen/OneWire
+  #include <DallasTemperature.h>         //https://github.com/milesburton/Arduino-Temperature-Control-Library
+
+  OneWire oneWire(ONE_WIRE_BUS);
+  DallasTemperature dallasSensor(&oneWire);  
+  
+  int dsPeriod = DS18B20_pollTime;
+  unsigned long dsTimeNow = 0; 
+  float dsTemp = 0;  
+#endif
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -239,9 +250,18 @@ void setup() {
 #ifdef ENABLE_BUTTON
   pinMode(BUTTON,INPUT_PULLUP);
 #endif
+
+  // setup sensor
+#ifdef DS18B20 
+  pinMode(ONE_WIRE_BUS, INPUT);
+  dallasSensor.begin();
+#endif
+
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
+  
+  
   // ***************************************************************************
   // Setup: SPIFFS
   // ***************************************************************************
@@ -1049,4 +1069,25 @@ void loop() {
       EEPROM.commit();
     }
   #endif
+  
+  #ifdef DS18B20
+    if(millis() > dsTimeNow + dsPeriod){
+      dsTimeNow = millis();
+      dallasSensor.setResolution(12);
+      dallasSensor.requestTemperatures(); // Send the command to get temperature
+      dsTemp = dallasSensor.getTempCByIndex(0);
+      DBG_OUTPUT_PORT.print("/get_DS18B20: ");
+      DBG_OUTPUT_PORT.println(dsTemp);
+      if((dsTemp > -40) && (dsTemp <80))
+      {
+        #ifdef ENABLE_MQTT
+        mqtt_client.publish(mqtt_outtopic_ds.c_str(), String(dsTemp).c_str(),true);
+        #endif
+        #ifdef ENABLE_AMQTT
+        amqttClient.publish(mqtt_outtopic_ds.c_str(), qospub, true, String(dsTemp).c_str());
+        #endif
+      }
+    }  
+  #endif
+  
 }

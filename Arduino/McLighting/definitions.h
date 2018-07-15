@@ -18,6 +18,12 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 
+#define DS18B20                           // If defined, enable DS18B20 temperature sensor code.  ENABLE_MQTT must be active
+#ifdef DS18B20
+  #define ONE_WIRE_BUS        D5          // GPIO/Pin for the one wire sensors such as DS18B20
+  #define DS18B20_pollTime    15000       // poll the sensor every X milliseconds - 15000 = 15 seconds
+#endif
+
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
 #error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
 #endif
@@ -32,6 +38,9 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #endif
 #if ( !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOME_ASSISTANT_SUPPORT) )
 #error "To use HA support, you have to either enable Homeassistant component"
+#endif
+#if ( (defined(DS18B20) and !defined(ENABLE_MQTT)) and (defined(DS18B20) and !defined(ENABLE_AMQTT)) )
+#error "To use DS18B20, you have to either enable PubCubClient or AsyncMQTT"
 #endif
 
 // parameters for automatically cycling favorite patterns
@@ -53,6 +62,10 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
     uint8_t qossub = 0; // PubSubClient can sub qos 0 or 1
   #endif
 
+  #ifdef DS18B20
+    String mqtt_outtopic_ds = String(HOSTNAME) + "/ds18b20";
+  #endif
+  
   #ifdef ENABLE_AMQTT
     String mqtt_intopic = String(HOSTNAME) + "/in";
     String mqtt_outtopic = String(HOSTNAME) + "/out";
