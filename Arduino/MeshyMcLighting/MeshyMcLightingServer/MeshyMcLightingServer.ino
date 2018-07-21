@@ -1,6 +1,6 @@
 #include <FS.h>
 #include <ESP8266mDNS.h>
-#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
+#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh
 #include <ArduinoJson.h>            //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"            //https://github.com/arkhipenko/TaskScheduler
 #include "version.h"
@@ -143,8 +143,7 @@ void setup(){
   //WiFi.hostname(HOSTNAME);
     
   mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
-  //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  //develop
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, wifi_channel);
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
@@ -152,8 +151,7 @@ void setup(){
   mesh.stationManual(wifi_ssid, wifi_pwd);
   mesh.setHostname(HOSTNAME);
   
-  //myAPIP = IPAddress(mesh.getAPIP());  // develop
-  myAPIP = IPAddress(mesh.getAPIP().addr);  //master
+  myAPIP = IPAddress(mesh.getAPIP());
   DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
 
   userScheduler.addTask(taskSendMessage);

@@ -1,5 +1,5 @@
 #include <FS.h>
-#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh/tree/develop
+#include <painlessMesh.h>           //https://gitlab.com/painlessMesh/painlessMesh
 #include <ArduinoJson.h>            //https://github.com/bblanchon/ArduinoJson
 #include "definitions.h"
 
@@ -123,12 +123,10 @@ void setup(){
   //WiFi.mode(WIFI_AP_STA);
   //WiFi.hostname("MeshyMcLighting");
   //mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
-  //mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );  // painlessMesh-develop
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, STA_AP, WIFI_AUTH_WPA2_PSK, STATION_WIFI_CHANNEL );  // painlessMesh-master
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, WIFI_AP_STA, STATION_WIFI_CHANNEL );
   mesh.onReceive(&receivedCallback);
   
-  //myAPIP = IPAddress(mesh.getAPIP());  // painlessMesh-develop
-  myAPIP = IPAddress(mesh.getAPIP().addr); // painlessMesh-master
+  myAPIP = IPAddress(mesh.getAPIP());  
   DEBUG_PRINTLN("My AP IP is " + myAPIP.toString());
 
   userScheduler.addTask(taskSendMessage);

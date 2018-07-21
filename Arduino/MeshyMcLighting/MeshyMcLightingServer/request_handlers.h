@@ -1183,8 +1183,7 @@ void autoTick(void) {
 ///////// Mesh Stuff ///////////
 
 IPAddress getlocalIP() {
-  //return IPAddress(mesh.getStationIP()); //develop
-  return IPAddress(mesh.getStationIP().addr);  //master
+  return IPAddress(mesh.getStationIP());
 }
 
 void sendMessage() {
