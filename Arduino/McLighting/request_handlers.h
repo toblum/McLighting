@@ -400,14 +400,14 @@ void autoTick() {
 }
 
 void handleAutoStart() {
-  mode = AUTO;
+  //mode = AUTO;
   autoCount = 0;
   autoTick();
   strip.start();
 }
 
 void handleAutoStop() {
-  mode = OFF;
+  //mode = OFF;
   autoTicker.detach();
   strip.stop();
 }

@@ -3,26 +3,26 @@
 
 // Neopixel
 #define PIN 15             // PIN (15 / D8) where neopixel / WS2811 strip is attached 
-#define NUMLEDS 194        // Number of leds in the strip 
+#define NUMLEDS 12         // Number of leds in the strip 
 #define BUILTIN_LED 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON  14         // Input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-#define BUTTON_GY33 12         // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+#define BUTTON_GY33 12     // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 #define RGBW               // If defined, use RGBW Strips
 
-const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
+const char HOSTNAME[] = "FABLightingRGBW";   // Friedly hostname
 
 #define HTTP_OTA             // If defined, enable Added ESP8266HTTPUpdateServer
 //#define ENABLE_OTA           // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT          // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-//#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
+#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
+//#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 #define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
 //#define ENABLE_STATE_SAVE_EEPROM      // If defined, save state on reboot
-#define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
+//#define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
   
 #if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
@@ -43,10 +43,10 @@ const char HOSTNAME[] = "McLightingRGBW01";   // Friedly hostname
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
-  {0x00ff0000, 250,  1,  5.0}, // blink red for 5 seconds
-  {0x0000ff00, 200,  3, 10.0}, // wipe green for 10 seconds
-  {0x000000ff, 200, 14,  5.0}, // dual scan blue for 5 seconds
-  {0x000000ff, 200, 46, 15.0}  // fireworks for 15 seconds
+  {0x00ff0000, 120,  1,  5.0}, // blink red for 5 seconds
+  {0x0000ff00, 120,  3, 10.0}, // wipe green for 10 seconds
+  {0x000000ff, 196, 14,  5.0}, // dual scan blue for 5 seconds
+  {0x000000ff, 196, 46, 15.0}  // fireworks for 15 seconds
 };
 
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
