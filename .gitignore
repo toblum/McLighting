@@ -1,3 +1,10 @@
 clients/web/node_modules/
-
 clients/web/\.vscode/
+
+.pioenvs
+.piolibdeps
+lib/readme.txt
+
+*.h.gch
+.clang_complete
+.gcc-flags.json
