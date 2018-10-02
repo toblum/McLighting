@@ -852,9 +852,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
 
       if (root.containsKey("brightness")) {
-        const char * brightness_json = root["brightness"];
-        uint8_t b = (uint8_t) strtol((const char *) &brightness_json[0], NULL, 10);
-        brightness = constrain(b, 0, 255);
+        brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
         mode = BRIGHTNESS;
       }
 

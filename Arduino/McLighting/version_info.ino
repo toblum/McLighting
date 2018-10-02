@@ -17,4 +17,7 @@
  * 
  * 10 Jul 2018 v 2.1.4
  * - Fixes measureJson() as pointed in #206
+ * 
+ * 2 Oct 2018 v 2.1.5
+ * - Try fixing #224 HA brightness causes reboot 
  */
