@@ -3,18 +3,23 @@
 
 // Neopixel
 #define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
-#define NUMLEDS 24       // Number of leds in the strip
+#define NUMLEDS 180       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-
-const char HOSTNAME[] = "McLighting01";   // Friedly hostname
+#define PIRSIGNAL D8 // is pulldown on d1 mini, so just put to 3.3V or connect pir to get signal
+                     // hmm, but I need to have low on PIN 8 if I want to flash esp again, so disconnect PIR if you want to do this 
+#ifdef PIRSIGNAL
+  #define PIR_MODE "STA| 1|  0|245|150|255|255|255"   // Static white
+   //           notused  mode wsmode speed  bright r   g   b
+#endif
+const char HOSTNAME[] = "McLightGarden";   // Friedly hostname
 
 #define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
-//#define ENABLE_OTA         // If defined, enable Arduino OTA code.
-#define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
+#define ENABLE_OTA         // If defined, enable Arduino OTA code.
+//#define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
-#define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
+//#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
+//#define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 
@@ -28,7 +33,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #error "Cant have both PubSubClient and AsyncMQTT enabled. Choose either one."
 #endif
 #if ( (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_MQTT)) and (defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_AMQTT)) )
-#error "To use HA, you have to either enable PubCubClient or AsyncMQTT"
+#error "To use HA, you have to either enable PubCubClient or AsyncMQTT"N
 #endif
 #if ( !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOME_ASSISTANT_SUPPORT) )
 #error "To use HA support, you have to either enable Homeassistant component"

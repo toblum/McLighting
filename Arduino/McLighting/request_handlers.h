@@ -1,6 +1,11 @@
 // ***************************************************************************
 // Request handlers
 // ***************************************************************************
+/*
+ * File is extended to handle PIR Signal
+ * moved parts from server.on("/off") from McLightning to function handleStripeOff
+ * */
+void getStatusJSON(); //forward declaration, karo, want to call function in handleStripeOff 
 #ifdef ENABLE_HOMEASSISTANT
 void tickerSendState(){
   new_ha_mqtt_msg = true;
@@ -74,6 +79,29 @@ uint16_t convertSpeed(uint8_t mcl_speed) {
 // ***************************************************************************
 // Handler functions for WS and MQTT
 // ***************************************************************************
+//karo: found no simple way to switch off, so build function wich is called
+//from server.on("/off") and from my pir-sensor
+void handleStripeOff() {
+    #ifdef ENABLE_LEGACY_ANIMATIONS
+      exit_func = true;
+    #endif
+    mode = OFF;
+    getArgs();
+    getStatusJSON();
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = false;
+    #endif
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
+}
+    
 void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtol((const char *) &mypayload[1], NULL, 16);
@@ -553,7 +581,6 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     if (payload[0] == '=') {
       // we get mode data
       String str_mode = String((char *) &payload[0]);
-
       handleSetNamedMode(str_mode);
       if (mqtt == true)  {
         DBG_OUTPUT_PORT.print("MQTT: "); 
@@ -1175,7 +1202,39 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
   }
 #endif
-
+//pir signal karo
+#ifdef PIRSIGNAL
+void pirSignal() {
+      //Pir has integrated timer so I don't care about time control, 
+      //will see if it is goud enough with the integrate one, yes it seems so
+      static byte previousState = LOW;      
+      byte currState = digitalRead(PIRSIGNAL);
+      //int m = (int) strip.getMode();//mode number is not enough to detect off
+      //---so get information like in listStatusJSON
+      static bool needLight = false;
+      //-------------------------------------------------
+      if ( previousState == LOW && currState == HIGH) {
+        DBG_OUTPUT_PORT.println("PIR: Detect change from LOW to HIGH ");
+        DBG_OUTPUT_PORT.printf("main_color %i %i %i brightness %i  \n",main_color.red,main_color.green,main_color.blue,brightness);
+        if ((uint8_t) mode == 2  //off
+             || (main_color.red == 0 && main_color.green == 0 && main_color.blue == 0 ) //all off
+             || brightness < 5 )
+             needLight = true;
+         //set leds to white if LED is actually off
+         if (needLight) {
+          DBG_OUTPUT_PORT.println("ok, needlight is true, switch on");
+          setModeByStateString(PIR_MODE);
+         }
+      }
+      else if (previousState == HIGH && currState == LOW && needLight) {
+        DBG_OUTPUT_PORT.println("PIR: Detect change from HIGH to LOW ");
+        //switch led  to off 
+        needLight = false;
+        handleStripeOff();
+      }
+      previousState = currState;    
+  }
+#endif
 #ifdef ENABLE_STATE_SAVE_SPIFFS
 bool updateFS = false;
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
