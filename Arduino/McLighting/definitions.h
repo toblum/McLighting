@@ -6,10 +6,16 @@
 #define NUMLEDS 180       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-#define PIRSIGNAL D8 // is pulldown on d1 mini, so just put to 3.3V or connect pir to get signal
+//#define PIRSIGNAL D8 // is pulldown on d1 mini, so just put to 3.3V or connect pir to get signal
                      // hmm, but I need to have low on PIN 8 if I want to flash esp again, so disconnect PIR if you want to do this 
+                     // and - better read before, if you start ESP and have D8 high (GPIO 15), the esp tries to start from 
+                     // sdcard (what ever this means), so D8 is not usable as simple as I thought :-(  pir sends to fast a motion
+                     // detection if there is something
+#define PIRSIGNAL D2 //is no pull down, so I hope the pir sensor will do the pull down when switching from signal detected to off
+                     //yes it works as expected, pir has output of low and high
+
 #ifdef PIRSIGNAL
-  #define PIR_MODE "STA| 1|  0|245|150|255|255|255"   // Static white
+  #define PIR_MODE "STA| 1|  0|245|80|255|255|255"   // Static white
    //           notused  mode wsmode speed  bright r   g   b
 #endif
 const char HOSTNAME[] = "McLightGarden";   // Friedly hostname
