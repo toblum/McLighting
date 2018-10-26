@@ -1,5 +1,7 @@
 #include "definitions.h"
 #include "version.h"
+
+
 // ***************************************************************************
 // Load libraries for: WebServer / WiFiManager / WebSockets
 // ***************************************************************************
@@ -671,24 +673,7 @@ void setup() {
   });
 
   server.on("/off", []() {
-    #ifdef ENABLE_LEGACY_ANIMATIONS
-      exit_func = true;
-    #endif
-    mode = OFF;
-    getArgs();
-    getStatusJSON();
-    #ifdef ENABLE_MQTT
-    mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
-    #endif
-    #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
-    #endif
-    #ifdef ENABLE_HOMEASSISTANT
-      stateOn = false;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
+    handleStripeOff(); //karo, moved to request_handlers.h
   });
 
   server.on("/all", []() {
@@ -903,6 +888,9 @@ void loop() {
   #ifdef ENABLE_BUTTON
     button();
   #endif
+  #ifdef PIRSIGNAL
+    pirSignal();
+  #endif 
   server.handleClient();
   webSocket.loop();
 
