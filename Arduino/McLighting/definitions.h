@@ -1,5 +1,5 @@
-//#define USE_NEOANIMATIONFX  // Uses NeoAnimationFX, PIN is ignored & set to RX/GPIO3 or UART method: D4/GPIO2, see: https://github.com/debsahu/NeoAnimationFX
-#define USE_WS2812FX          // Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+//#define USE_WS2812FX_DMA      // Uses PIN is ignored & set to RX/GPIO3  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
 #define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
@@ -13,16 +13,13 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 //#define ENABLE_OTA         // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
+#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
 
-#if defined(USE_NEOANIMATIONFX) and defined(USE_WS2812FX)
-#error "Cant have both NeoAnimationFX and WS2812FX enabled. Choose either one."
-#endif
-#if !defined(USE_NEOANIMATIONFX) and !defined(USE_WS2812FX)
-#error "Need to either use NeoAnimationFX and WS2812FX mode."
+#if defined(USE_WS2812FX_DMA) and defined(USE_WS2812FX_UART)
+#error "Cant have both DMA and UART method."
 #endif
 #if defined(ENABLE_MQTT) and defined(ENABLE_AMQTT)
 #error "Cant have both PubSubClient and AsyncMQTT enabled. Choose either one."

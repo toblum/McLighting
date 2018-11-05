@@ -410,7 +410,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
-      // stateOn = true; //Commented our because # only is ment to change color and not the state
+      stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
     #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
@@ -431,6 +431,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     }
     DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
     #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
     #endif
     #ifdef ENABLE_MQTT
