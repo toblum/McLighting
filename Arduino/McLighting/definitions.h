@@ -1,5 +1,5 @@
 //#define USE_WS2812FX_DMA      // Uses PIN is ignored & set to RX/GPIO3  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
-#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+//#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
 #define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
