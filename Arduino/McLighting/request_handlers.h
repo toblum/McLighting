@@ -411,7 +411,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
-    if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
     #endif
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
@@ -431,6 +431,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     }
     DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
     #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
     #endif
     #ifdef ENABLE_MQTT

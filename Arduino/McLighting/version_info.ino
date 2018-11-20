@@ -20,4 +20,9 @@
  * 
  * 2 Oct 2018 v 2.1.5
  * - Try fixing #224 HA brightness causes reboot 
+ * 
+ * 5 Nov 2018 v 2.1.6
+ * - Retire NeoAnimationFX
+ * - Use DMA or UART method along with WS2812FX instead
+ * - fix #248 
  */
