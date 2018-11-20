@@ -159,7 +159,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Licence
-[GNU LGPLv3](http://www.gnu.org/licenses/lgpl-3.0.txt)
+[MIT](https://choosealicense.com/licenses/mit/)
 
 
 ## Disclaimer
