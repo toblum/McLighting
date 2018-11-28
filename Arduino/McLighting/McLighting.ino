@@ -301,7 +301,15 @@ void setup() {
 
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback(configModeCallback);
-
+#ifdef Config_Time_Out
+ wifiManager.setConfigPortalTimeout(wifiTimeOut);
+#endif
+#ifdef Static_IP_Conf
+IPAddress _ip = IPAddress(static_ip[0], static_ip[1], static_ip[2], static_ip[3]);
+IPAddress _gw = IPAddress(static_gw[0], static_gw[1], static_gw[2], static_gw[3]);
+IPAddress _sn = IPAddress(static_sn[0], static_sn[1], static_sn[2], static_sn[3]); 
+wifiManager.setSTAStaticIPConfig(_ip, _gw, _sn);
+#endif
   #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //set config save notify callback
     wifiManager.setSaveConfigCallback(saveConfigCallback);

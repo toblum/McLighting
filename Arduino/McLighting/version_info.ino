@@ -25,4 +25,8 @@
  * - Retire NeoAnimationFX
  * - Use DMA or UART method along with WS2812FX instead
  * - fix #248 
+ * 
+ * 28 Nov 2018 v 2.1.7
+ * - Put Static IP configuration in Definitions.h
+ * - Added Wifi configuration portal timeout. 
  */

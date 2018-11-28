@@ -2,7 +2,7 @@
 //#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
-#define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
+#define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
@@ -145,4 +145,17 @@ LEDState main_color = { 255, 0, 0 };  // Store the "main color" of the strip use
   byte KeyPressCount = 0;
   byte prevKeyState = HIGH;             // button is active low
   boolean buttonState = false;
+#endif
+#define Config_Time_Out // It is useful on Power failure. Usually most WiFi routers need time for boot after main power failure. This will restart ESP after time passed.
+
+#ifdef Config_Time_Out
+int wifiTimeOut = 180; // Time for waiting of configuration.
+#endif
+
+//#define Static_IP_Conf //This will make use the specified IP configuration instead of using DHCP in station mode.
+#ifdef Static_IP_Conf
+int static_ip[4] = {0,0,0,0}; //static IP
+int static_gw[4] = {0,0,0,0};  // Gateway
+int static_sn[4] = {255,255,255,0};  // Mask
+
 #endif
