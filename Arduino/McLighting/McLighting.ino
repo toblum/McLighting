@@ -426,7 +426,7 @@ void setup() {
   // Configure MQTT
   // ***************************************************************************
   #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
-    snprintf(mqtt_clientid, 64, "%u-%08X", HOSTNAME, ESP.getChipId());
+    snprintf(mqtt_clientid, 64, "%s-%08X", HOSTNAME, ESP.getChipId());
   #endif
 
   #ifdef ENABLE_MQTT
