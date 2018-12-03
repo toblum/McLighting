@@ -25,4 +25,10 @@
  * - Retire NeoAnimationFX
  * - Use DMA or UART method along with WS2812FX instead
  * - fix #248 
+ * 
+ * 3 Dec 2018 v 2.1.7
+ * - Contributions by @	MrTheBarbarian from #270
+ * - rethink ESP.getChipId implementaion
+ * - check ArduinoJSON version
+ * - Try restting prevmode as suggested in #276
  */

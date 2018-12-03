@@ -2,7 +2,7 @@
 //#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
-#define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
+#define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
@@ -17,6 +17,15 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS
+
+//#define WIFIMGR_PORTAL_TIMEOUT 180
+//#define WIFIMGR_SET_MANUAL_IP
+
+#ifdef WIFIMGR_SET_MANUAL_IP
+  uint8_t _ip[4] = {192,168,0,128};
+  uint8_t _gw[4] = {192,168,0,1};
+  uint8_t _sn[4] = {255,255,255,0};
+#endif
 
 #if defined(USE_WS2812FX_DMA) and defined(USE_WS2812FX_UART)
 #error "Cant have both DMA and UART method."
@@ -72,9 +81,9 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
 
   //#define ENABLE_MQTT_HOSTNAME_CHIPID          // Uncomment/comment to add ESPChipID to end of MQTT hostname
   #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
-    const char* mqtt_clientid = String(String(HOSTNAME) + "-" + String(ESP.getChipId())).c_str(); // MQTT ClientID
+    char mqtt_clientid[64];
   #else
-    const char* mqtt_clientid = HOSTNAME;          // MQTT ClientID
+    const char* mqtt_clientid = HOSTNAME;
   #endif
 
   char mqtt_host[64] = "";

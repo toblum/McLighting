@@ -52,6 +52,12 @@
   WiFiEventHandler wifiDisconnectHandler;
 #endif
 
+#ifdef ARDUINOJSON_VERSION
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 6)
+    #error "Install ArduinoJson v6.6.0-beta"
+  #endif
+#endif
+
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -317,11 +323,15 @@ void setup() {
   
   // Uncomment if you want to restart ESP8266 if it cannot connect to WiFi.
   // Value in brackets is in seconds that WiFiManger waits until restart
-  //wifiManager.setConfigPortalTimeout(180);
+  #ifdef WIFIMGR_PORTAL_TIMEOUT
+  wifiManager.setConfigPortalTimeout(WIFIMGR_PORTAL_TIMEOUT);
+  #endif
 
   // Uncomment if you want to set static IP 
   // Order is: IP, Gateway and Subnet 
-  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,128), IPAddress(192,168,0,1), IPAddress(255,255,255,0));   
+  #ifdef WIFIMGR_SET_MANUAL_IP
+  wifiManager.setSTAStaticIPConfig(IPAddress(_ip[0], _ip[1], _ip[2], _ip[3]), IPAddress(_gw[0], _gw[1], _gw[2], _gw[3]), IPAddress(_sn[0], _sn[1], _sn[2], _sn[3]));
+  #endif
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
@@ -415,6 +425,10 @@ void setup() {
   // ***************************************************************************
   // Configure MQTT
   // ***************************************************************************
+  #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
+    snprintf(mqtt_clientid, 64, "%u-%08X", HOSTNAME, ESP.getChipId());
+  #endif
+
   #ifdef ENABLE_MQTT
     if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
@@ -1007,6 +1021,7 @@ void loop() {
         exit_func = false;
       }
     #endif
+    if (prevmode == SET_MODE) prevmode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == TV) {
