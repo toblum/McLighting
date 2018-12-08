@@ -8,3 +8,5 @@ lib/readme.txt
 *.h.gch
 .clang_complete
 .gcc-flags.json
+
+.vscode/*
