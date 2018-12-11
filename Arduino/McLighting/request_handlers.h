@@ -936,10 +936,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12));
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
+            #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+            json["platform"] = "mqtt";
+            json["schema"] = "json";
+            #else
             json["platform"] = "mqtt_json";
+            #endif
             json["state_topic"] = mqtt_ha_state_out;
             json["command_topic"] = mqtt_ha_state_in;
             json["on_command_type"] = "first";
@@ -1016,10 +1021,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12));
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
+          #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+          json["platform"] = "mqtt";
+          json["schema"] = "json";
+          #else
           json["platform"] = "mqtt_json";
+          #endif
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
           json["on_command_type"] = "first";

@@ -27,6 +27,10 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
   uint8_t _sn[4] = {255,255,255,0};
 #endif
 
+#ifdef MQTT_HOME_ASSISTANT_SUPPORT
+  #define MQTT_HOME_ASSISTANT_0_84_SUPPORT // Comment if using HA version < 0.84 
+#endif
+
 #if defined(USE_WS2812FX_DMA) and defined(USE_WS2812FX_UART)
 #error "Cant have both DMA and UART method."
 #endif
@@ -50,7 +54,7 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
 
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
   #ifdef ENABLE_MQTT
-    #define MQTT_MAX_PACKET_SIZE 512
+    #define MQTT_MAX_PACKET_SIZE 2048
     #define MQTT_MAX_RECONNECT_TRIES 4
 
     int mqtt_reconnect_retries = 0;
