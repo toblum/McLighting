@@ -58,13 +58,21 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Todos
-- [x] MQTT support
-- [ ] Support multiple strips and control them separately or together #118
-- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
-- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
-- [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/93)
+- [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
-- [ ] Remove old / wrong EEPROM settings completely (https://github.com/toblum/McLighting/issues/92)
+- [ ] Remove old / wrong EEPROM settings completely [Issue]
+- [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
+- [ ] Additional clients
+- [ ] If no wifi, at least enable button mode.
+- [ ] Also enable McLighting in Wifi AP mode.
+- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
+- [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
+- [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [x] MQTT support
+- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
+- [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
 - [x] Fix issue with websockets connection problems
 - [x] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
 - [x] Use the led strip for status information in connection phase
@@ -72,17 +80,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [x] Stability improvements
 - [x] RGBW mode [Issue](https://github.com/toblum/McLighting/issues/24)
 - [x] Add called command to response [Issue](https://github.com/toblum/McLighting/issues/19)
-- [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [x] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
 - [x] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
-- [ ] Additional clients
-- [ ] If no wifi, at least enable button mode.
-- [ ] Also enable McLighting in Wifi AP mode.
 - [x] Make a set of NodeRed nodes.
-- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
-- [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
-- [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
-- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 
 
 ## Licence
