@@ -34,4 +34,5 @@
  * 
  * 11 Dec 2018 v 2.1.8
  * - Fix Auto-Discovery for HA version >= 0.84 #286
+ * - Fix #283
  */
