@@ -1249,8 +1249,6 @@ bool writeConfigFS(bool saveConfig){
     json["mqtt_port"] = mqtt_port;
     json["mqtt_user"] = mqtt_user;
     json["mqtt_pass"] = mqtt_pass;
-
-    Serial.printf(">>>>>%s %s %s %s<<<<<<<<<\n", mqtt_host, mqtt_port, mqtt_user, mqtt_pass);
   
 //      SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
     File configFile = SPIFFS.open("/config.json", "w");
