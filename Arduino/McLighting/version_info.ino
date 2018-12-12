@@ -35,4 +35,7 @@
  * 11 Dec 2018 v 2.1.8
  * - Fix Auto-Discovery for HA version >= 0.84 #286
  * - Fix #283
+ * 
+ * 12 Dec 2018 v 2.1.9
+ * - Add E1.31 mode
  */

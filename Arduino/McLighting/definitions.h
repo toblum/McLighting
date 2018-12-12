@@ -16,7 +16,13 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
-#define ENABLE_LEGACY_ANIMATIONS
+#define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
+#define ENABLE_E131              // E1.31 implementation
+
+#ifdef ENABLE_E131
+  #define UNIVERSE 1                    // First DMX Universe to listen for
+  #define UNIVERSE_COUNT 7              // Total number of Universes to listen for, starting at UNIVERSE
+#endif
 
 //#define WIFIMGR_PORTAL_TIMEOUT 180
 //#define WIFIMGR_SET_MANUAL_IP
@@ -104,7 +110,11 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
 
 // List of all color modes
 #ifdef ENABLE_LEGACY_ANIMATIONS
-  enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
+  #ifdef ENABLE_E131
+    enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, E131 };
+  #else
+    enum MODE { SET_MODE, HOLD, OFF, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM };
+  #endif
   MODE mode = RAINBOW;         // Standard mode that is active when software starts
   bool exit_func = false;      // Global helper variable to get out of the color modes when mode changes
 #else

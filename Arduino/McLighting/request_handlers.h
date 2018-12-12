@@ -1,6 +1,38 @@
 // ***************************************************************************
 // Request handlers
 // ***************************************************************************
+#ifdef ENABLE_E131
+void handleE131(){
+  if (!e131.isEmpty())
+  {
+    e131_packet_t packet;
+    e131.pull(&packet); // Pull packet from ring buffer
+
+    uint16_t universe = htons(packet.universe);
+    uint8_t *data = packet.property_values + 1;
+
+    if (!e131.stats.num_packets || universe < UNIVERSE || universe > UNIVERSE_COUNT) return;
+
+    // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
+    //               htons(packet.universe),                 // The Universe for this packet
+    //               htons(packet.property_value_count) - 1, // Start code is ignored, we're interested in dimmer data
+    //               e131.stats.num_packets,                 // Packet counter
+    //               e131.stats.packet_errors,               // Packet error counter
+    //               packet.property_values[1]);             // Dimmer data for Channel 1
+
+    uint16_t len = e131.stats.num_packets / 3;
+    uint16_t multipacketOffset = (universe - UNIVERSE) * 170; //if more than 170 LEDs (510 channels), client will send in next higher universe
+    if (NUMLEDS <= multipacketOffset) return;
+    if (len + multipacketOffset > NUMLEDS) len = NUMLEDS - multipacketOffset;
+    for (uint16_t i = 0; i < len; i++){
+      uint16_t j = i * 3;
+      strip.setPixelColor(i, data[j], data[j + 1], data[j + 2]);
+    }
+    strip.show();
+  }
+}
+#endif
+
 #ifdef ENABLE_HOMEASSISTANT
 void tickerSendState(){
   new_ha_mqtt_msg = true;
@@ -261,6 +293,18 @@ void setModeByStateString(String saved_state_string) {
     }
     if (str_mode.startsWith("=tv")) {
       mode = TV;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+  }
+#endif
+
+#ifdef ENABLE_E131
+  void handleE131NamedMode(String str_mode) {
+    exit_func = true;
+    if (str_mode.startsWith("=e131")) {
+      mode = E131;
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
       #endif
@@ -556,6 +600,9 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       String str_mode = String((char *) &payload[0]);
 
       handleSetNamedMode(str_mode);
+      #ifdef ENABLE_E131
+      handleE131NamedMode(str_mode);
+      #endif
       if (mqtt == true)  {
         DBG_OUTPUT_PORT.print("MQTT: "); 
       } else {
@@ -1202,6 +1249,8 @@ bool writeConfigFS(bool saveConfig){
     json["mqtt_port"] = mqtt_port;
     json["mqtt_user"] = mqtt_user;
     json["mqtt_pass"] = mqtt_pass;
+
+    Serial.printf(">>>>>%s %s %s %s<<<<<<<<<\n", mqtt_host, mqtt_port, mqtt_user, mqtt_pass);
   
 //      SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
     File configFile = SPIFFS.open("/config.json", "w");

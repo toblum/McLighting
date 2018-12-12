@@ -53,9 +53,15 @@
 #endif
 
 #ifdef ARDUINOJSON_VERSION
-  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 6)
-    #error "Install ArduinoJson v6.6.0-beta"
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 7)
+    #error "Install ArduinoJson v6.7.0-beta"
   #endif
+#endif
+
+#ifdef ENABLE_E131
+  #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
+  #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
+  ESPAsyncE131 e131(UNIVERSE_COUNT);
 #endif
 
 
@@ -350,6 +356,8 @@ void setup() {
     strcpy(mqtt_port, custom_mqtt_port.getValue());
     strcpy(mqtt_user, custom_mqtt_user.getValue());
     strcpy(mqtt_pass, custom_mqtt_pass.getValue());
+
+    Serial.printf(">>>>>%s %s %s %s<<<<<<<<<\n", mqtt_host, mqtt_port, mqtt_user, mqtt_pass);
 
     //save the custom parameters to FS
     #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
@@ -840,6 +848,26 @@ void setup() {
         if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
       #endif
     });
+
+    #ifdef ENABLE_E131
+    server.on("/e131", []() {
+      exit_func = true;
+      mode = E131;
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =131").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+    #endif
   
     server.on("/tv", []() {
       exit_func = true;
@@ -895,6 +923,15 @@ void setup() {
   if (mdns_result) {
     MDNS.addService("http", "tcp", 80);
   }
+
+  #ifdef ENABLE_E131
+  // Choose one to begin listening for E1.31 data
+  // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
+  if (e131.begin(E131_MULTICAST, UNIVERSE, UNIVERSE_COUNT)) // Listen via Multicast
+      Serial.println(F("Listening for data..."));
+  else
+      Serial.println(F("*** e131.begin failed ***"));
+  #endif
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     (readStateFS()) ? DBG_OUTPUT_PORT.println(" Success!") : DBG_OUTPUT_PORT.println(" Failure!");
   #endif
@@ -1013,6 +1050,11 @@ void loop() {
       strip.trigger();
       mode = HOLD;
     }
+    #ifdef ENABLE_E131
+    if (mode == E131) {
+      handleE131();
+    }
+    #endif
   #endif
   if (mode == HOLD || mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
