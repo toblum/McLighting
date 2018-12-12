@@ -1196,7 +1196,7 @@ bool writeConfigFS(bool saveConfig){
     //FS save
     updateFS = true;
     DBG_OUTPUT_PORT.print("Saving config: ");
-    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4));
+    DynamicJsonDocument jsonBuffer;
     JsonObject json = jsonBuffer.to<JsonObject>();
     json["mqtt_host"] = mqtt_host;
     json["mqtt_port"] = mqtt_port;
@@ -1265,7 +1265,7 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7));
+  DynamicJsonDocument jsonBuffer;
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip.getMode();
