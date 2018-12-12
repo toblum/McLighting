@@ -2,7 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Mc Lighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features a self-hosted responsive web-interface, a REST-API and a websocket connector.
+McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
 Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
@@ -10,22 +10,24 @@ Because of it's open architecture and APIs it's easy to build new clients for di
 
 [![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
 
-___
-
+---
 
 ## The Hardware
 
-The project ist based on the famous ESP8266 microcontroller and WD2811/WS2812 LED strips. There are many variations of the ESP chip out there, but I chose the NodeMCU dev board, because it's powered by micro USB and has a voltage converter included to power the ESP which uses 3.3V.
-A standalone ESP8266 or a Adafruit Huzzah should work too.
+The project is based on the ESP8266 and WD2811/WS2812 LED strips. There are many variations of the ESP chip out there, but for beginners we suggest a NodeMCU dev board, as these are as "plug 'n' play"as it can get.
+A standalone ESP8266 or an Adafruit Huzzah should work too.
 
-The RGB LED strips are also available in many different flavours as strip or as standalone LEDs and can easily be chained.
+The RGB LED strips are also available in many different flavours (as strips or as standalone LEDs) and can easily be chained.
 
-See wiki [Hardware](../../wiki/Hardware)
+For a detailed explanation see our wiki: [Hardware](../../wiki/Hardware)
 
 
 ## Software installation
-See wiki [Software installation](../../wiki/Software-installation)
 
+You can read how to get started on the software side of this project 
+again in out wiki: [Software installation](../../wiki/Software-installation)
+
+---
 
 ### Used Libraries
 
