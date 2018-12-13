@@ -765,7 +765,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
 
     void sendState() {
-      const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6);
+      const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6) + 500;
       DynamicJsonDocument jsonBuffer(bufferSize);
       JsonObject root = jsonBuffer.to<JsonObject>();
 
@@ -781,9 +781,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       root["speed"] = ws2812fx_speed;
 
-      char modeName[30];
-      strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-      root["effect"] = modeName;
+      //char modeName[30];
+      //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+      root["effect"] = strip.getModeName(strip.getMode());
 
       char buffer[measureJson(root) + 1];
       serializeJson(root, buffer, sizeof(buffer));
@@ -1203,7 +1203,7 @@ bool writeConfigFS(bool saveConfig){
     json["mqtt_user"] = mqtt_user;
     json["mqtt_pass"] = mqtt_pass;
   
-//      SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+    //SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
 
@@ -1275,7 +1275,7 @@ bool writeStateFS(){
   json["green"] = main_color.green;
   json["blue"] = main_color.blue;
 
-//      SPIFFS.remove("/state.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+  //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
   File configFile = SPIFFS.open("/stripstate.json", "w");
   if (!configFile) {
     DBG_OUTPUT_PORT.println("Failed!");
