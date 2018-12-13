@@ -357,8 +357,6 @@ void setup() {
     strcpy(mqtt_user, custom_mqtt_user.getValue());
     strcpy(mqtt_pass, custom_mqtt_pass.getValue());
 
-    Serial.printf(">>>>>%s %s %s %s<<<<<<<<<\n", mqtt_host, mqtt_port, mqtt_user, mqtt_pass);
-
     //save the custom parameters to FS
     #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
       (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
