@@ -35,4 +35,10 @@
  * 11 Dec 2018 v 2.1.8
  * - Fix Auto-Discovery for HA version >= 0.84 #286
  * - Fix #283
+ * 
+ * 13 Dec 2018 v 2.1.9
+ * - HA is not getting the correct animation name being run, boils down to changes to ArduinoJson library
+ * - Bump ArduinoJson library requirment for v6.7.0-beta (better memory management)
+ * - sendState() needs extra memory for jsonBuffer
+ * - sensState() effect can be sent directly instead of copying from PROGMEM
  */

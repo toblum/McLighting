@@ -53,8 +53,8 @@
 #endif
 
 #ifdef ARDUINOJSON_VERSION
-  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 6)
-    #error "Install ArduinoJson v6.6.0-beta"
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 7)
+    #error "Install ArduinoJson v6.7.0-beta"
   #endif
 #endif
 
