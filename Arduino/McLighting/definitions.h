@@ -21,7 +21,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 
 #ifdef ENABLE_E131
   #define UNIVERSE 1                    // First DMX Universe to listen for
-  #define UNIVERSE_COUNT 7              // Total number of Universes to listen for, starting at UNIVERSE
+  #define UNIVERSE_COUNT 2              // Total number of Universes to listen for, starting at UNIVERSE
 #endif
 
 //#define WIFIMGR_PORTAL_TIMEOUT 180
