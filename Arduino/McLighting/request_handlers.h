@@ -20,10 +20,9 @@ void handleE131(){
     //               e131.stats.packet_errors,               // Packet error counter
     //               packet.property_values[1]);             // Dimmer data for Channel 1
 
-    uint16_t len = 170; // (htons(packet.property_value_count) - 1) /3;
     uint16_t multipacketOffset = (universe - UNIVERSE) * 170; //if more than 170 LEDs (510 channels), client will send in next higher universe
     if (NUMLEDS <= multipacketOffset) return;
-    if (len + multipacketOffset > NUMLEDS) len = NUMLEDS - multipacketOffset;
+    uint16_t len = (170 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 170;
     for (uint16_t i = 0; i < len; i++){
       uint16_t j = i * 3;
       strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
