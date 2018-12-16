@@ -41,4 +41,7 @@
  * - Bump ArduinoJson library requirment for v6.7.0-beta (better memory management)
  * - sendState() needs extra memory for jsonBuffer
  * - sensState() effect can be sent directly instead of copying from PROGMEM
+ * 
+ * 16 Dec 2018 v 1.1.10
+ * - more ArduinoJson library memory managment fixes
  */

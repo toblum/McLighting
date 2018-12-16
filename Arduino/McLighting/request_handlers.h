@@ -277,7 +277,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
 String listStatusJSON(void) {
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
-  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
+  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
@@ -302,7 +302,7 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray json = jsonBuffer.to<JsonArray>();
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
