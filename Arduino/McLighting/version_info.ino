@@ -44,4 +44,8 @@
  * 
  * 16 Dec 2018 v 1.1.10
  * - more ArduinoJson library memory managment fixes
+ * 
+ * 18 Dec 2018 v 2.1.11
+ * - More Auto-Discovery fix for HA version >= 0.84 #286
+ * - Suggestions from https://github.com/home-assistant/home-assistant/issues/19420
  */
