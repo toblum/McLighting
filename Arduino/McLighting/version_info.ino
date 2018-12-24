@@ -45,4 +45,14 @@
  * - Bump ArduinoJson library requirment for v6.7.0-beta (better memory management)
  * - sendState() needs extra memory for jsonBuffer
  * - sensState() effect can be sent directly instead of copying from PROGMEM
+ * 
+ * 16 Dec 2018 v 2.1.10
+ * - more ArduinoJson library memory managment fixes
+ * 
+ * 18 Dec 2018 v 2.1.11
+ * - More Auto-Discovery fix for HA version >= 0.84 #286
+ * - Suggestions from https://github.com/home-assistant/home-assistant/issues/19420
+ * 
+ * 23 Dec 2018 v 2.2.0 
+ * - Add E1.31 mode to getModes(), no need to change McLightingUI
  */

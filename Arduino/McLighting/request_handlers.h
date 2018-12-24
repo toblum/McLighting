@@ -302,7 +302,7 @@ void setModeByStateString(String saved_state_string) {
 #ifdef ENABLE_E131
   void handleE131NamedMode(String str_mode) {
     exit_func = true;
-    if (str_mode.startsWith("=e131")) {
+    if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
       if(strip.isRunning()) strip.stop();
       mode = E131;
       #ifdef ENABLE_HOMEASSISTANT
@@ -321,7 +321,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
 String listStatusJSON(void) {
   uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
   
-  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6);
+  const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
@@ -346,9 +346,14 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2);
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray json = jsonBuffer.to<JsonArray>();
+  #ifdef ENABLE_E131
+  JsonObject objecte131 = json.createNestedObject();
+  objecte131["mode"] = "e131";
+  objecte131["name"] = "E131";
+  #endif
   for (uint8_t i = 0; i < strip.getModeCount(); i++) {
     JsonObject object = json.createNestedObject();
     object["mode"] = i;
@@ -675,6 +680,10 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // / ==> Set WS2812 mode.
   if (payload[0] == '/') {
     handleSetWS2812FXMode(payload);
+    #ifdef ENABLE_E131
+    String str_mode = String((char *) &payload[0]);
+    handleE131NamedMode(str_mode);
+    #endif
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: "); 
     } else {
@@ -983,11 +992,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12));
+            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
             #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
-            json["platform"] = "mqtt";
             json["schema"] = "json";
             #else
             json["platform"] = "mqtt_json";
@@ -1068,11 +1076,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12));
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
           #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
-          json["platform"] = "mqtt";
           json["schema"] = "json";
           #else
           json["platform"] = "mqtt_json";
