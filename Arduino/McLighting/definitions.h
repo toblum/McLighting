@@ -1,5 +1,6 @@
 //#define USE_WS2812FX_DMA      // Uses PIN is ignored & set to RX/GPIO3  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
-//#define USE_WS2812FX_UART     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+//#define USE_WS2812FX_UART1     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+//#define USE_WS2812FX_UART2     // Uses PIN is ignored & set to TX/GPIO1  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
 #define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
@@ -20,8 +21,8 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #define ENABLE_E131              // E1.31 implementation
 
 #ifdef ENABLE_E131
-  #define UNIVERSE 1                    // First DMX Universe to listen for
-  #define UNIVERSE_COUNT 2              // Total number of Universes to listen for, starting at UNIVERSE
+  #define START_UNIVERSE 1                    // First DMX Universe to listen for
+  #define END_UNIVERSE 2              // Total number of Universes to listen for, starting at UNIVERSE
 #endif
 
 //#define WIFIMGR_PORTAL_TIMEOUT 180

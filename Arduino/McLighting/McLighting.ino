@@ -61,7 +61,7 @@
 #ifdef ENABLE_E131
   #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
   #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
-  ESPAsyncE131 e131(UNIVERSE_COUNT);
+  ESPAsyncE131 e131(END_UNIVERSE - START_UNIVERSE + 1);
 #endif
 
 
@@ -96,14 +96,18 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-#ifdef USE_WS2812FX_DMA
+#ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
   NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #endif
-#ifdef USE_WS2812FX_UART
+#ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
-  NeoEsp8266Uart800KbpsMethod dma = NeoEsp8266Uart800KbpsMethod(NUMLEDS, 3);
+  NeoEsp8266Uart0800KbpsMethod dma = NeoEsp8266Uart0800KbpsMethod(NUMLEDS, 3);
+#endif
+#ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  #include <NeoPixelBus.h>
+  NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 3);
 #endif
 #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
   void DMA_Show(void) {
@@ -925,7 +929,7 @@ void setup() {
   #ifdef ENABLE_E131
   // Choose one to begin listening for E1.31 data
   // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
-  if (e131.begin(E131_MULTICAST, UNIVERSE, UNIVERSE_COUNT)) // Listen via Multicast
+  if (e131.begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) // Listen via Multicast
       Serial.println(F("Listening for data..."));
   else
       Serial.println(F("*** e131.begin failed ***"));

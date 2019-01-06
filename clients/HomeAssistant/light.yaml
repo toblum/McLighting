@@ -63,6 +63,7 @@ light:
       - "Bicolor Chase"
       - "Tricolor Chase"
       - "ICU"
+      - "E131"
     brightness: true
     color_temp: true
     rgb: true
@@ -79,7 +80,7 @@ input_number:
     step: 5
     
 automation:
-  - id: 71938579813759813757
+  - id: "71938579813759813757"
     alias: NeoPixel Animation Speed Send
     initial_state: true
     hide_entity: false
@@ -93,7 +94,7 @@ automation:
         topic: home/McLighting01_ha/state/in
       service: mqtt.publish
 
-  - id: 93786598732698756967
+  - id: "93786598732698756967"
     alias: NeoPixel Animation Speed Receive
     trigger:
     - platform: mqtt

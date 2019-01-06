@@ -2,6 +2,8 @@
 // Request handlers
 // ***************************************************************************
 #ifdef ENABLE_E131
+void checkForRequests(void); //prototype
+
 void handleE131(){
   if (!e131.isEmpty())
   {
@@ -11,7 +13,7 @@ void handleE131(){
     uint16_t universe = htons(packet.universe);
     uint8_t *data = packet.property_values + 1;
 
-    if (universe < UNIVERSE || universe > UNIVERSE_COUNT) return; //async will take care about filling the buffer
+    if (universe < START_UNIVERSE || universe > END_UNIVERSE) return; //async will take care about filling the buffer
 
     // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
     //               htons(packet.universe),                 // The Universe for this packet
@@ -20,7 +22,7 @@ void handleE131(){
     //               e131.stats.packet_errors,               // Packet error counter
     //               packet.property_values[1]);             // Dimmer data for Channel 1
 
-    uint16_t multipacketOffset = (universe - UNIVERSE) * 170; //if more than 170 LEDs (510 channels), client will send in next higher universe
+    uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs (510 channels), client will send in next higher universe
     if (NUMLEDS <= multipacketOffset) return;
     uint16_t len = (170 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 170;
     for (uint16_t i = 0; i < len; i++){
@@ -28,6 +30,7 @@ void handleE131(){
       strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
     }
     strip.show();
+    checkForRequests();
   }
 }
 #endif
@@ -839,7 +842,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       //char modeName[30];
       //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-      root["effect"] = strip.getModeName(strip.getMode());
+      #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
+      if (mode == E131)
+        root["effect"] = "E131";
+      else
+        root["effect"] = strip.getModeName(strip.getMode());
+      #else
+        root["effect"] = strip.getModeName(strip.getMode());
+      #endif
 
       char buffer[measureJson(root) + 1];
       serializeJson(root, buffer, sizeof(buffer));
@@ -918,6 +928,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         String effectString = root["effect"].as<String>();
 
         for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+          #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
+          if(effectString == "E131"){
+            if(strip.isRunning()) strip.stop();
+            mode = E131;
+            break;
+          }
+          #endif
           if(String(strip.getModeName(i)) == effectString) {
             mode = SET_MODE;
             ws2812fx_mode = i;
@@ -1012,6 +1029,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             for (uint8_t i = 0; i < strip.getModeCount(); i++) {
               effect_list.add(strip.getModeName(i));
             }
+            #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
+              effect_list.add("E131");
+            #endif
             char buffer[measureJson(json) + 1];
             serializeJson(json, buffer, sizeof(buffer));
             mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
@@ -1096,6 +1116,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           for (uint8_t i = 0; i < strip.getModeCount(); i++) {
             effect_list.add(strip.getModeName(i));
           }
+          #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
+            effect_list.add("E131");
+          #endif
           char buffer[measureJson(json) + 1];
           serializeJson(json, buffer, sizeof(buffer));
           DBG_OUTPUT_PORT.println(buffer);
