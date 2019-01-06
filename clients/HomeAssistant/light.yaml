@@ -1,5 +1,6 @@
 light:
-  - platform: mqtt_json
+  - platform: mqtt
+    schema: json
     name: "NeoPixel LEDs"
     state_topic: "home/McLighting01_ha/state/out"
     command_topic: "home/McLighting01_ha/state/in"
