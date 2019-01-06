@@ -55,4 +55,8 @@
  * 
  * 23 Dec 2018 v 2.2.0 
  * - Add E1.31 mode to getModes(), no need to change McLightingUI
+ * 
+ * 6 Jan 2018 v 2.2.0
+ * - fix webserver not responding when E1.31 is mode is acivated: do a webserver.loop() for every 1.31 packet
+ * - HA E1.31 mode added
  */

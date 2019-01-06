@@ -1,0 +1,14 @@
+language: python
+python:
+    - "2.7"
+sudo: false
+cache:
+    directories:
+        - "~/.platformio"
+env:
+    - PLATFORMIO_CI_SRC=Arduino/McLighting
+install:
+    - pip install -U platformio
+    - platformio update
+script:
+    - platformio ci --project-conf=./platformio.ini -v
