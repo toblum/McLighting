@@ -58,6 +58,12 @@
   #endif
 #endif
 
+#ifdef ENABLE_E131
+  #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
+  #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
+  ESPAsyncE131 e131(END_UNIVERSE - START_UNIVERSE + 1);
+#endif
+
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -90,14 +96,18 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-#ifdef USE_WS2812FX_DMA
+#ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
   NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #endif
-#ifdef USE_WS2812FX_UART
+#ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
-  NeoEsp8266Uart800KbpsMethod dma = NeoEsp8266Uart800KbpsMethod(NUMLEDS, 3);
+  NeoEsp8266Uart0800KbpsMethod dma = NeoEsp8266Uart0800KbpsMethod(NUMLEDS, 3);
+#endif
+#ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  #include <NeoPixelBus.h>
+  NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 3);
 #endif
 #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
   void DMA_Show(void) {
@@ -840,6 +850,26 @@ void setup() {
         if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
       #endif
     });
+
+    #ifdef ENABLE_E131
+    server.on("/e131", []() {
+      exit_func = true;
+      mode = E131;
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =131").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+    #endif
   
     server.on("/tv", []() {
       exit_func = true;
@@ -895,6 +925,15 @@ void setup() {
   if (mdns_result) {
     MDNS.addService("http", "tcp", 80);
   }
+
+  #ifdef ENABLE_E131
+  // Choose one to begin listening for E1.31 data
+  // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
+  if (e131.begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) // Listen via Multicast
+      Serial.println(F("Listening for data..."));
+  else
+      Serial.println(F("*** e131.begin failed ***"));
+  #endif
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     (readStateFS()) ? DBG_OUTPUT_PORT.println(" Success!") : DBG_OUTPUT_PORT.println(" Failure!");
   #endif
@@ -1013,6 +1052,11 @@ void loop() {
       strip.trigger();
       mode = HOLD;
     }
+    #ifdef ENABLE_E131
+    if (mode == E131) {
+      handleE131();
+    }
+    #endif
   #endif
   if (mode == HOLD || mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
