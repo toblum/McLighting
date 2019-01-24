@@ -94,10 +94,10 @@ WS2812FX* strip;
   NeoEsp8266Dma800KbpsMethod* dma;
 #endif
 #ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-  NeoEsp8266Uart0800KbpsMethod dma;
+  NeoEsp8266Uart0800KbpsMethod* dma;
 #endif
 #ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-  NeoEsp8266Uart1800KbpsMethod dma;
+  NeoEsp8266Uart1800KbpsMethod* dma;
 #endif
 
 void initDMA(uint16_t stripSize = NUMLEDS){
