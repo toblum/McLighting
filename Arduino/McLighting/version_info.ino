@@ -65,5 +65,7 @@
  * - Minor fixes related to NeoPixelBus UART methods
  * - Modify platformio.ini for future bump to esp8266-arduino v2.5.0 (shamelessly stolen settings from espurna project)
  * - Gzipped index2.htm & edit.htm.gz(untouched), convereted to hex format using xxd -i abcd.gz > html_gz.h
- * - Think about using pointers for WS2812FX (no code regarding this in initial push)
+ * - Pointers added for WS2812FX & NeoPixelBus
+ * - new "REST API": /pixels?ct=xxx to change length of LED strip
+ * - new "REST API": /pixels?rgbo=xxx to change RGB order
  */

@@ -27,9 +27,9 @@ void handleE131(){
     uint16_t len = (170 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 170;
     for (uint16_t i = 0; i < len; i++){
       uint16_t j = i * 3;
-      strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
+      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
     }
-    strip.show();
+    strip->show();
     checkForRequests();
   }
 }
@@ -63,7 +63,7 @@ void getArgs() {
   }
 
   if (server.arg("m") != "") {
-    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
+    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
   }
   
   if (server.arg("c").toInt() > 0) {
@@ -114,7 +114,7 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-//  strip.setColor(main_color.red, main_color.green, main_color.blue);
+//  strip->setColor(main_color.red, main_color.green, main_color.blue);
   mode = SETCOLOR;
 }
 
@@ -140,8 +140,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
-  if (led <= strip.numPixels()) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip->numPixels(), mypayload );
+  if (led <= strip->numPixels()) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
@@ -156,8 +156,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
 
-    strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
-    strip.show();
+    strip->setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
+    strip->show();
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     exit_func = true;
@@ -234,10 +234,10 @@ void setModeByStateString(String saved_state_string) {
   DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
   DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
 
-  strip.setMode(ws2812fx_mode);
-  strip.setSpeed(convertSpeed(ws2812fx_speed));
-  strip.setBrightness(brightness);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip->setMode(ws2812fx_mode);
+  strip->setSpeed(convertSpeed(ws2812fx_speed));
+  strip->setBrightness(brightness);
+  strip->setColor(main_color.red, main_color.green, main_color.blue);
 }
 
 #ifdef ENABLE_LEGACY_ANIMATIONS
@@ -306,7 +306,7 @@ void setModeByStateString(String saved_state_string) {
   void handleE131NamedMode(String str_mode) {
     exit_func = true;
     if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
-      if(strip.isRunning()) strip.stop();
+      if(strip->isRunning()) strip->stop();
       mode = E131;
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -318,18 +318,18 @@ void setModeByStateString(String saved_state_string) {
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = SET_MODE;
   uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
+  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip->getModeCount() - 1);
 }
 
 String listStatusJSON(void) {
-  uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
+  uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode();
   
   const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = tmp_mode;
-  root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
+  root["ws2812fx_mode_name"] = strip->getModeName(tmp_mode);
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
@@ -349,7 +349,7 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+1) + strip->getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray json = jsonBuffer.to<JsonArray>();
   #ifdef ENABLE_E131
@@ -357,10 +357,10 @@ String listModesJSON(void) {
   objecte131["mode"] = "e131";
   objecte131["name"] = "E131";
   #endif
-  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+  for (uint8_t i = 0; i < strip->getModeCount(); i++) {
     JsonObject object = json.createNestedObject();
     object["mode"] = i;
-    object["name"] = strip.getModeName(i);
+    object["name"] = strip->getModeName(i);
   }
   JsonObject object = json.createNestedObject();
   
@@ -422,9 +422,9 @@ Ticker autoTicker;
 int autoCount = 0;
 
 void autoTick() {
-  strip.setColor(autoParams[autoCount][0]);
-  strip.setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
-  strip.setMode((uint8_t)autoParams[autoCount][2]);
+  strip->setColor(autoParams[autoCount][0]);
+  strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
+  strip->setMode((uint8_t)autoParams[autoCount][2]);
   autoTicker.once((float)autoParams[autoCount][3], autoTick);
   DBG_OUTPUT_PORT.print("autoTick ");
   DBG_OUTPUT_PORT.println(autoCount);
@@ -436,12 +436,12 @@ void autoTick() {
 void handleAutoStart() {
   autoCount = 0;
   autoTick();
-  strip.start();
+  strip->start();
 }
 
 void handleAutoStop() {
   autoTicker.detach();
-  strip.stop();
+  strip->stop();
 }
 
 void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
@@ -839,14 +839,14 @@ void checkForRequests() {
       root["speed"] = ws2812fx_speed;
 
       //char modeName[30];
-      //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+      //strncpy_P(modeName, (PGM_P)strip->getModeName(strip->getMode()), sizeof(modeName)); // copy from progmem
       #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
       if (mode == E131)
         root["effect"] = "E131";
       else
-        root["effect"] = strip.getModeName(strip.getMode());
+        root["effect"] = strip->getModeName(strip->getMode());
       #else
-        root["effect"] = strip.getModeName(strip.getMode());
+        root["effect"] = strip->getModeName(strip->getMode());
       #endif
 
       char buffer[measureJson(root) + 1];
@@ -925,15 +925,15 @@ void checkForRequests() {
         animation_on = true;
         String effectString = root["effect"].as<String>();
 
-        for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+        for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
           if(effectString == "E131"){
-            if(strip.isRunning()) strip.stop();
+            if(strip->isRunning()) strip->stop();
             mode = E131;
             break;
           }
           #endif
-          if(String(strip.getModeName(i)) == effectString) {
+          if(String(strip->getModeName(i)) == effectString) {
             mode = SET_MODE;
             ws2812fx_mode = i;
             break;
@@ -1007,7 +1007,7 @@ void checkForRequests() {
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
+            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
             #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
@@ -1024,8 +1024,8 @@ void checkForRequests() {
             json["color_temp"] = "true";
             json["effect"] = "true";
             JsonArray effect_list = json.createNestedArray("effect_list");
-            for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-              effect_list.add(strip.getModeName(i));
+            for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+              effect_list.add(strip->getModeName(i));
             }
             #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
               effect_list.add("E131");
@@ -1094,7 +1094,7 @@ void checkForRequests() {
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
           #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
@@ -1111,8 +1111,8 @@ void checkForRequests() {
           json["color_temp"] = "true";
           json["effect"] = "true";
           JsonArray effect_list = json.createNestedArray("effect_list");
-          for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-            effect_list.add(strip.getModeName(i));
+          for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+            effect_list.add(strip->getModeName(i));
           }
           #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
             effect_list.add("E131");
@@ -1343,7 +1343,7 @@ bool writeStateFS(){
   DynamicJsonDocument jsonBuffer;
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
-  json["strip_mode"] = (int) strip.getMode();
+  json["strip_mode"] = (int) strip->getMode();
   json["brightness"] = brightness;
   json["speed"] = ws2812fx_speed;
   json["red"] = main_color.red;
@@ -1395,14 +1395,14 @@ bool readStateFS() {
         main_color.green = json["green"];
         main_color.blue = json["blue"];
 
-        strip.setMode(ws2812fx_mode);
-        strip.setSpeed(convertSpeed(ws2812fx_speed));
-        strip.setBrightness(brightness);
-        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        strip->setMode(ws2812fx_mode);
+        strip->setSpeed(convertSpeed(ws2812fx_speed));
+        strip->setBrightness(brightness);
+        strip->setColor(main_color.red, main_color.green, main_color.blue);
 
         #ifdef ENABLE_E131
         if (mode == E131) {
-          strip.stop();
+          strip->stop();
         }
         #endif
         

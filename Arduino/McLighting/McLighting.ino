@@ -84,39 +84,39 @@ ESP8266HTTPUpdateServer httpUpdater;
 // ***************************************************************************
 // https://github.com/kitesurfer1404/WS2812FX
 #include <WS2812FX.h>
-WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+// WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+WS2812FX* strip;
 
-// Parameter 1 = number of pixels in strip
-// Parameter 2 = Arduino pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
-//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-
-// IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
-// pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
-// and minimize distance between Arduino and first pixel.  Avoid connecting
-// on a live circuit...if you must, connect GND first.
+#if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+#include <NeoPixelBus.h>
 
 #ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-  #include <NeoPixelBus.h>
-  NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+  NeoEsp8266Dma800KbpsMethod* dma;
+#endif
+#ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  NeoEsp8266Uart0800KbpsMethod dma;
+#endif
+#ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  NeoEsp8266Uart1800KbpsMethod dma;
+#endif
+
+void initDMA(uint16_t stripSize = NUMLEDS){
+#ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  dma = new NeoEsp8266Dma800KbpsMethod(stripSize, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #endif
 #ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-  #include <NeoPixelBus.h>
-  NeoEsp8266Uart0800KbpsMethod dma = NeoEsp8266Uart0800KbpsMethod(NUMLEDS, 3);
+  dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, 3);
 #endif
 #ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-  #include <NeoPixelBus.h>
-  NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 3);
+   dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, 3);
 #endif
-#if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+  dma->Initialize();
+}
   void DMA_Show(void) {
-    if(dma.IsReadyToUpdate()) {
-      memcpy(dma.getPixels(), strip.getPixels(), dma.getPixelsSize());
-      dma.Update();
+    if(dma->IsReadyToUpdate()) {
+      memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
+      dma->Update();
     }
   }
 #endif
@@ -205,10 +205,10 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   ticker.attach(0.2, tick);
 
   uint16_t i;
-  for (i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, 0, 0, 255);
+  for (i = 0; i < strip->numPixels(); i++) {
+    strip->setPixelColor(i, 0, 0, 255);
   }
-  strip.show();
+  strip->show();
 }
 
 //callback notifying us of the need to save config
@@ -226,6 +226,34 @@ void saveConfigCallback () {
 // Include: Request handlers
 // ***************************************************************************
 #include "request_handlers.h"
+
+//
+void initStrip(uint16_t stripSize = NUMLEDS, neoPixelType RGBOrder = NEO_GRB){
+  strip = new WS2812FX(stripSize, PIN, RGBOrder + NEO_KHZ800);
+  // Parameter 1 = number of pixels in strip
+  // Parameter 2 = Arduino pin number (most are valid)
+  // Parameter 3 = pixel type flags, add together as needed:
+  //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+  //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+  //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+  //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+
+  // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
+  // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
+  // and minimize distance between Arduino and first pixel.  Avoid connecting
+  // on a live circuit...if you must, connect GND first.
+  
+  strip->init();
+  #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+    initDMA(stripSize);
+    strip->setCustomShow(DMA_Show);
+  #endif
+  strip->setBrightness(brightness);
+  strip->setSpeed(convertSpeed(ws2812fx_speed));
+  //strip->setMode(FX_MODE_RAINBOW_CYCLE);
+  strip->setColor(main_color.red, main_color.green, main_color.blue);
+  strip->start();
+}
 
 // ***************************************************************************
 // Include: Color modes
@@ -274,16 +302,7 @@ void setup() {
   // ***************************************************************************
   // Setup: Neopixel
   // ***************************************************************************
-  strip.init();
-  #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
-    dma.Initialize();
-    strip.setCustomShow(DMA_Show);
-  #endif
-  strip.setBrightness(brightness);
-  strip.setSpeed(convertSpeed(ws2812fx_speed));
-  //strip.setMode(FX_MODE_RAINBOW_CYCLE);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
-  strip.start();
+  initStrip();
 
   // ***************************************************************************
   // Setup: WiFiManager
@@ -675,7 +694,7 @@ void setup() {
     if (server.arg("d").toInt() >= 0) {
       ws2812fx_speed = server.arg("d").toInt();
       ws2812fx_speed = constrain(ws2812fx_speed, 0, 255);
-      strip.setSpeed(convertSpeed(ws2812fx_speed));
+      strip->setSpeed(convertSpeed(ws2812fx_speed));
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String(String("OK ?") + String(ws2812fx_speed)).c_str());
       #endif
@@ -715,6 +734,34 @@ void setup() {
 
   server.on("/status", []() {
     getStatusJSON();
+  });
+
+  server.on("/pixels", []() {
+    if(server.hasArg("ct")){
+      uint16_t pixelCt = server.arg("ct").toInt();
+      if (pixelCt > 0) {
+        initStrip(pixelCt);
+        DBG_OUTPUT_PORT.printf("/pixels: Count# %d\n", pixelCt);
+      }
+    }
+    if(server.hasArg("rgbo")){
+      String RGBOrder = server.arg("rgbo");
+      DBG_OUTPUT_PORT.print("/pixels: RGB Order# ");
+      if (RGBOrder == "grb") {
+        initStrip(strip->getLength(), NEO_GRB);
+      } else if (RGBOrder == "gbr") {
+        initStrip(strip->getLength(), NEO_GBR);
+      } else if (RGBOrder == "rgb") {
+        initStrip(strip->getLength(), NEO_RGB);
+      } else if (RGBOrder == "rbg") {
+        initStrip(strip->getLength(), NEO_RBG);
+      } else if (RGBOrder == "brg") {
+        initStrip(strip->getLength(), NEO_BRG);
+      } else if (RGBOrder == "bgr") {
+        initStrip(strip->getLength(), NEO_BGR);
+      }
+      DBG_OUTPUT_PORT.println(RGBOrder);
+    }
   });
 
   server.on("/off", []() {
@@ -1018,63 +1065,63 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
-    strip.setMode(ws2812fx_mode);
-    strip.trigger();
+    strip->setMode(ws2812fx_mode);
+    strip->trigger();
     prevmode = SET_MODE;
     mode = SETCOLOR;
   }
   if (mode == OFF) {
-    if(strip.isRunning()) strip.stop(); //should clear memory
+    if(strip->isRunning()) strip->stop(); //should clear memory
     // mode = HOLD;
   }
   if (mode == SETCOLOR) {
-    strip.setColor(main_color.red, main_color.green, main_color.blue);
-    strip.trigger();
+    strip->setColor(main_color.red, main_color.green, main_color.blue);
+    strip->trigger();
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
-    strip.setSpeed(convertSpeed(ws2812fx_speed));
-    strip.trigger();
+    strip->setSpeed(convertSpeed(ws2812fx_speed));
+    strip->trigger();
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
-    strip.setBrightness(brightness);
-    strip.trigger();
+    strip->setBrightness(brightness);
+    strip->trigger();
     if (prevmode == SET_MODE) prevmode = HOLD;
     mode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
-      strip.setMode(FX_MODE_COLOR_WIPE);
-      strip.trigger();
+      strip->setColor(main_color.red, main_color.green, main_color.blue);
+      strip->setMode(FX_MODE_COLOR_WIPE);
+      strip->trigger();
       mode = HOLD;
     }
     if (mode == RAINBOW) {
-      strip.setMode(FX_MODE_RAINBOW);
-      strip.trigger();
+      strip->setMode(FX_MODE_RAINBOW);
+      strip->trigger();
       mode = HOLD;
     }
     if (mode == RAINBOWCYCLE) {
-      strip.setMode(FX_MODE_RAINBOW_CYCLE);
-      strip.trigger();
+      strip->setMode(FX_MODE_RAINBOW_CYCLE);
+      strip->trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
-      strip.setMode(FX_MODE_THEATER_CHASE);
-      strip.trigger();
+      strip->setColor(main_color.red, main_color.green, main_color.blue);
+      strip->setMode(FX_MODE_THEATER_CHASE);
+      strip->trigger();
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
-      strip.setColor(main_color.red, main_color.green, main_color.blue);
-      strip.setMode(FX_MODE_TWINKLE_RANDOM);
-      strip.trigger();
+      strip->setColor(main_color.red, main_color.green, main_color.blue);
+      strip->setMode(FX_MODE_TWINKLE_RANDOM);
+      strip->trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASERAINBOW) {
-      strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
-      strip.trigger();
+      strip->setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+      strip->trigger();
       mode = HOLD;
     }
     #ifdef ENABLE_E131
@@ -1084,7 +1131,7 @@ void loop() {
     #endif
   #endif
   if (mode == HOLD || mode == CUSTOM) {
-    if(!strip.isRunning()) strip.start();
+    if(!strip->isRunning()) strip->start();
     #ifdef ENABLE_LEGACY_ANIMATIONS
       if (exit_func) {
         exit_func = false;
@@ -1094,7 +1141,7 @@ void loop() {
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == TV) {
-      if(!strip.isRunning()) strip.start();
+      if(!strip->isRunning()) strip->start();
       tv();
     }
   #endif
@@ -1105,7 +1152,7 @@ void loop() {
   #else
   if (mode != CUSTOM) {
   #endif
-    strip.service();
+    strip->service();
   }
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
@@ -1116,7 +1163,7 @@ void loop() {
 
   #ifdef ENABLE_STATE_SAVE_EEPROM
     // Check for state changes
-    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
+    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip->getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue);
 
     if (strcmp(current_state, last_state) != 0) {
       // DBG_OUTPUT_PORT.printf("STATE CHANGED: %s / %s\n", last_state, current_state);

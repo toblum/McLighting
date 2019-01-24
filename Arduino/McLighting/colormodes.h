@@ -25,7 +25,7 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
     temp[1] = temp[4] = (uint8_t)((((( (index & 255)        * sat) / 255) + (sat ^ 255)) * bright) / 255);
     temp[2] =           (uint8_t)(((((((index & 255) ^ 255) * sat) / 255) + (sat ^ 255)) * bright) / 255);
 
-    strip.setPixelColor(myled, temp[n + 2], temp[n + 1], temp[n]);
+    strip->setPixelColor(myled, temp[n + 2], temp[n + 1], temp[n]);
 }
 
 
@@ -37,7 +37,7 @@ void updateLed (int led, int brightness) {
 		uint16_t index = (i%3 == 0) ? 400 : random(0,767);
 		hsb2rgbAN1(index, 200, ledStates[i], i);
 	}
-	strip.show();
+	strip->show();
 }
 
 
@@ -61,7 +61,7 @@ void tv() {
 		}
 		if(currentMillis-previousMillis<twitch)
 		{
-			led=random(0, (strip.numPixels()-1));
+			led=random(0, (strip->numPixels()-1));
 			analogLevel=random(50,255);// set the range of the 3 pwm leds
 			ledState = ledState == LOW ? HIGH: LOW; // if the LED is off turn it on and vice-versa:
 			
@@ -76,7 +76,7 @@ void tv() {
 				darkTime = random(50,150);
 				dipInterval = random(5,250);// cycles of flicker
 			}
-			//strip.show();
+			//strip->show();
 		} 
 	}
 	else
@@ -85,7 +85,7 @@ void tv() {
 		currentDipTime = millis();
 		if (currentDipTime - dipStartTime < darkTime)
 		{
-			for (int i=3; i<strip.numPixels(); i++)
+			for (int i=3; i<strip->numPixels(); i++)
 			{
 				updateLed(i, 0);
 			}
@@ -94,6 +94,6 @@ void tv() {
 		{
 			timeToDip = false;
 		}
-		strip.show();
+		strip->show();
 	}
 }
