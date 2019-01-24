@@ -112,7 +112,7 @@ WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
   #include <NeoPixelBus.h>
   NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 3);
 #endif
-#if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
+#if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
   void DMA_Show(void) {
     if(dma.IsReadyToUpdate()) {
       memcpy(dma.getPixels(), strip.getPixels(), dma.getPixelsSize());
