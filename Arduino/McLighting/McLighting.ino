@@ -749,18 +749,25 @@ void setup() {
       DBG_OUTPUT_PORT.print("/pixels: RGB Order# ");
       if (RGBOrder == "grb") {
         initStrip(strip->getLength(), NEO_GRB);
+        DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "gbr") {
         initStrip(strip->getLength(), NEO_GBR);
+        DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "rgb") {
         initStrip(strip->getLength(), NEO_RGB);
+        DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "rbg") {
         initStrip(strip->getLength(), NEO_RBG);
+        DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "brg") {
         initStrip(strip->getLength(), NEO_BRG);
+        DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "bgr") {
         initStrip(strip->getLength(), NEO_BGR);
+        DBG_OUTPUT_PORT.println(RGBOrder);
+      } else {
+        DBG_OUTPUT_PORT.println("invalid input!");
       }
-      DBG_OUTPUT_PORT.println(RGBOrder);
     }
   });
 
