@@ -19,10 +19,12 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
 #define ENABLE_E131              // E1.31 implementation
+//#define USE_HTML_MIN_GZ      //uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
 
 #ifdef ENABLE_E131
   #define START_UNIVERSE 1                    // First DMX Universe to listen for
-  #define END_UNIVERSE 2              // Total number of Universes to listen for, starting at UNIVERSE
+  #define END_UNIVERSE 2                      // Last Universe to listen for, starting at UNIVERSE
+                                              // MUST: END_UNIVERSE >= START_UNIVERSE
 #endif
 
 //#define WIFIMGR_PORTAL_TIMEOUT 180

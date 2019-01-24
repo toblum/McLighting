@@ -748,15 +748,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 }
 
-#ifdef ENABLE_LEGACY_ANIMATIONS
-  void checkForRequests() {
-    webSocket.loop();
-    server.handleClient();
-    #ifdef ENABLE_MQTT
-    mqtt_client.loop();
-    #endif
-  }
-#endif
+void checkForRequests() {
+  webSocket.loop();
+  server.handleClient();
+  #ifdef ENABLE_MQTT
+  mqtt_client.loop();
+  #endif
+}
 
 
 // ***************************************************************************

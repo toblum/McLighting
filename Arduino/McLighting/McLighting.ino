@@ -64,6 +64,9 @@
   ESPAsyncE131 e131(END_UNIVERSE - START_UNIVERSE + 1);
 #endif
 
+#ifdef USE_HTML_MIN_GZ
+#include "html_gz.h" 
+#endif
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -533,8 +536,11 @@ void setup() {
     #if defined(USE_WS2812FX_DMA)
       json["animation_lib"] = "WS2812FX_DMA";
       json["pin"] = 3;
-    #elif defined(USE_WS2812FX_UART)
-      json["animation_lib"] = "WS2812FX_UART";
+    #elif defined(USE_WS2812FX_UART1)
+      json["animation_lib"] = "WS2812FX_UART1";
+      json["pin"] = 1;
+    #elif defined(USE_WS2812FX_UART2)
+      json["animation_lib"] = "WS2812FX_UART2";
       json["pin"] = 2;
     #else
       json["animation_lib"] = "WS2812FX";
@@ -581,6 +587,25 @@ void setup() {
     server.send(200, "application/json", json_str);
   });
 
+  server.on("/", HTTP_GET, [&](){
+#ifdef USE_HTML_MIN_GZ
+    server.sendHeader("Content-Encoding", "gzip", true);
+    server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
+#else
+    if (!handleFileRead(server.uri()))
+      handleNotFound();
+#endif
+  });
+
+  server.on("/edit", HTTP_GET, [&](){
+#ifdef USE_HTML_MIN_GZ
+    server.sendHeader("Content-Encoding", "gzip", true);
+    server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
+#else
+    if (!handleFileRead(server.uri()))
+      handleNotFound();
+#endif
+  });
 
   //called when the url is not defined here
   //use it to load content from SPIFFS

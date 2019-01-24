@@ -59,4 +59,11 @@
  * 6 Jan 2018 v 2.2.0
  * - fix webserver not responding when E1.31 is mode is acivated: do a webserver.loop() for every 1.31 packet
  * - HA E1.31 mode added
+ * 
+ * 24 Jan 2018 v 2.2.1
+ * - checkForRequests() is vital for e131 mode, remove from #ifdef ENABLE_LEGACY_ANIMATIONS
+ * - Minor fixes related to NeoPixelBus UART methods
+ * - Modify platformio.ini for future bump to esp8266-arduino v2.5.0 (shamelessly stolen settings from espurna project)
+ * - Gzipped index2.htm & edit.htm.gz(untouched), convereted to hex format using xxd -i abcd.gz > html_gz.h
+ * - Think about using pointers for WS2812FX (no code regarding this in initial push)
  */
