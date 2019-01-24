@@ -101,6 +101,7 @@ WS2812FX* strip;
 #endif
 
 void initDMA(uint16_t stripSize = NUMLEDS){
+  if (dma) delete dma;
 #ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   dma = new NeoEsp8266Dma800KbpsMethod(stripSize, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -109,16 +110,16 @@ void initDMA(uint16_t stripSize = NUMLEDS){
   dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, 3);
 #endif
 #ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-   dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, 3);
+  dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, 3);
 #endif
   dma->Initialize();
 }
-  void DMA_Show(void) {
-    if(dma->IsReadyToUpdate()) {
-      memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
-      dma->Update();
-    }
+void DMA_Show(void) {
+  if(dma->IsReadyToUpdate()) {
+    memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
+    dma->Update();
   }
+}
 #endif
 
 // ***************************************************************************
@@ -227,8 +228,14 @@ void saveConfigCallback () {
 // ***************************************************************************
 #include "request_handlers.h"
 
+neoPixelType RGBOrderOnStrip = NEO_GRB;
 //
 void initStrip(uint16_t stripSize = NUMLEDS, neoPixelType RGBOrder = NEO_GRB){
+  if (strip) {
+    if (strip->getLength() == stripSize && RGBOrderOnStrip == RGBOrder) return;
+    delete strip;
+    RGBOrderOnStrip = RGBOrder;
+  }
   strip = new WS2812FX(stripSize, PIN, RGBOrder + NEO_KHZ800);
   // Parameter 1 = number of pixels in strip
   // Parameter 2 = Arduino pin number (most are valid)
@@ -740,7 +747,9 @@ void setup() {
     if(server.hasArg("ct")){
       uint16_t pixelCt = server.arg("ct").toInt();
       if (pixelCt > 0) {
+        if(strip->isRunning()) strip->stop();
         initStrip(pixelCt);
+        if(mode != HOLD) mode = SET_MODE;
         DBG_OUTPUT_PORT.printf("/pixels: Count# %d\n", pixelCt);
       }
     }
