@@ -61,17 +61,18 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
-- [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
-- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
-- [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
-- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/272)
+- [x] Make number of pixels, RGB Order and PIN configurable via REST API
+- [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
+- [x] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [x] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 - [x] MQTT support
 - [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)

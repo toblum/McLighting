@@ -114,6 +114,7 @@ void initDMA(uint16_t stripSize = NUMLEDS){
 #endif
   dma->Initialize();
 }
+
 void DMA_Show(void) {
   if(dma->IsReadyToUpdate()) {
     memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
@@ -228,15 +229,16 @@ void saveConfigCallback () {
 // ***************************************************************************
 #include "request_handlers.h"
 
-neoPixelType RGBOrderOnStrip = NEO_GRB;
-//
-void initStrip(uint16_t stripSize = NUMLEDS, neoPixelType RGBOrder = NEO_GRB){
+// function to Initialize the strip
+void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelType RGBOrder = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin){
   if (strip) {
-    if (strip->getLength() == stripSize && RGBOrderOnStrip == RGBOrder) return;
+    if (strip->getLength() == stripSize && WS2812FXStripSettings.RGBOrder == RGBOrder && WS2812FXStripSettings.pin == pin) return;
     delete strip;
-    RGBOrderOnStrip = RGBOrder;
+    WS2812FXStripSettings.stripSize = stripSize;
+    WS2812FXStripSettings.RGBOrder = RGBOrder;
+    WS2812FXStripSettings.pin = pin;
   }
-  strip = new WS2812FX(stripSize, PIN, RGBOrder + NEO_KHZ800);
+  strip = new WS2812FX(stripSize, pin, RGBOrder + NEO_KHZ800);
   // Parameter 1 = number of pixels in strip
   // Parameter 2 = Arduino pin number (most are valid)
   // Parameter 3 = pixel type flags, add together as needed:
@@ -260,6 +262,7 @@ void initStrip(uint16_t stripSize = NUMLEDS, neoPixelType RGBOrder = NEO_GRB){
   //strip->setMode(FX_MODE_RAINBOW_CYCLE);
   strip->setColor(main_color.red, main_color.green, main_color.blue);
   strip->start();
+  saveWS2812FXStripSettings.once(3, writeStripConfigFS);
 }
 
 // ***************************************************************************
@@ -309,6 +312,7 @@ void setup() {
   // ***************************************************************************
   // Setup: Neopixel
   // ***************************************************************************
+  readStripConfigFS(); // Read config from FS first
   initStrip();
 
   // ***************************************************************************
@@ -778,6 +782,38 @@ void setup() {
         DBG_OUTPUT_PORT.println("invalid input!");
       }
     }
+    if(server.hasArg("pin")){
+      uint8_t pin = server.arg("pin").toInt();
+      DBG_OUTPUT_PORT.print("/pixels: GPIO used# ");
+      #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+        #ifdef USE_WS2812FX_DMA
+          DBG_OUTPUT_PORT.println("3");
+        #endif
+        #ifdef USE_WS2812FX_UART1
+          DBG_OUTPUT_PORT.println("2");
+        #endif
+        #ifdef USE_WS2812FX_UART2
+          DBG_OUTPUT_PORT.println("1");
+        #endif
+      #else
+      if (pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) {
+        initStrip(NULL, NULL, pin);
+        DBG_OUTPUT_PORT.println(pin);
+      } else {
+        DBG_OUTPUT_PORT.println("invalid input!");
+      }
+      #endif
+    }
+
+    DynamicJsonDocument jsonBuffer;
+    JsonObject json = jsonBuffer.to<JsonObject>();
+    json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+    json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
+    json["pin"] = WS2812FXStripSettings.pin;
+    String json_str;
+    serializeJson(json, json_str);
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", json_str);
   });
 
   server.on("/off", []() {

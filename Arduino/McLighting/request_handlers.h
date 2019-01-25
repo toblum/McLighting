@@ -1422,3 +1422,87 @@ bool readStateFS() {
   return false;
 }
 #endif
+
+//Strip Config
+struct
+{
+  uint16_t stripSize = NUMLEDS;
+  uint16_t RGBOrder = NEO_GRB;
+  #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+    #ifdef USE_WS2812FX_DMA
+      uint8_t pin = 3;
+    #endif
+    #ifdef USE_WS2812FX_UART1
+      uint8_t pin = 2;
+    #endif
+    #ifdef USE_WS2812FX_UART2
+      uint8_t pin = 1;
+    #endif
+  #else
+    uint8_t pin = PIN;
+  #endif
+} WS2812FXStripSettings;
+
+Ticker saveWS2812FXStripSettings;
+
+bool readStripConfigFS(void) {
+  //read stripconfiguration from FS JSON
+  updateFS = true;
+  if (SPIFFS.exists("/neoconfig.json")) {
+    //file exists, reading and loading
+    DBG_OUTPUT_PORT.print("Reading neoconfig file... ");
+    File configFile = SPIFFS.open("/neoconfig.json", "r");
+    if (configFile) {
+      DBG_OUTPUT_PORT.println("Opened!");
+      size_t size = configFile.size();
+      std::unique_ptr<char[]> buf(new char[size]);
+      configFile.readBytes(buf.get(), size);
+      DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
+      DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+      DBG_OUTPUT_PORT.print("Config: ");
+      if (!error) {
+        DBG_OUTPUT_PORT.println(" Parsed!");
+        JsonObject json = jsonBuffer.as<JsonObject>();
+        serializeJson(json, DBG_OUTPUT_PORT);
+        WS2812FXStripSettings.stripSize = json["pixel_pount"];
+        WS2812FXStripSettings.RGBOrder = json["rgb_order"];
+        WS2812FXStripSettings.pin = json["pin"];
+        updateFS = false;
+        return true;
+      } else {
+        DBG_OUTPUT_PORT.print("Failed to load json config: ");
+        DBG_OUTPUT_PORT.println(error.c_str());
+      }
+    } else {
+      DBG_OUTPUT_PORT.println("Failed to open /config.json");
+    }
+  } else {
+    DBG_OUTPUT_PORT.println("Coudnt find config.json");
+  }
+  //end read
+  updateFS = false;
+  return false;
+}
+
+void writeStripConfigFS(void){
+  updateFS = true;
+  //save the strip config to FS JSON
+  DBG_OUTPUT_PORT.print("Saving cfg: ");
+  DynamicJsonDocument jsonBuffer;
+  JsonObject json = jsonBuffer.to<JsonObject>();
+  json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+  json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
+  json["pin"] = WS2812FXStripSettings.pin;
+
+  //SPIFFS.remove("/neoconfig.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+  File configFile = SPIFFS.open("/neoconfig.json", "w");
+  if (!configFile) {
+    DBG_OUTPUT_PORT.println("Failed!");
+    updateFS = false;
+  }
+  serializeJson(json, DBG_OUTPUT_PORT);
+  serializeJson(json, configFile);
+  configFile.close();
+  updateFS = false;
+  //end save
+}
