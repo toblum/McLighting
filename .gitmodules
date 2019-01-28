@@ -1,0 +1,6 @@
+[submodule "Arduino/McLighting/data/McLightingUI"]
+	path = Arduino/McLighting/data/McLightingUI
+	url = https://github.com/toblum/McLightingUI
+[submodule "clients/web/McLightingUI"]
+	path = clients/web/McLightingUI
+	url = https://github.com/toblum/McLightingUI

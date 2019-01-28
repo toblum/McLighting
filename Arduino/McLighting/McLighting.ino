@@ -1,5 +1,4 @@
 #include "definitions.h"
-
 #include "version.h"
 // ***************************************************************************
 // Load libraries for: WebServer / WiFiManager / WebSockets
@@ -9,7 +8,7 @@
 // needed for library WiFiManager
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include <WiFiManager.h>        //https://github.com/tzapu/WiFiManager
 
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
@@ -62,6 +61,18 @@
   WiFiEventHandler wifiDisconnectHandler;
 #endif
 
+#ifdef ARDUINOJSON_VERSION
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 7)
+    #error "Install ArduinoJson v6.7.0-beta"
+  #endif
+#endif
+
+#ifdef ENABLE_E131
+  #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
+  #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
+  ESPAsyncE131 e131(END_UNIVERSE - START_UNIVERSE + 1);
+#endif
+
 
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
@@ -74,32 +85,6 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif
 
-#ifdef USE_NEOANIMATIONFX
-// ***************************************************************************
-// Load libraries / Instanciate NeoAnimationFX library
-// ***************************************************************************
-// https://github.com/debsahu/NeoAnimationFX
-#include "NeoAnimationFX.h"
-#define NEOMETHOD NeoPBBGRB800
-
-NEOMETHOD neoStrip(NUMLEDS);
-NeoAnimationFX<NEOMETHOD> strip(neoStrip);
-
-// Uses Pin RX / GPIO3 (Only pin that is supported, due to hardware limitations)
-// NEOMETHOD NeoPBBGRB800 uses GRB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-// NEOMETHOD NeoPBBGRB400 uses GRB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-// NEOMETHOD NeoPBBRGB800 uses RGB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-// NEOMETHOD NeoPBBRGB400 uses RGB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-
-// Uses Pin D4 / GPIO2 (Only pin that is supported, due to hardware limitations)
-// NEOMETHOD NeoPBBGRBU800 uses GRB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-// NEOMETHOD NeoPBBGRBU400 uses GRB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-// NEOMETHOD NeoPBBRGBU800 uses RGB config 800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-// NEOMETHOD NeoPBBRGBU400 uses RGB config 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-
-#endif
-
-#ifdef USE_WS2812FX
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
@@ -124,6 +109,23 @@ NeoAnimationFX<NEOMETHOD> strip(neoStrip);
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
+
+#ifdef USE_WS2812FX_DMA
+  #include <NeoPixelBus.h>
+  NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+  //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+#endif
+#ifdef USE_WS2812FX_UART
+  #include <NeoPixelBus.h>
+  NeoEsp8266Uart800KbpsMethod dma = NeoEsp8266Uart800KbpsMethod(NUMLEDS, 3);
+#endif
+#if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
+  void DMA_Show(void) {
+    if(dma.IsReadyToUpdate()) {
+      memcpy(dma.getPixels(), strip.getPixels(), dma.getPixelsSize());
+      dma.Update();
+    }
+  }
 #endif
 
 // ***************************************************************************
@@ -252,7 +254,7 @@ void setup() {
   pinMode(BUILTIN_LED, OUTPUT);
   // button pin setup
 #ifdef ENABLE_BUTTON
-  pinMode(BUTTON, INPUT_PULLUP);
+  pinMode(BUTTON,INPUT_PULLUP);
 #endif
 
 #ifdef ENABLE_BUTTON_GY33
@@ -293,10 +295,14 @@ DBG_OUTPUT_PORT.println("Starting....");
   // Setup: Neopixel
   // ***************************************************************************
   strip.init();
+  #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
+    dma.Initialize();
+    strip.setCustomShow(DMA_Show);
+  #endif
   strip.setBrightness(brightness);
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   //strip.setMode(FX_MODE_RAINBOW_CYCLE);
-  strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+  strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
   strip.start();
 
   // ***************************************************************************
@@ -350,11 +356,15 @@ DBG_OUTPUT_PORT.println("Starting....");
   
   // Uncomment if you want to restart ESP8266 if it cannot connect to WiFi.
   // Value in brackets is in seconds that WiFiManger waits until restart
-  //wifiManager.setConfigPortalTimeout(180);
+  #ifdef WIFIMGR_PORTAL_TIMEOUT
+  wifiManager.setConfigPortalTimeout(WIFIMGR_PORTAL_TIMEOUT);
+  #endif
 
   // Uncomment if you want to set static IP 
   // Order is: IP, Gateway and Subnet 
-  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,128), IPAddress(192,168,0,1), IPAddress(255,255,255,0));   
+  #ifdef WIFIMGR_SET_MANUAL_IP
+  wifiManager.setSTAStaticIPConfig(IPAddress(_ip[0], _ip[1], _ip[2], _ip[3]), IPAddress(_gw[0], _gw[1], _gw[2], _gw[3]), IPAddress(_sn[0], _sn[1], _sn[2], _sn[3]));
+  #endif
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
@@ -363,7 +373,7 @@ DBG_OUTPUT_PORT.println("Starting....");
   if (!wifiManager.autoConnect(HOSTNAME)) {
     DBG_OUTPUT_PORT.println("failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
-ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
+    ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
     delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
 
@@ -448,6 +458,10 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
   // ***************************************************************************
   // Configure MQTT
   // ***************************************************************************
+  #ifdef ENABLE_MQTT_HOSTNAME_CHIPID
+    snprintf(mqtt_clientid, 64, "%s-%08X", HOSTNAME, ESP.getChipId());
+  #endif
+
   #ifdef ENABLE_MQTT
     if (mqtt_host != "" && atoi(mqtt_port) > 0) {
       snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
@@ -539,12 +553,15 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
     json["core_version"] = ESP.getCoreVersion();
     json["cpu_freq"] = ESP.getCpuFreqMHz();
     json["chip_id"] = ESP.getFlashChipId();
-    #ifndef USE_NEOANIMATIONFX
-    json["animation_lib"] = "WS2812FX";
-    json["pin"] = PIN;
+    #if defined(USE_WS2812FX_DMA)
+      json["animation_lib"] = "WS2812FX_DMA";
+      json["pin"] = 3;
+    #elif defined(USE_WS2812FX_UART)
+      json["animation_lib"] = "WS2812FX_UART";
+      json["pin"] = 2;
     #else
-    json["animation_lib"] = "NeoAnimationFX";
-    json["pin"] = "Ignored, check NEOMETHOD";
+      json["animation_lib"] = "WS2812FX";
+      json["pin"] = PIN;
     #endif
     json["number_leds"] = NUMLEDS;
     #ifdef ENABLE_BUTTON
@@ -694,7 +711,7 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
 
   server.on("/get_color", []() {
     char rgbcolor[9];
-    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.red, main_color.green, main_color.blue, main_color.white);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
@@ -884,6 +901,26 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
         if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
       #endif
     });
+
+    #ifdef ENABLE_E131
+    server.on("/e131", []() {
+      exit_func = true;
+      mode = E131;
+      getStatusJSON();
+      #ifdef ENABLE_MQTT
+      mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
+      #endif
+      #ifdef ENABLE_AMQTT
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =131").c_str());
+      #endif
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+      #ifdef ENABLE_STATE_SAVE_SPIFFS
+        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+      #endif
+    });
+    #endif
   
     server.on("/tv", []() {
       exit_func = true;
@@ -939,6 +976,15 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
   if (mdns_result) {
     MDNS.addService("http", "tcp", 80);
   }
+
+  #ifdef ENABLE_E131
+  // Choose one to begin listening for E1.31 data
+  // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
+  if (e131.begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) // Listen via Multicast
+      Serial.println(F("Listening for data..."));
+  else
+      Serial.println(F("*** e131.begin failed ***"));
+  #endif
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     (readStateFS()) ? DBG_OUTPUT_PORT.println(" Success!") : DBG_OUTPUT_PORT.println(" Failure!");
   #endif
@@ -950,7 +996,7 @@ ESP.reset();  //Will be removed when upgrading to standalone offline McLightingU
       DBG_OUTPUT_PORT.printf("Found saved state: %s\n", saved_state_string.c_str());
       setModeByStateString(saved_state_string);
     }
-    sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
+    sprintf(last_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
   #endif
   
   #ifdef ENABLE_BUTTON_GY33
@@ -1019,7 +1065,7 @@ void loop() {
     // mode = HOLD;
   }
   if (mode == SETCOLOR) {
-    strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+    strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
     strip.trigger();
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
@@ -1036,7 +1082,7 @@ void loop() {
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
       strip.setMode(FX_MODE_COLOR_WIPE);
       strip.trigger();
       mode = HOLD;
@@ -1052,13 +1098,13 @@ void loop() {
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
       strip.setMode(FX_MODE_THEATER_CHASE);
       strip.trigger();
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
-      strip.setColor(main_color.white, main_color.red, main_color.green, main_color.blue);
+      strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
       strip.trigger();
       mode = HOLD;
@@ -1068,6 +1114,11 @@ void loop() {
       strip.trigger();
       mode = HOLD;
     }
+    #ifdef ENABLE_E131
+    if (mode == E131) {
+      handleE131();
+    }
+    #endif
   #endif
   if (mode == HOLD || mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
@@ -1076,6 +1127,7 @@ void loop() {
         exit_func = false;
       }
     #endif
+    if (prevmode == SET_MODE) prevmode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == TV) {
@@ -1101,7 +1153,7 @@ void loop() {
 
   #ifdef ENABLE_STATE_SAVE_EEPROM
     // Check for state changes
-    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.white, main_color.red, main_color.green, main_color.blue);
+    sprintf(current_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
 
     if (strcmp(current_state, last_state) != 0) {
       // DBG_OUTPUT_PORT.printf("STATE CHANGED: %s / %s\n", last_state, current_state);

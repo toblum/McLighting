@@ -12,6 +12,7 @@
        {
                         "accessory": "HTTP-RGB",
                         "name": "Wohnzimmerlampe",
+                        "service": "Light",
 
                         "switch": {
                                 "status": "http://<ESP_HOST>/get_switch",
