@@ -49,15 +49,15 @@ void tickerSpiffsSaveState(){
 void getArgs() {
   if (server.arg("rgb") != "") {
     uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
-    main_color.red = ((rgb >> 24) & 0xFF);
-    main_color.green = ((rgb >> 16) & 0xFF);
-    main_color.blue = ((rgb >> 8) & 0xFF);
-	main_color.white = ((rgb >> 0) & 0xFF);
+    main_color.white = ((rgb >> 24) & 0xFF);
+    main_color.red = ((rgb >> 16) & 0xFF);
+    main_color.green = ((rgb >> 8) & 0xFF);
+    main_color.blue = ((rgb >> 0) & 0xFF);
   } else {
     main_color.red = server.arg("r").toInt();
     main_color.green = server.arg("g").toInt();
     main_color.blue = server.arg("b").toInt();
-	main_color.white = server.arg("w").toInt();
+	  main_color.white = server.arg("w").toInt();
   }
   if (server.arg("s") != "") {
   ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
@@ -115,10 +115,10 @@ uint16_t convertSpeed(uint8_t mcl_speed) {
 void handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  main_color.red = ((rgb >> 24) & 0xFF);
-  main_color.green = ((rgb >> 16) & 0xFF);
-  main_color.blue = ((rgb >> 8) & 0xFF);
-  main_color.white = ((rgb >> 0) & 0xFF);
+  main_color.white = ((rgb >> 24) & 0xFF);
+  main_color.red = ((rgb >> 16) & 0xFF);
+  main_color.green = ((rgb >> 8) & 0xFF);
+  main_color.blue = ((rgb >> 0) & 0xFF);
 //  strip.setColor(main_color.red, main_color.green, main_color.blue);
   mode = SETCOLOR;
 }
@@ -127,10 +127,10 @@ void handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
 
-  main_color.red = ((rgb >> 24) & 0xFF);
-  main_color.green = ((rgb >> 16) & 0xFF);
-  main_color.blue = ((rgb >> 8) & 0xFF);
-  main_color.white = ((rgb >> 0) & 0xFF);
+  main_color.white = ((rgb >> 24) & 0xFF);
+  main_color.red = ((rgb >> 16) & 0xFF);
+  main_color.green = ((rgb >> 8) & 0xFF);
+  main_color.blue = ((rgb >> 0) & 0xFF);
 
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
   #ifdef ENABLE_LEGACY_ANIMATIONS
@@ -151,11 +151,11 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
-	char whitehex[3];
+	  char whitehex[3];
     strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
     strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
     strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
-	strncpy (whitehex, (const char *) &mypayload[2 + firstChar], 2 );
+	  strncpy (whitehex, (const char *) &mypayload[8 + firstChar], 2 );
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
@@ -250,16 +250,30 @@ void setModeByStateString(String saved_state_string) {
   strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
 }
 
-#ifdef ENABLE_LEGACY_ANIMATIONS
-  void handleSetNamedMode(String str_mode) {
+
+void handleSetNamedMode(String str_mode) {
     exit_func = true;
   
-    if (str_mode.startsWith("=off")) {
+    if (str_mode.startsWith("=off") or str_mode.startsWith("/off")) {
       mode = OFF;
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = false;
       #endif
     }
+    if (str_mode.startsWith("=tv") or str_mode.startsWith("/tv")) {
+      mode = TV;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+    if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
+      if(strip.isRunning()) strip.stop();
+      mode = E131;
+      #ifdef ENABLE_HOMEASSISTANT
+        stateOn = true;
+      #endif
+    }
+#ifdef ENABLE_LEGACY_ANIMATIONS    
     if (str_mode.startsWith("=auto")) {
       mode = AUTO;
       #ifdef ENABLE_HOMEASSISTANT
@@ -309,28 +323,8 @@ void setModeByStateString(String saved_state_string) {
         stateOn = true;
       #endif
     }
-    if (str_mode.startsWith("=tv")) {
-      mode = TV;
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = true;
-      #endif
-    }
-  }
 #endif
-
-#ifdef ENABLE_E131
-  void handleE131NamedMode(String str_mode) {
-    exit_func = true;
-    if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
-      if(strip.isRunning()) strip.stop();
-      mode = E131;
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = true;
-      #endif
-    }
-  }
-#endif
-
+}
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = SET_MODE;
   uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
@@ -349,10 +343,10 @@ String listStatusJSON(void) {
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
+  color.add(main_color.white);
   color.add(main_color.red);
   color.add(main_color.green);
   color.add(main_color.blue);
-  color.add(main_color.white);
 	
   String json;
   serializeJson(root, json);
@@ -369,6 +363,12 @@ String listModesJSON(void) {
   const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray json = jsonBuffer.to<JsonArray>();
+  JsonObject objectoff = json.createNestedObject();
+  objectoff["mode"] = "off";
+  objectoff["name"] = "OFF";
+  JsonObject objecttv = json.createNestedObject();
+  objecttv["mode"] = "tv";
+  objecttv["name"] = "TV";
   #ifdef ENABLE_E131
   JsonObject objecte131 = json.createNestedObject();
   objecte131["mode"] = "e131";
@@ -600,10 +600,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       String str_mode = String((char *) &payload[0]);
 
       handleSetNamedMode(str_mode);
-      #ifdef ENABLE_E131
-      handleE131NamedMode(str_mode);
-      #endif
-	  Dbg_Prefix(mqtt, num);
+      Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
@@ -670,10 +667,8 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // / ==> Set WS2812 mode.
   if (payload[0] == '/') {
     handleSetWS2812FXMode(payload);
-    #ifdef ENABLE_E131
     String str_mode = String((char *) &payload[0]);
-    handleE131NamedMode(str_mode);
-    #endif
+    handleSetNamedMode(str_mode);
     Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\n", payload);
     #ifdef ENABLE_MQTT
@@ -815,7 +810,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       color["r"] = main_color.red;
       color["g"] = main_color.green;
       color["b"] = main_color.blue;
-
+      color["w"] = main_color.white;
+      
       root["brightness"] = brightness;
 
       root["color_temp"] = color_temp;

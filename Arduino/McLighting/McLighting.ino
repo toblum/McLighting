@@ -112,7 +112,11 @@ ESP8266HTTPUpdateServer httpUpdater;
 
 #ifdef USE_WS2812FX_DMA
   #include <NeoPixelBus.h>
-  NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    #ifdef RGBW
+    NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 4);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+  #else
+    NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+  #endif
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #endif
 #ifdef USE_WS2812FX_UART
@@ -711,7 +715,7 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   server.on("/get_color", []() {
     char rgbcolor[9];
-    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.red, main_color.green, main_color.blue, main_color.white);
+    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");

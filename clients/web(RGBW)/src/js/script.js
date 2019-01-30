@@ -56,34 +56,15 @@ $(function(){
 
 		// Load modes async
 		// List of all color modes
-		// enum MODE { SET_MODE, HOLD, OFF, ALL, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, TV, CUSTOM, AUTO };
+		// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
 		$.getJSON("http://" + host + "/get_modes", function(data) {
 		    console.log("modes", data);
 			var modes_html = "";
-			modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == "3") {
-				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="off">OFF';
-			} else {
-				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF';
-			}
-			modes_html += '<i class="material-icons right">send</i>';
-			modes_html += '</a>';
-			modes_html += '</div>'
-						modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-			if (mode == "4") {
-				modes_html += '<a class="btn waves-effect waves-light btn_mode_static red" name="action" data-mode="tv">TV';
-			} else {
-				modes_html += '<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV';
-			}
-			modes_html += '<i class="material-icons right">send</i>';
-			modes_html += '</a>';
-			modes_html += '</div>';
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
 					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-					if (mode == "1" && current_mode.mode == ws2812fx_mode) {
-						modes_html += '<a class="btn waves-effect waves-light btn_mode red" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
-
+					if ((mode == "1" && current_mode.mode == ws2812fx_mode) || (mode == "3" && current_mode.mode == "off") || (mode == "4" && current_mode.mode == "tv") || (mode == "15" && current_mode.mode == "e131")){
+						modes_html += '<a class="btn waves-effect waves-light btn_mode red" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 					
 					} else {
 						modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
 					}
