@@ -246,7 +246,7 @@ void setModeByStateString(String saved_state_string) {
   main_color.blue = str_blue.toInt();
   String str_white = getValue(saved_state_string, '|', 8);
   main_color.white = str_white.toInt();
-
+  DBG_OUTPUT_PORT.printf("Mode: %d\n", mode);
   DBG_OUTPUT_PORT.printf("ws2812fx_mode: %d\n", ws2812fx_mode);
   DBG_OUTPUT_PORT.printf("ws2812fx_speed: %d\n", ws2812fx_speed);
   DBG_OUTPUT_PORT.printf("brightness: %d\n", brightness);
@@ -461,11 +461,13 @@ void autoTick() {
 }
 
 void handleAutoStart() {
-  sprintf(beforeauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
-  mode = AUTO;
-  autoCount = 0;
-  autoTick();
-  strip.start();
+  if (mode!=AUTO) {
+    sprintf(beforeauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
+    mode = AUTO;
+    autoCount = 0;
+    autoTick();
+    strip.start();
+  }
 }
 
 void handleAutoStop() {
