@@ -1,10 +1,10 @@
-//#define USE_WS2812FX_DMA      // Uses PIN is ignored & set to RX/GPIO3  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+#define USE_WS2812FX_DMA      // Uses PIN is ignored & set to RX/GPIO3  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 //#define USE_WS2812FX_UART1     // Uses PIN is ignored & set to D4/GPIO2  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 //#define USE_WS2812FX_UART2     // Uses PIN is ignored & set to TX/GPIO1  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
-#define PIN 15             // PIN (15 / D8) where neopixel / WS2811 strip is attached 
-#define NUMLEDS 194        // Number of leds in the strip 
+#define PIN 3             // PIN (15 / D8) where neopixel / WS2811 strip is attached 
+#define NUMLEDS 144        // Number of leds in the strip 
 #define BUILTIN_LED 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON  14         // Input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 #define BUTTON_GY33 12     // Input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
@@ -18,10 +18,10 @@ const char HOSTNAME[] = "McLightingRGBW";   // Friedly hostname
 //#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
+//#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
-#define ENABLE_E131              // E1.31 implementation
+#define ENABLE_E131              // E1.31 implementation You have to uncomment #define USE_WS2812FX_DMA
 
 #ifdef ENABLE_E131
   #define START_UNIVERSE 1                    // First DMX Universe to listen for
@@ -145,11 +145,13 @@ struct ledstate             // Data structure to store a state of a single led
 
 typedef struct ledstate LEDState;     // Define the datatype LEDState
 LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
-LEDState main_color = { 0, 255, 0, 0 };  // Store the "main color" of the strip used in single color modes
+LEDState main_color = { 255, 0, 0, 0 };  // Store the "main color" of the strip used in single color modes
 
 
 #define ENABLE_STATE_SAVE_SPIFFS        // If defined, saves state on SPIFFS
 //#define ENABLE_STATE_SAVE_EEPROM        // If defined, save state on reboot
+
+char beforeauto_state[36];            // Keeps the state representation before auto mode
 #ifdef ENABLE_STATE_SAVE_EEPROM
   char current_state[36];               // Keeps the current state representation
   char last_state[36];                  // Save the last state as string representation

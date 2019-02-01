@@ -54,22 +54,31 @@ void getArgs() {
     main_color.green = ((rgb >> 8) & 0xFF);
     main_color.blue = ((rgb >> 0) & 0xFF);
   } else {
-    main_color.red = server.arg("r").toInt();
-    main_color.green = server.arg("g").toInt();
-    main_color.blue = server.arg("b").toInt();
-	  main_color.white = server.arg("w").toInt();
+    if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
+      main_color.red = server.arg("r").toInt();
+    }
+    if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
+      main_color.green = server.arg("g").toInt();
+    }
+    if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
+      main_color.blue = server.arg("b").toInt();
+    }
+    if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
+      main_color.white = server.arg("w").toInt();
+    }
   }
-  if (server.arg("s") != "") {
+  
+  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
   ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
   }
 
-  if (server.arg("m") != "") {
+  if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip.getModeCount())) {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
   
-  if (server.arg("c") != "") {
+  if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
     brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
-  } else if (server.arg("p") != "") {
+  } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
     brightness = constrain(server.arg("p").toInt(), 0, 255);
   }
 
@@ -77,7 +86,7 @@ void getArgs() {
   main_color.green = constrain(main_color.green, 0, 255);
   main_color.blue = constrain(main_color.blue, 0, 255);
   main_color.white = constrain(main_color.white, 0, 255);
-  
+
   DBG_OUTPUT_PORT.print("Mode: ");
   DBG_OUTPUT_PORT.print(mode);
   DBG_OUTPUT_PORT.print(", Color: ");
@@ -163,6 +172,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s] rgb.white: [%s]\n", redhex, greenhex, bluehex, whitehex);
     DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white, mypayload);
+
+
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
     strip.show();
   }
@@ -249,7 +260,6 @@ void setModeByStateString(String saved_state_string) {
   strip.setBrightness(brightness);
   strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
 }
-
 
 void handleSetNamedMode(String str_mode) {
     exit_func = true;
@@ -347,7 +357,7 @@ String listStatusJSON(void) {
   color.add(main_color.red);
   color.add(main_color.green);
   color.add(main_color.blue);
-	
+  
   String json;
   serializeJson(root, json);
   
@@ -451,17 +461,19 @@ void autoTick() {
 }
 
 void handleAutoStart() {
-  //mode = AUTO;
+  sprintf(beforeauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
+  mode = AUTO;
   autoCount = 0;
   autoTick();
   strip.start();
 }
 
 void handleAutoStop() {
-  //mode = OFF;
   autoTicker.detach();
   strip.stop();
+  setModeByStateString(beforeauto_state);
 }
+
 void Dbg_Prefix(bool mqtt, uint8_t num) {
   if (mqtt == true)  {
     DBG_OUTPUT_PORT.print("MQTT: "); 
@@ -811,7 +823,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       color["g"] = main_color.green;
       color["b"] = main_color.blue;
       color["w"] = main_color.white;
-      
+
       root["brightness"] = brightness;
 
       root["color_temp"] = color_temp;
@@ -1074,10 +1086,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(11));
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
+          #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+          json["schema"] = "json";
+          #else
           json["platform"] = "mqtt_json";
+          #endif
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
           json["on_command_type"] = "first";
@@ -1443,7 +1459,7 @@ bool readStateFS() {
         main_color.green = json["green"];
         main_color.blue = json["blue"];
         main_color.white = json["white"];
-		
+
         strip.setMode(ws2812fx_mode);
         strip.setSpeed(convertSpeed(ws2812fx_speed));
         strip.setBrightness(brightness);

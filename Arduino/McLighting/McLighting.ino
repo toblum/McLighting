@@ -110,18 +110,30 @@ ESP8266HTTPUpdateServer httpUpdater;
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-#ifdef USE_WS2812FX_DMA
+#ifdef USE_WS2812FX_DMA // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
-    #ifdef RGBW
+  #ifdef RGBW
     NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 4);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #else
     NeoEsp8266Dma800KbpsMethod dma = NeoEsp8266Dma800KbpsMethod(NUMLEDS, 3);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #endif
   //NeoEsp8266Dma400KbpsMethod dma = NeoEsp8266Dma400KbpsMethod(NUMLEDS, 3);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #endif
-#ifdef USE_WS2812FX_UART
+#ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #include <NeoPixelBus.h>
-  NeoEsp8266Uart800KbpsMethod dma = NeoEsp8266Uart800KbpsMethod(NUMLEDS, 3);
+  #ifdef RGBW
+    NeoEsp8266Uart0800KbpsMethod dma = NeoEsp8266Uart0800KbpsMethod(NUMLEDS, 4);
+  #else
+    NeoEsp8266Uart0800KbpsMethod dma = NeoEsp8266Uart0800KbpsMethod(NUMLEDS, 3);
+  #endif
+#endif
+#ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
+  #include <NeoPixelBus.h>
+  #ifdef RGBW
+    NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 4);
+  #else
+    NeoEsp8266Uart1800KbpsMethod dma = NeoEsp8266Uart1800KbpsMethod(NUMLEDS, 3);
+  #endif
 #endif
 #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART)
   void DMA_Show(void) {
@@ -649,7 +661,6 @@ DBG_OUTPUT_PORT.println("Starting....");
     server.send(200, "text/plain", "Formatting SPIFFS complete" );
   });
 
-
   // ***************************************************************************
   // Setup: SPIFFS Webserver handler
   // ***************************************************************************
@@ -752,7 +763,7 @@ DBG_OUTPUT_PORT.println("Starting....");
       exit_func = true;
     #endif
     mode = OFF;
-    //getArgs();
+    getArgs();
     getStatusJSON();
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String("OK =auto").c_str());
@@ -929,7 +940,7 @@ DBG_OUTPUT_PORT.println("Starting....");
     server.on("/tv", []() {
       exit_func = true;
       mode = TV;
-      getArgs();
+      //getArgs();
       getStatusJSON();
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
