@@ -129,6 +129,7 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 //  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  prevmode = mode;
   mode = SETCOLOR;
 }
 
@@ -510,6 +511,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '?') {
     uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     ws2812fx_speed = constrain(d, 0, 255);
+    prevmode = mode;
     mode = SETSPEED;
     Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
@@ -529,6 +531,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '%') {
     uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     brightness = constrain(b, 0, 255);
+    prevmode = mode;
     mode = BRIGHTNESS;
     Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\n", brightness);

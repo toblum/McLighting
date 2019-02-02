@@ -1082,18 +1082,18 @@ void loop() {
   if (mode == SETCOLOR) {
     strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
     strip.trigger();
-    mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
+    mode = (prevmode == SET_MODE) ? SETSPEED : prevmode;
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
     strip.trigger();
-    mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
+    mode = (prevmode == SET_MODE) ? BRIGHTNESS : prevmode;
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
     strip.trigger();
     if (prevmode == SET_MODE) prevmode = HOLD;
-    mode = HOLD;
+    mode = prevmode;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
