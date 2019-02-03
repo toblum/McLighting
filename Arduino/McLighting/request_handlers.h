@@ -894,6 +894,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         main_color.red = (uint8_t) color["r"];
         main_color.green = (uint8_t) color["g"];
         main_color.blue = (uint8_t) color["b"];
+        prevmode = mode;
         mode = SETCOLOR;
       }
 
@@ -901,7 +902,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (json_speed != ws2812fx_speed) {
           ws2812fx_speed = json_speed;
-          if(stateOn) mode = SETSPEED;
+          //if(stateOn) mode = SETSPEED;
+          prevmode = mode;
+          mode = SETSPEED;
         }
       }
 
@@ -910,12 +913,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         color_temp = (uint16_t) root["color_temp"];
         unsigned int kelvin  = 1000000 / color_temp;
         main_color = temp2rgb(kelvin);
+        prevmode = mode;
         mode = SETCOLOR;
       }
 
       if (root.containsKey("brightness")) {
-        brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
-        mode = BRIGHTNESS;
+        uint8_t json_brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
+        if (json_brightness != brightness) {
+          prevmode = mode;
+          mode = BRIGHTNESS;
+        }
       }
 
       if (root.containsKey("effect")) {

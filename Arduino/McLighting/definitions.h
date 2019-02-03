@@ -16,7 +16,7 @@ const char HOSTNAME[] = "McLightingRGBW";   // Friedly hostname
 //#define ENABLE_OTA         // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
-#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
+//#define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
@@ -115,7 +115,7 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 // List of all color modes
 #ifdef ENABLE_LEGACY_ANIMATIONS
   #ifdef ENABLE_E131
-    enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, E131 };
+    enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, E131};
   #else
     enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
   #endif
