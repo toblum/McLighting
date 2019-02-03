@@ -143,7 +143,7 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.blue = ((rgb >> 0) & 0xFF);
 
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
-  #ifdef ENABLE_LEGACY_ANIMATIONS
+  #ifdef ENABLE_TV
     exit_func = true;
   #endif
   ws2812fx_mode = FX_MODE_STATIC;
@@ -178,7 +178,7 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
     strip.show();
   }
-  #ifdef ENABLE_LEGACY_ANIMATIONS
+  #ifdef ENABLE_TV
     exit_func = true;
   #endif
   mode = CUSTOM;
@@ -263,7 +263,9 @@ void setModeByStateString(String saved_state_string) {
 }
 
 void handleSetNamedMode(String str_mode) {
+#ifdef ENABLE_TV
     exit_func = true;
+#endif
   
     if (str_mode.startsWith("=off") or str_mode.startsWith("/off")) {
       mode = OFF;
@@ -271,12 +273,17 @@ void handleSetNamedMode(String str_mode) {
         stateOn = false;
       #endif
     }
+
+#ifdef ENABLE_TV
     if (str_mode.startsWith("=tv") or str_mode.startsWith("/tv")) {
       mode = TV;
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
       #endif
     }
+#endif
+
+#ifdef ENABLE_E131
     if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
       if(strip.isRunning()) strip.stop();
       mode = E131;
@@ -284,6 +291,8 @@ void handleSetNamedMode(String str_mode) {
         stateOn = true;
       #endif
     }
+#endif
+
 #ifdef ENABLE_LEGACY_ANIMATIONS    
     if (str_mode.startsWith("=auto")) {
       mode = AUTO;
@@ -377,9 +386,11 @@ String listModesJSON(void) {
   JsonObject objectoff = json.createNestedObject();
   objectoff["mode"] = "off";
   objectoff["name"] = "OFF";
+  #ifdef ENABLE_TV
   JsonObject objecttv = json.createNestedObject();
   objecttv["mode"] = "tv";
   objecttv["name"] = "TV";
+  #endif
   #ifdef ENABLE_E131
   JsonObject objecte131 = json.createNestedObject();
   objecte131["mode"] = "e131";
@@ -742,7 +753,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 }
 
-#ifdef ENABLE_LEGACY_ANIMATIONS
+#if defined(ENABLE_TV) || defined(ENABLE_E131)
   void checkForRequests() {
     webSocket.loop();
     server.handleClient();
@@ -955,7 +966,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 //    DBG_OUTPUT_PORT.print("]: "); DBG_OUTPUT_PORT.println(payload_in);
     uint8_t * payload = (uint8_t *) malloc(length + 1);
     memcpy(payload, payload_in, length);
-    payload[length] = NULL;
+    payload[length] = 0;
     DBG_OUTPUT_PORT.printf("]: %s\n", payload);
   #endif
 
@@ -963,7 +974,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void mqtt_callback(char* topic, byte* payload_in, unsigned int length) {
     uint8_t * payload = (uint8_t *)malloc(length + 1);
     memcpy(payload, payload_in, length);
-    payload[length] = NULL;
+    payload[length] = 0;
     DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
   #endif
     #ifdef ENABLE_HOMEASSISTANT

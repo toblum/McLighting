@@ -20,8 +20,9 @@ const char HOSTNAME[] = "McLightingRGBW";   // Friedly hostname
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define ENABLE_BUTTON_GY33   // If defined, enable button handling code for GY-33 color sensor to scan color
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
-#define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
+#define ENABLE_LEGACY_ANIMATIONS // Enable Legacy Animations
 #define ENABLE_E131              // E1.31 implementation You have to uncomment #define USE_WS2812FX_DMA
+#define ENABLE_TV                // Enable TV Animation 
 
 #ifdef ENABLE_E131
   #define START_UNIVERSE 1                    // First DMX Universe to listen for
@@ -56,10 +57,10 @@ const char HOSTNAME[] = "McLightingRGBW";   // Friedly hostname
 
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
-  {0xff000000, 120,  1,  5.0}, // blink red for 5 seconds
-  {0x00ff0000, 120,  3, 10.0}, // wipe green for 10 seconds
-  {0x0000ff00, 196, 14,  5.0}, // dual scan blue for 5 seconds
-  {0x0000ff00, 196, 46, 15.0}  // fireworks for 15 seconds
+  {0xff000000, 120,  1,  5}, // blink red for 5 seconds
+  {0x00ff0000, 120,  3, 10}, // wipe green for 10 seconds
+  {0x0000ff00, 196, 14,  5}, // dual scan blue for 5 seconds
+  {0x0000ff00, 196, 46, 15}  // fireworks for 15 seconds
 };
 
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
@@ -114,18 +115,15 @@ uint32_t autoParams[][4] = {   // color, speed, mode, duration (seconds)
 
 // List of all color modes
 #ifdef ENABLE_LEGACY_ANIMATIONS
-  #ifdef ENABLE_E131
-    enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW, E131};
-  #else
-    enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
-  #endif
+  enum MODE {OFF, AUTO, TV, E131, SET_MODE, HOLD, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
   MODE mode = RAINBOW;         // Standard mode that is active when software starts
-  bool exit_func = false;      // Global helper variable to get out of the color modes when mode changes
 #else
-  enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS};
+  enum MODE {OFF, AUTO, TV, E131, SET_MODE, HOLD, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS};
   MODE mode = SET_MODE;        // Standard mode that is active when software starts
 #endif
-
+#ifdef ENABLE_TV
+  bool exit_func = false;      // Global helper variable to get out of the color modes when mode changes
+#endif
 MODE prevmode = mode;
 
 int ws2812fx_speed = 196;   // Global variable for storing the delay between color changes --> smaller == faster
@@ -164,7 +162,7 @@ char beforeauto_state[36];            // Keeps the state representation before a
 #endif
 
 // Button handling
-#ifdef ENABLE_BUTTON || ENABLE_BUTTON_GY33
+#if defined(ENABLE_BUTTON) || defined(ENABLE_BUTTON_GY33)
   boolean buttonState = false;
 #endif
 

@@ -253,7 +253,7 @@ void saveConfigCallback () {
 // ***************************************************************************
 // Include: Color modes
 // ***************************************************************************
-#ifdef ENABLE_LEGACY_ANIMATIONS
+#ifdef ENABLE_TV
   #include "colormodes.h"
 #endif
 
@@ -403,7 +403,8 @@ DBG_OUTPUT_PORT.println("Starting....");
     //save the custom parameters to FS
     #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
       (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
-    #else if defined(ENABLE_STATE_SAVE_EEPROM)
+    #endif
+    #if defined(ENABLE_STATE_SAVE_EEPROM)
       if (shouldSaveConfig) {
         DBG_OUTPUT_PORT.println("Saving WiFiManager config");
 
@@ -601,6 +602,16 @@ DBG_OUTPUT_PORT.println("Starting....");
     #else
       json["legacy_animations"] = "OFF";
     #endif
+    #ifdef ENABLE_TV
+      json["tv_animation"] = "ON";
+    #else
+      json["tv_animation"] = "OFF";
+    #endif
+    #ifdef ENABLE_E131
+      json["e131_animations"] = "ON";
+    #else
+      json["e131_animations"] = "OFF";
+    #endif
     #ifdef HTTP_OTA
       json["esp8266_http_updateserver"] = "ON";
     #endif
@@ -738,7 +749,7 @@ DBG_OUTPUT_PORT.println("Starting....");
   });
 
   server.on("/off", []() {
-    #ifdef ENABLE_LEGACY_ANIMATIONS
+    #ifdef ENABLE_TV
       exit_func = true;
     #endif
     mode = OFF;
@@ -759,10 +770,10 @@ DBG_OUTPUT_PORT.println("Starting....");
   });
 
     server.on("/auto", []() {
-    #ifdef ENABLE_LEGACY_ANIMATIONS
+    #ifdef ENABLE_TV
       exit_func = true;
     #endif
-    mode = OFF;
+    mode = AUTO;
     getArgs();
     getStatusJSON();
     #ifdef ENABLE_MQTT
@@ -780,7 +791,7 @@ DBG_OUTPUT_PORT.println("Starting....");
   });
 
   server.on("/all", []() {
-    #ifdef ENABLE_LEGACY_ANIMATIONS
+    #ifdef ENABLE_TV
       exit_func = true;
     #endif
     ws2812fx_mode = FX_MODE_STATIC;
@@ -804,7 +815,9 @@ DBG_OUTPUT_PORT.println("Starting....");
 
   #ifdef ENABLE_LEGACY_ANIMATIONS
     server.on("/wipe", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = WIPE;
       getArgs();
       getStatusJSON();
@@ -823,7 +836,9 @@ DBG_OUTPUT_PORT.println("Starting....");
     });
   
     server.on("/rainbow", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = RAINBOW;
       getArgs();
       getStatusJSON();
@@ -842,7 +857,9 @@ DBG_OUTPUT_PORT.println("Starting....");
     });
   
     server.on("/rainbowCycle", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = RAINBOWCYCLE;
       getArgs();
       getStatusJSON();
@@ -861,7 +878,9 @@ DBG_OUTPUT_PORT.println("Starting....");
     });
   
     server.on("/theaterchase", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = THEATERCHASE;
       getArgs();
       getStatusJSON();
@@ -880,7 +899,9 @@ DBG_OUTPUT_PORT.println("Starting....");
     });
   
     server.on("/twinkleRandom", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = TWINKLERANDOM;
       getArgs();
       getStatusJSON();
@@ -899,7 +920,9 @@ DBG_OUTPUT_PORT.println("Starting....");
     });
     
     server.on("/theaterchaseRainbow", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = THEATERCHASERAINBOW;
       getArgs();
       getStatusJSON();
@@ -916,17 +939,20 @@ DBG_OUTPUT_PORT.println("Starting....");
         if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
       #endif
     });
-
-    #ifdef ENABLE_E131
+  #endif
+  
+  #ifdef ENABLE_E131
     server.on("/e131", []() {
+    #ifdef ENABLE_TV
       exit_func = true;
+    #endif
       mode = E131;
       getStatusJSON();
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =131").c_str());
+      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =e131").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -935,8 +961,9 @@ DBG_OUTPUT_PORT.println("Starting....");
         if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
       #endif
     });
-    #endif
+  #endif
   
+  #ifdef ENABLE_TV  
     server.on("/tv", []() {
       exit_func = true;
       mode = TV;
@@ -1000,9 +1027,11 @@ DBG_OUTPUT_PORT.println("Starting....");
   else
       Serial.println(F("*** e131.begin failed ***"));
   #endif
+  
   #ifdef ENABLE_STATE_SAVE_SPIFFS
     (readStateFS()) ? DBG_OUTPUT_PORT.println(" Success!") : DBG_OUTPUT_PORT.println(" Failure!");
   #endif
+  
   #ifdef ENABLE_STATE_SAVE_EEPROM
     // Load state string from EEPROM
     String saved_state_string = readEEPROM(256, 36);
@@ -1128,22 +1157,25 @@ void loop() {
       strip.trigger();
       mode = HOLD;
     }
-    #ifdef ENABLE_E131
+  #endif
+  
+  #ifdef ENABLE_E131
     if (mode == E131) {
       handleE131();
     }
-    #endif
   #endif
+
   if (mode == HOLD || mode == CUSTOM) {
     if(!strip.isRunning()) strip.start();
-    #ifdef ENABLE_LEGACY_ANIMATIONS
+    #ifdef ENABLE_TV
       if (exit_func) {
         exit_func = false;
       }
     #endif
     if (prevmode == SET_MODE) prevmode = HOLD;
   }
-  #ifdef ENABLE_LEGACY_ANIMATIONS
+  
+  #ifdef ENABLE_TV
     if (mode == TV) {
       if(!strip.isRunning()) strip.start();
       tv();
@@ -1151,7 +1183,7 @@ void loop() {
   #endif
 
   // Only for modes with WS2812FX functionality
-  #ifdef ENABLE_LEGACY_ANIMATIONS
+  #ifdef ENABLE_TV
   if (mode != TV && mode != CUSTOM) {
   #else
   if (mode != CUSTOM) {

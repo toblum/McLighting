@@ -56,14 +56,14 @@ $(function(){
 
 		// Load modes async
 		// List of all color modes
-		// enum MODE { SET_MODE, HOLD, AUTO, OFF, TV, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
+		//   enum MODE {OFF, AUTO, TV, E131, SET_MODE, HOLD, CUSTOM, SETCOLOR, SETSPEED, BRIGHTNESS, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
 		$.getJSON("http://" + host + "/get_modes", function(data) {
 		    console.log("modes", data);
 			var modes_html = "";
 			data.forEach(function(current_mode){
 				if (current_mode.mode !== undefined) {
 					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-					if ((mode == "1" && current_mode.mode == ws2812fx_mode) || (mode == "3" && current_mode.mode == "off") || (mode == "4" && current_mode.mode == "tv") || (mode == "15" && current_mode.mode == "e131")){
+					if ((mode == "5" && current_mode.mode == ws2812fx_mode) || (mode == "0" && current_mode.mode == "off") || (mode == "2" && current_mode.mode == "tv") || (mode == "3" && current_mode.mode == "e131")){
 						modes_html += '<a class="btn waves-effect waves-light btn_mode red" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 					
 					} else {
 						modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
