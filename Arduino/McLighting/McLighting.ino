@@ -8,7 +8,7 @@
 // needed for library WiFiManager
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h>        //https://github.com/tzapu/WiFiManager
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
@@ -17,10 +17,10 @@
 
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
-
+  
 #ifdef ENABLE_BUTTON_GY33
   // needed for MCU
-  #include "GY33_MCU.h"
+  #include <GY33_MCU.h>           //https://github.com/FabLab-Luenen/GY33_MCU/archive/master.zip ; //https://github.com/pasko-zh/brzo_i2c
   // ***************************************************************************
   // Initialize Color Sensor
   // ***************************************************************************

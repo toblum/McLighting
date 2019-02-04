@@ -129,6 +129,9 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
 //  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  #ifdef ENABLE_TV
+    exit_func = true;
+  #endif
   prevmode = mode;
   mode = SETCOLOR;
 }
@@ -147,6 +150,9 @@ void handleSetAllMode(uint8_t * mypayload) {
     exit_func = true;
   #endif
   ws2812fx_mode = FX_MODE_STATIC;
+  #ifdef ENABLE_TV
+    exit_func = true;
+  #endif
   mode = SET_MODE;
 }
 
@@ -346,9 +352,12 @@ void handleSetNamedMode(String str_mode) {
 #endif
 }
 void handleSetWS2812FXMode(uint8_t * mypayload) {
-  mode = SET_MODE;
   uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
   ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
+  #ifdef ENABLE_TV
+    exit_func = true;
+  #endif
+  mode = SET_MODE;
 }
 
 String listStatusJSON(void) {
@@ -474,6 +483,9 @@ void autoTick() {
 
 void handleAutoStart() {
   if (mode!=AUTO) {
+    #ifdef ENABLE_TV
+      exit_func = true;
+    #endif
     sprintf(beforeauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
     mode = AUTO;
     autoCount = 0;
@@ -522,6 +534,9 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '?') {
     uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     ws2812fx_speed = constrain(d, 0, 255);
+    #ifdef ENABLE_TV
+      exit_func = true;
+    #endif
     prevmode = mode;
     mode = SETSPEED;
     Dbg_Prefix(mqtt, num);
@@ -542,6 +557,9 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '%') {
     uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     brightness = constrain(b, 0, 255);
+    #ifdef ENABLE_TV
+      exit_func = true;
+    #endif  
     prevmode = mode;
     mode = BRIGHTNESS;
     Dbg_Prefix(mqtt, num);
