@@ -1010,14 +1010,16 @@ void checkForRequests() {
             DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
-            #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+            #ifdef MQTT_HOME_ASSISTANT_0_87_SUPPORT
             json["schema"] = "json";
             #else
             json["platform"] = "mqtt_json";
             #endif
             json["state_topic"] = mqtt_ha_state_out;
             json["command_topic"] = mqtt_ha_state_in;
+            #ifndef MQTT_HOME_ASSISTANT_0_87_SUPPORT
             json["on_command_type"] = "first";
+            #endif
             json["brightness"] = "true";
             json["rgb"] = "true";
             json["optimistic"] = "false";
@@ -1097,14 +1099,16 @@ void checkForRequests() {
           DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
-          #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+          #ifdef MQTT_HOME_ASSISTANT_0_87_SUPPORT
           json["schema"] = "json";
           #else
           json["platform"] = "mqtt_json";
           #endif
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
+          #ifndef MQTT_HOME_ASSISTANT_0_87_SUPPORT
           json["on_command_type"] = "first";
+          #endif
           json["brightness"] = "true";
           json["rgb"] = "true";
           json["optimistic"] = "false";

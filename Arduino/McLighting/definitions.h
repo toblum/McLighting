@@ -37,7 +37,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #endif
 
 #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-  #define MQTT_HOME_ASSISTANT_0_84_SUPPORT // Comment if using HA version < 0.84 
+  #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87
 #endif
 
 #if defined(USE_WS2812FX_DMA) and defined(USE_WS2812FX_UART)
