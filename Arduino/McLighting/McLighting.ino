@@ -53,8 +53,8 @@
 #endif
 
 #ifdef ARDUINOJSON_VERSION
-  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 7)
-    #error "Install ArduinoJson v6.7.0-beta"
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 8)
+    #error "Install ArduinoJson v6.8.0-beta"
   #endif
 #endif
 
@@ -548,7 +548,7 @@ void setup() {
   }, handleFileUpload);
   //get heap status, analog input value and all GPIO statuses in one json call
   server.on("/esp_status", HTTP_GET, []() {
-    DynamicJsonDocument jsonBuffer;
+    DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(21) + 1500);
     JsonObject json = jsonBuffer.to<JsonObject>();
   
     json["HOSTNAME"] = HOSTNAME;
@@ -805,7 +805,7 @@ void setup() {
       #endif
     }
 
-    DynamicJsonDocument jsonBuffer;
+    DynamicJsonDocument jsonBuffer(200);
     JsonObject json = jsonBuffer.to<JsonObject>();
     json["pixel_pount"] = WS2812FXStripSettings.stripSize;
     json["rgb_order"] = WS2812FXStripSettings.RGBOrder;

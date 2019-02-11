@@ -1275,7 +1275,7 @@ bool writeConfigFS(bool saveConfig){
     //FS save
     updateFS = true;
     DBG_OUTPUT_PORT.print("Saving config: ");
-    DynamicJsonDocument jsonBuffer;
+    DynamicJsonDocument jsonBuffer(200);
     JsonObject json = jsonBuffer.to<JsonObject>();
     json["mqtt_host"] = mqtt_host;
     json["mqtt_port"] = mqtt_port;
@@ -1344,7 +1344,7 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonDocument jsonBuffer;
+  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7)+200);
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
   json["strip_mode"] = (int) strip->getMode();
@@ -1492,7 +1492,7 @@ void writeStripConfigFS(void){
   updateFS = true;
   //save the strip config to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonDocument jsonBuffer;
+  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["pixel_pount"] = WS2812FXStripSettings.stripSize;
   json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
