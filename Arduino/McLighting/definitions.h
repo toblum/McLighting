@@ -63,7 +63,7 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
 
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
   #ifdef ENABLE_MQTT
-    #define MQTT_MAX_PACKET_SIZE 2048
+    #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
 
     int mqtt_reconnect_retries = 0;

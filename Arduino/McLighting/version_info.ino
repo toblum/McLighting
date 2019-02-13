@@ -70,4 +70,6 @@
  * - new "REST API": /pixels?rgbo=xxx to change RGB order
  * - new "REST API": /pixels?pin=GPIO_NO to change PIN# (Allowed GPIO values: 16/5/4/0/2/14/12/13/15/3/1)
  * - added HA 0.87 version support https://github.com/toblum/McLighting/issues/327
+ * - Added alternative way to send large messages using PubSubClient
+ * - Added Jason2866's link to Arduino Core v2.5.0 in platformio.ini as official core on PIO is not yet released
  */

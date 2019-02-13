@@ -1032,9 +1032,18 @@ void checkForRequests() {
             #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
               effect_list.add("E131");
             #endif
-            char buffer[measureJson(json) + 1];
+            // Following will never work for PubSubClient as message size > 1.6kB
+            // char buffer[measureJson(json) + 1];
+            // serializeJson(json, buffer, sizeof(buffer));
+            // mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+
+            // Alternate way to publish large messages using PubSubClient
+            unsigned int msg_len = measureJson(json) + 1;
+            char buffer[msg_len];
             serializeJson(json, buffer, sizeof(buffer));
-            mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+            mqtt->beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len, true);
+            mqtt->write((const uint8_t*)buffer, msg_len);
+            mqtt->endPublish();
           #endif
         #endif
 
