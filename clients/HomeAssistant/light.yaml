@@ -4,7 +4,6 @@ light:
     name: "NeoPixel LEDs"
     state_topic: "home/McLighting01_ha/state/out"
     command_topic: "home/McLighting01_ha/state/in"
-    on_command_type: 'first'
     effect: true
     effect_list:
     ######
