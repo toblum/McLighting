@@ -428,9 +428,8 @@ void autoTick() {
   strip->setColor(autoParams[autoCount][0]);
   strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
   strip->setMode((uint8_t)autoParams[autoCount][2]);
-  autoTicker.once((float)autoParams[autoCount][3], autoTick);
-  DBG_OUTPUT_PORT.print("autoTick ");
-  DBG_OUTPUT_PORT.println(autoCount);
+  autoTicker.once_ms((uint32_t)autoParams[autoCount][3], autoTick);
+  DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%06x, %d, %d, %d}\n", autoCount, autoParams[autoCount][0], (uint8_t)autoParams[autoCount][1], (uint8_t)autoParams[autoCount][2], (uint32_t)autoParams[autoCount][3]);
 
   autoCount++;
   if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
