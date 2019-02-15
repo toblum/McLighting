@@ -148,6 +148,9 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
     strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
     strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
+    redhex[2] = 0x00;
+    greenhex[2] = 0x00;
+    bluehex[2] = 0x00;
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
