@@ -54,7 +54,7 @@ const char HOSTNAME[] = "McLighting01";   // Friedly hostname
 #endif
 
 // parameters for automatically cycling favorite patterns
-uint32_t autoParams[][4] = { // color, speed, mode, duration (milliseconds)
+uint32_t autoParams[][4] = {  // color, speed, mode, duration (milliseconds)
   {0xff0000, 200,  1,  5000}, // blink red for 5 seconds
   {0x00ff00, 200,  3, 10000}, // wipe green for 10 seconds
   {0x0000ff, 200, 14,  5000}, // dual scan blue for 5 seconds
