@@ -67,7 +67,6 @@ void getArgs() {
       main_color.white = server.arg("w").toInt();
     }
   }
-  
   if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
   ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
   }
@@ -75,7 +74,7 @@ void getArgs() {
   if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip.getModeCount())) {
     ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
   }
-  
+
   if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
     brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
   } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
@@ -117,7 +116,6 @@ uint16_t convertSpeed(uint8_t mcl_speed) {
   return ws2812_speed;
 }
 
-
 // ***************************************************************************
 // Handler functions for WS and MQTT
 // ***************************************************************************
@@ -139,20 +137,15 @@ void handleSetMainColor(uint8_t * mypayload) {
 void handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-
   main_color.white = ((rgb >> 24) & 0xFF);
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
   #ifdef ENABLE_TV
     exit_func = true;
   #endif
   ws2812fx_mode = FX_MODE_STATIC;
-  #ifdef ENABLE_TV
-    exit_func = true;
-  #endif
   mode = SET_MODE;
 }
 
@@ -167,11 +160,11 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
-	  char whitehex[3];
+    char whitehex[3];
     strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
     strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
     strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
-	  strncpy (whitehex, (const char *) &mypayload[8 + firstChar], 2 );
+    strncpy (whitehex, (const char *) &mypayload[8 + firstChar], 2 );
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
@@ -179,8 +172,6 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s] rgb.white: [%s]\n", redhex, greenhex, bluehex, whitehex);
     DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white, mypayload);
-
-
     strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
     strip.show();
   }
@@ -237,6 +228,9 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 }
 
 void setModeByStateString(String saved_state_string) {
+#ifdef ENABLE_TV
+    exit_func = true;
+#endif
   String str_mode = getValue(saved_state_string, '|', 1);
   mode = static_cast<MODE>(str_mode.toInt());
   String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
@@ -266,6 +260,7 @@ void setModeByStateString(String saved_state_string) {
   strip.setSpeed(convertSpeed(ws2812fx_speed));
   strip.setBrightness(brightness);
   strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
+  strip.trigger();
 }
 
 void handleSetNamedMode(String str_mode) {
@@ -486,7 +481,7 @@ void handleAutoStart() {
     #ifdef ENABLE_TV
       exit_func = true;
     #endif
-    sprintf(beforeauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
+    sprintf(beforeoffauto_state, "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, strip.getMode(), ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white);
     mode = AUTO;
     autoCount = 0;
     autoTick();
@@ -495,9 +490,11 @@ void handleAutoStart() {
 }
 
 void handleAutoStop() {
-  autoTicker.detach();
-  strip.stop();
-  setModeByStateString(beforeauto_state);
+  if (mode==AUTO) {
+    autoTicker.detach();
+    strip.stop();
+    setModeByStateString(beforeoffauto_state);
+  }
 }
 
 void Dbg_Prefix(bool mqtt, uint8_t num) {
@@ -524,9 +521,6 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
   }
 
@@ -866,18 +860,23 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
       //char modeName[30];
       //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
-      #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
-      if (mode == E131)
-        root["effect"] = "E131";
-      else
-        root["effect"] = strip.getModeName(strip.getMode());
-      #else
-        root["effect"] = strip.getModeName(strip.getMode());
+      #if defined(ENABLE_HOMEASSISTANT)
+      if (mode == OFF){
+        root["effect"] = "OFF";
+      } else {
+         if (mode == TV){
+            root["effect"] = "TV";
+         } else {
+            if (mode == E131){
+               root["effect"] = "E131";
+            } else {
+               root["effect"] = strip.getModeName(strip.getMode());
+            }
+         }
+      }
       #endif
-
       char buffer[measureJson(root) + 1];
       serializeJson(root, buffer, sizeof(buffer));
-
       #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
       DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), buffer);
@@ -923,6 +922,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         main_color.red = (uint8_t) color["r"];
         main_color.green = (uint8_t) color["g"];
         main_color.blue = (uint8_t) color["b"];
+        main_color.white = (uint8_t) color["w"];
         prevmode = mode;
         mode = SETCOLOR;
       }
@@ -1060,8 +1060,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             for (uint8_t i = 0; i < strip.getModeCount(); i++) {
               effect_list.add(strip.getModeName(i));
             }
-            #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
-              effect_list.add("E131");
+            #ifdef MQTT_HOME_ASSISTANT_SUPPORT
+              effect_list.add("OFF");
+              #ifdef ENABLE_TV
+                effect_list.add("TV");
+              #endif
+              #ifdef ENABLE_E131
+                 effect_list.add("E131");
+              #endif
             #endif
             char buffer[measureJson(json) + 1];
             serializeJson(json, buffer, sizeof(buffer));
@@ -1147,8 +1153,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           for (uint8_t i = 0; i < strip.getModeCount(); i++) {
             effect_list.add(strip.getModeName(i));
           }
-          #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
-            effect_list.add("E131");
+          #ifdef MQTT_HOME_ASSISTANT_SUPPORT
+              effect_list.add("OFF");
+              #ifdef ENABLE_TV
+                effect_list.add("TV");
+              #endif
+              #ifdef ENABLE_E131
+                 effect_list.add("E131");
+              #endif
           #endif
           char buffer[measureJson(json) + 1];
           serializeJson(json, buffer, sizeof(buffer));

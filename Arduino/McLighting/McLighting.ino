@@ -1,26 +1,27 @@
 #include "definitions.h"
 #include "version.h"
+
 // ***************************************************************************
 // Load libraries for: WebServer / WiFiManager / WebSockets
 // ***************************************************************************
-#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
+#include <ESP8266WiFi.h>           //https://github.com/esp8266/Arduino
 
 // needed for library WiFiManager
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include <WiFiManager.h>           //https://github.com/tzapu/WiFiManager
 
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 #include <EEPROM.h>
 
-#include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
+#include <WebSockets.h>            //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
   
 #ifdef ENABLE_BUTTON_GY33
   // needed for MCU
-  #include <GY33_MCU.h>           //https://github.com/FabLab-Luenen/GY33_MCU/archive/master.zip ; //https://github.com/pasko-zh/brzo_i2c
+  #include <GY33_MCU.h>            //https://github.com/FabLab-Luenen/GY33_MCU/archive/master.zip ; //https://github.com/pasko-zh/brzo_i2c
   // ***************************************************************************
   // Initialize Color Sensor
   // ***************************************************************************
@@ -35,14 +36,14 @@
 
 //SPIFFS Save
 #if !defined(ENABLE_HOMEASSISTANT) and defined(ENABLE_STATE_SAVE_SPIFFS)
-  #include <ArduinoJson.h>        //https://github.com/bblanchon/ArduinoJson
+  #include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
 #endif
 
 // MQTT
 #ifdef ENABLE_MQTT
   #include <PubSubClient.h>
   #ifdef ENABLE_HOMEASSISTANT
-    #include <ArduinoJson.h>     //https://github.com/bblanchon/ArduinoJson
+    #include <ArduinoJson.h>       //https://github.com/bblanchon/ArduinoJson
   #endif
 
   WiFiClient espClient;
@@ -50,8 +51,8 @@
 #endif
 
 #ifdef ENABLE_AMQTT
-  #include <AsyncMqttClient.h>    //https://github.com/marvinroger/async-mqtt-client
-                                  //https://github.com/me-no-dev/ESPAsyncTCP
+  #include <AsyncMqttClient.h>     //https://github.com/marvinroger/async-mqtt-client
+                                   //https://github.com/me-no-dev/ESPAsyncTCP
   #ifdef ENABLE_HOMEASSISTANT
     #include <ArduinoJson.h>
   #endif
@@ -73,7 +74,6 @@
   ESPAsyncE131 e131(END_UNIVERSE - START_UNIVERSE + 1);
 #endif
 
-
 // ***************************************************************************
 // Instanciate HTTP(80) / WebSockets(81) Server
 // ***************************************************************************
@@ -88,8 +88,8 @@ ESP8266HTTPUpdateServer httpUpdater;
 // ***************************************************************************
 // Load libraries / Instanciate WS2812FX library
 // ***************************************************************************
-// https://github.com/kitesurfer1404/WS2812FX
-#include "WS2812FX.h"
+
+#include <WS2812FX.h>              // https://github.com/kitesurfer1404/WS2812FX
 
   #ifdef RGBW
     WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRBW + NEO_KHZ800);
@@ -417,7 +417,7 @@ DBG_OUTPUT_PORT.println("Starting....");
       }
     #endif
   #endif
-  
+
   #ifdef ENABLE_AMQTT
     wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
     wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
@@ -677,7 +677,7 @@ DBG_OUTPUT_PORT.println("Starting....");
   // ***************************************************************************
   server.on("/set_brightness", []() {
     getArgs();
-	mode = BRIGHTNESS;
+    mode = BRIGHTNESS;
     #ifdef ENABLE_MQTT
     mqtt_client.publish(mqtt_outtopic, String(String("OK %") + String(brightness)).c_str());
     #endif
@@ -687,9 +687,6 @@ DBG_OUTPUT_PORT.println("Starting....");
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
     getStatusJSON();
   });
@@ -703,21 +700,17 @@ DBG_OUTPUT_PORT.println("Starting....");
   });
 
   server.on("/set_speed", []() {
-    if (server.arg("d").toInt() >= 0) {
-      ws2812fx_speed = server.arg("d").toInt();
-      ws2812fx_speed = constrain(ws2812fx_speed, 0, 255);
-      strip.setSpeed(convertSpeed(ws2812fx_speed));
-      #ifdef ENABLE_MQTT
+    getArgs();
+    mode = SETSPEED;
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String(String("OK ?") + String(ws2812fx_speed)).c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ?") + String(ws2812fx_speed)).c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
-        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-      #endif
-    }
-
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
+    #endif
     getStatusJSON();
   });
 
@@ -764,16 +757,13 @@ DBG_OUTPUT_PORT.println("Starting....");
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = false;
     #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
   });
 
     server.on("/auto", []() {
     #ifdef ENABLE_TV
       exit_func = true;
     #endif
-    mode = AUTO;
+    handleAutoStart();
     getArgs();
     getStatusJSON();
     #ifdef ENABLE_MQTT
@@ -784,9 +774,6 @@ DBG_OUTPUT_PORT.println("Starting....");
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = false;
-    #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
   });
 
@@ -808,9 +795,6 @@ DBG_OUTPUT_PORT.println("Starting....");
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
     #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
   });
 
   #ifdef ENABLE_LEGACY_ANIMATIONS
@@ -821,18 +805,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = WIPE;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =wipe").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =wipe").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
     });
   
     server.on("/rainbow", []() {
@@ -842,18 +823,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = RAINBOW;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =rainbow").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbow").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
     });
   
     server.on("/rainbowCycle", []() {
@@ -863,18 +841,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = RAINBOWCYCLE;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =rainbowCycle").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbowCycle").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
     });
   
     server.on("/theaterchase", []() {
@@ -884,18 +859,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = THEATERCHASE;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =theaterchase").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchase").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
     });
   
     server.on("/twinkleRandom", []() {
@@ -905,18 +877,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = TWINKLERANDOM;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =twinkleRandom").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =twinkleRandom").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
-        stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
+      stateOn = true;
+    #endif
     });
     
     server.on("/theaterchaseRainbow", []() {
@@ -926,18 +895,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = THEATERCHASERAINBOW;
       getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =theaterchaseRainbow").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchaseRainbow").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
     });
   #endif
   
@@ -948,18 +914,15 @@ DBG_OUTPUT_PORT.println("Starting....");
     #endif
       mode = E131;
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =e131").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
     });
   #endif
   
@@ -969,18 +932,15 @@ DBG_OUTPUT_PORT.println("Starting....");
       mode = TV;
       //getArgs();
       getStatusJSON();
-      #ifdef ENABLE_MQTT
+    #ifdef ENABLE_MQTT
       mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
-      #endif
-      #ifdef ENABLE_AMQTT
+    #endif
+    #ifdef ENABLE_AMQTT
       amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =tv").c_str());
-      #endif
-      #ifdef ENABLE_HOMEASSISTANT
+    #endif
+    #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
-      #endif
-      #ifdef ENABLE_STATE_SAVE_SPIFFS
-        if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-      #endif
+    #endif
     });
   #endif
 
@@ -1003,9 +963,6 @@ DBG_OUTPUT_PORT.println("Starting....");
       stateOn = true;
       if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
     #endif
-    #ifdef ENABLE_STATE_SAVE_SPIFFS
-      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
-    #endif
   });
 
   #ifdef HTTP_OTA
@@ -1023,9 +980,9 @@ DBG_OUTPUT_PORT.println("Starting....");
   // Choose one to begin listening for E1.31 data
   // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
   if (e131.begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) // Listen via Multicast
-      Serial.println(F("Listening for data..."));
+      DBG_OUTPUT_PORT.println(F("Listening for data..."));
   else
-      Serial.println(F("*** e131.begin failed ***"));
+      DBG_OUTPUT_PORT.println(F("*** e131.begin failed ***"));
   #endif
   
   #ifdef ENABLE_STATE_SAVE_SPIFFS
@@ -1097,31 +1054,61 @@ void loop() {
   #endif
           
   // Simple statemachine that handles the different modes
+  if (mode == OFF) {
+    if(strip.isRunning()) strip.stop(); //should clear memory
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif
+  }
+  
+  #ifdef ENABLE_TV
+    if (mode == TV) {
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif
+      if(!strip.isRunning()) strip.start();
+      tv();
+    }
+  #endif
+  
+  #ifdef ENABLE_E131
+    if (mode == E131) {
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif      
+      handleE131();
+    }
+  #endif
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
     strip.setMode(ws2812fx_mode);
     //strip.trigger(); // is done later anyway, why do it more than once?
     prevmode = SET_MODE;
     mode = SETCOLOR;
-  }
-  if (mode == OFF) {
-    if(strip.isRunning()) strip.stop(); //should clear memory
-    // mode = HOLD;
-  }
+  }  
   if (mode == SETCOLOR) {
     strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
     mode = (prevmode == SET_MODE) ? SETSPEED : prevmode;
     if (mode == HOLD) strip.trigger();
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif
   }
   if (mode == SETSPEED) {
     strip.setSpeed(convertSpeed(ws2812fx_speed));
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : prevmode;
     if (mode == HOLD) strip.trigger();
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif
   }
   if (mode == BRIGHTNESS) {
     strip.setBrightness(brightness);
     mode = (prevmode == SET_MODE) ? HOLD : prevmode;
     if (mode == HOLD) strip.trigger();
+  #ifdef ENABLE_STATE_SAVE_SPIFFS
+    if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+  #endif
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
@@ -1129,59 +1116,64 @@ void loop() {
       strip.setMode(FX_MODE_COLOR_WIPE);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
     if (mode == RAINBOW) {
       strip.setMode(FX_MODE_RAINBOW);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
     if (mode == RAINBOWCYCLE) {
       strip.setMode(FX_MODE_RAINBOW_CYCLE);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
     if (mode == THEATERCHASE) {
       //strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
       strip.setMode(FX_MODE_THEATER_CHASE);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
     if (mode == TWINKLERANDOM) {
       //strip.setColor(main_color.red, main_color.green, main_color.blue, main_color.white);
       strip.setMode(FX_MODE_TWINKLE_RANDOM);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
     if (mode == THEATERCHASERAINBOW) {
       strip.setMode(FX_MODE_THEATER_CHASE_RAINBOW);
       strip.trigger();
       mode = HOLD;
+    #ifdef ENABLE_STATE_SAVE_SPIFFS
+      if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
+    #endif
     }
   #endif
   
-  #ifdef ENABLE_E131
-    if (mode == E131) {
-      handleE131();
-    }
-  #endif
-
   if (mode == HOLD || mode == CUSTOM) {
-    if(!strip.isRunning()) strip.start();
     #ifdef ENABLE_TV
       if (exit_func) {
         exit_func = false;
       }
     #endif
+    if(!strip.isRunning()) strip.start();
     if (prevmode == SET_MODE) prevmode = HOLD;
   }
   
-  #ifdef ENABLE_TV
-    if (mode == TV) {
-      if(!strip.isRunning()) strip.start();
-      tv();
-    }
-  #endif
-
   // Only for modes with WS2812FX functionality
   #ifdef ENABLE_TV
   if (mode != TV && mode != CUSTOM) {
