@@ -59,4 +59,10 @@
  * 6 Jan 2018 v 2.2.0
  * - fix webserver not responding when E1.31 is mode is acivated: do a webserver.loop() for every 1.31 packet
  * - HA E1.31 mode added
+  * 
+ * 15 Feb 2018 v 2.2.0 rgbw 3colors
+ * - Code cleanup
+ * - Implemented support for back- and xtra-color
+ * - Implemented IR remote control
+ * - Remove some string data types (to be continued)
  */
