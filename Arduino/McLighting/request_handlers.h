@@ -1454,7 +1454,7 @@ struct
       uint8_t pin = 1;
     #endif
   #else
-    uint8_t pin = PIN;
+    uint8_t pin = LED_PIN;
   #endif
 } WS2812FXStripSettings;
 
