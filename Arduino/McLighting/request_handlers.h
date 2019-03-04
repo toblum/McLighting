@@ -1008,6 +1008,7 @@ void checkForRequests() {
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
+          ha_send_data.once(5, tickerSendState);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
             DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
             JsonObject json = jsonBuffer.to<JsonObject>();
@@ -1106,6 +1107,7 @@ void checkForRequests() {
         ha_send_data.detach();
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
+        ha_send_data.once(5, tickerSendState);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
           DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
