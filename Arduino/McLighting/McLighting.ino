@@ -492,6 +492,7 @@ void setup() {
       amqttClient.setServer(mqtt_host, atoi(mqtt_port));
       if (mqtt_user != "" or mqtt_pass != "") amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
+      amqttClient.setWill(mqtt_will_topic.c_str(), 2, true, mqtt_will_payload, 0);
 
       connectToMqtt();
     }

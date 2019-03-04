@@ -62,6 +62,9 @@ uint32_t autoParams[][4] = {  // color, speed, mode, duration (milliseconds)
 };
 
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
+  const String mqtt_will_topic = String(HOSTNAME) + "/status";
+  const char mqtt_will_payload[] = "ONLINE";
+
   #ifdef ENABLE_MQTT
     #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
