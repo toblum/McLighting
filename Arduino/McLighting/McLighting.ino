@@ -84,7 +84,7 @@ ESP8266HTTPUpdateServer httpUpdater;
 // ***************************************************************************
 // https://github.com/kitesurfer1404/WS2812FX
 #include <WS2812FX.h>
-// WS2812FX strip = WS2812FX(NUMLEDS, PIN, NEO_GRB + NEO_KHZ800);
+// WS2812FX strip = WS2812FX(NUMLEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 WS2812FX* strip;
 
 #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
@@ -229,10 +229,13 @@ void saveConfigCallback () {
 // ***************************************************************************
 #include "request_handlers.h"
 
+#ifdef CUSTOM_WS2812FX_ANIMATIONS
+  #include "custom_ws2812fx_animations.h" // Add animations in this file
+#endif
+
 // function to Initialize the strip
 void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelType RGBOrder = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin){
   if (strip) {
-    if (strip->getLength() == stripSize && WS2812FXStripSettings.RGBOrder == RGBOrder && WS2812FXStripSettings.pin == pin) return;
     delete strip;
     WS2812FXStripSettings.stripSize = stripSize;
     WS2812FXStripSettings.RGBOrder = RGBOrder;
@@ -259,9 +262,13 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   #endif
   strip->setBrightness(brightness);
   strip->setSpeed(convertSpeed(ws2812fx_speed));
-  //strip->setMode(FX_MODE_RAINBOW_CYCLE);
+  //strip->setMode(ws2812fx_mode);
   strip->setColor(main_color.red, main_color.green, main_color.blue);
+#ifdef CUSTOM_WS2812FX_ANIMATIONS
+  strip->setCustomMode(myCustomEffect);
+#endif
   strip->start();
+  if(mode != HOLD) mode = SET_MODE;
   saveWS2812FXStripSettings.once(3, writeStripConfigFS);
 }
 
@@ -339,9 +346,15 @@ void setup() {
     #endif
     WiFiManagerParameter custom_mqtt_host("host", "MQTT hostname", mqtt_host, 64);
     WiFiManagerParameter custom_mqtt_port("port", "MQTT port", mqtt_port, 6);
-    WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32);
-    WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32);
+    WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32, " maxlength=31");
+    WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32, " maxlength=31 type='password'");
   #endif
+
+  sprintf(strip_size, "%d", WS2812FXStripSettings.stripSize);
+  sprintf(led_pin, "%d", WS2812FXStripSettings.pin);
+
+  WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", strip_size, 3);
+  WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", led_pin, 2);
 
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
@@ -361,6 +374,9 @@ void setup() {
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_pass);
   #endif
+
+  wifiManager.addParameter(&custom_strip_size);
+  wifiManager.addParameter(&custom_led_pin);
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   
@@ -393,6 +409,16 @@ void setup() {
     strcpy(mqtt_port, custom_mqtt_port.getValue());
     strcpy(mqtt_user, custom_mqtt_user.getValue());
     strcpy(mqtt_pass, custom_mqtt_pass.getValue());
+
+    strcpy(strip_size, custom_strip_size.getValue());
+    strcpy(led_pin, custom_led_pin.getValue());
+
+    if(atoi(strip_size) != WS2812FXStripSettings.stripSize)
+      WS2812FXStripSettings.stripSize = atoi(strip_size); 
+    uint8_t pin = atoi(led_pin);
+    if ((pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) and (pin != WS2812FXStripSettings.pin) )
+      WS2812FXStripSettings.pin = pin;    
+    initStrip();
 
     //save the custom parameters to FS
     #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
@@ -474,9 +500,6 @@ void setup() {
 
   #ifdef ENABLE_MQTT
     if (mqtt_host != "" && atoi(mqtt_port) > 0) {
-      snprintf(mqtt_intopic, sizeof mqtt_intopic, "%s/in", HOSTNAME);
-      snprintf(mqtt_outtopic, sizeof mqtt_outtopic, "%s/out", HOSTNAME);
-
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\n", mqtt_host, String(mqtt_port).toInt());
 
       mqtt_client.setServer(mqtt_host, atoi(mqtt_port));
@@ -492,7 +515,7 @@ void setup() {
       amqttClient.setServer(mqtt_host, atoi(mqtt_port));
       if (mqtt_user != "" or mqtt_pass != "") amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
-      amqttClient.setWill(mqtt_will_topic.c_str(), 2, true, mqtt_will_payload, 0);
+      amqttClient.setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
 
       connectToMqtt();
     }
@@ -575,7 +598,7 @@ void setup() {
       json["pin"] = 2;
     #else
       json["animation_lib"] = "WS2812FX";
-      json["pin"] = PIN;
+      json["pin"] = LED_PIN;
     #endif
     json["number_leds"] = NUMLEDS;
     #ifdef ENABLE_BUTTON
@@ -682,7 +705,7 @@ void setup() {
     mqtt_client.publish(mqtt_outtopic, String(String("OK %") + String(brightness)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK %") + String(brightness)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK %") + String(brightness)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -711,7 +734,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ?") + String(ws2812fx_speed)).c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ?") + String(ws2812fx_speed)).c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ?") + String(ws2812fx_speed)).c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
@@ -749,12 +772,13 @@ void setup() {
   });
 
   server.on("/pixels", []() {
+
+    bool updateStrip = false;
     if(server.hasArg("ct")){
       uint16_t pixelCt = server.arg("ct").toInt();
       if (pixelCt > 0) {
-        if(strip->isRunning()) strip->stop();
-        initStrip(pixelCt);
-        if(mode != HOLD) mode = SET_MODE;
+        WS2812FXStripSettings.stripSize = pixelCt;
+        updateStrip = true;
         DBG_OUTPUT_PORT.printf("/pixels: Count# %d\n", pixelCt);
       }
     }
@@ -762,22 +786,28 @@ void setup() {
       String RGBOrder = server.arg("rgbo");
       DBG_OUTPUT_PORT.print("/pixels: RGB Order# ");
       if (RGBOrder == "grb") {
-        initStrip(strip->getLength(), NEO_GRB);
+        WS2812FXStripSettings.RGBOrder = NEO_GRB;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "gbr") {
-        initStrip(strip->getLength(), NEO_GBR);
+        WS2812FXStripSettings.RGBOrder = NEO_GBR;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "rgb") {
-        initStrip(strip->getLength(), NEO_RGB);
+        WS2812FXStripSettings.RGBOrder = NEO_RGB;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "rbg") {
-        initStrip(strip->getLength(), NEO_RBG);
+        WS2812FXStripSettings.RGBOrder = NEO_RBG;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "brg") {
-        initStrip(strip->getLength(), NEO_BRG);
+        WS2812FXStripSettings.RGBOrder = NEO_BRG;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else if (RGBOrder == "bgr") {
-        initStrip(strip->getLength(), NEO_BGR);
+        WS2812FXStripSettings.RGBOrder = NEO_BGR;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
@@ -798,7 +828,8 @@ void setup() {
         #endif
       #else
       if (pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) {
-        initStrip(NULL, NULL, pin);
+        WS2812FXStripSettings.pin = pin;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(pin);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
@@ -806,6 +837,16 @@ void setup() {
       #endif
     }
 
+    if(updateStrip)
+    {
+      ws2812fx_mode = strip->getMode();
+      if(strip->isRunning()) strip->stop();
+      initStrip();
+      writeStripConfigFS();
+      strip->setMode(ws2812fx_mode);
+      strip->trigger();
+    }
+    
     DynamicJsonDocument jsonBuffer(200);
     JsonObject json = jsonBuffer.to<JsonObject>();
     json["pixel_pount"] = WS2812FXStripSettings.stripSize;
@@ -828,7 +869,7 @@ void setup() {
     mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =off").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = false;
@@ -851,7 +892,7 @@ void setup() {
     mqtt_client.publish(mqtt_outtopic, String("OK =all").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =all").c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =all").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -871,7 +912,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =wipe").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =wipe").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =wipe").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -890,7 +931,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =rainbow").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbow").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =rainbow").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -909,7 +950,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =rainbowCycle").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =rainbowCycle").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =rainbowCycle").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -928,7 +969,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =theaterchase").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchase").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =theaterchase").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -947,7 +988,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =twinkleRandom").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =twinkleRandom").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =twinkleRandom").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -966,7 +1007,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =theaterchaseRainbow").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =theaterchaseRainbow").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =theaterchaseRainbow").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -985,7 +1026,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =e131").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =131").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =131").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -1005,7 +1046,7 @@ void setup() {
       mqtt_client.publish(mqtt_outtopic, String("OK =tv").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =tv").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =tv").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -1029,7 +1070,7 @@ void setup() {
     mqtt_client.publish(mqtt_outtopic, String(String("OK /") + String(ws2812fx_mode)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK /") + String(ws2812fx_mode)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK /") + String(ws2812fx_mode)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -1055,7 +1096,7 @@ void setup() {
   // Choose one to begin listening for E1.31 data
   // if (e131.begin(E131_UNICAST))                             // Listen via Unicast
   if (e131.begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) // Listen via Multicast
-      Serial.println(F("Listening for data..."));
+      Serial.println(F("E1.31 mode setup complete."));
   else
       Serial.println(F("*** e131.begin failed ***"));
   #endif

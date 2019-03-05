@@ -461,7 +461,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -492,7 +492,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -512,7 +512,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -537,7 +537,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -562,7 +562,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -580,7 +580,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -599,7 +599,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -624,7 +624,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
@@ -644,7 +644,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         mqtt_client.publish(mqtt_outtopic, json.c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
@@ -671,7 +671,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
@@ -700,7 +700,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -855,12 +855,12 @@ void checkForRequests() {
       serializeJson(root, buffer, sizeof(buffer));
 
       #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), buffer);
+      mqtt_client.publish(mqtt_ha_state_out, buffer, true);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_ha_state_out.c_str(), 1, true, buffer);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), buffer);
+      amqttClient.publish(mqtt_ha_state_out, 1, true, buffer);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
       #endif
       new_ha_mqtt_msg = false;
       ha_send_data.detach();
@@ -965,7 +965,7 @@ void checkForRequests() {
     DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
   #endif
     #ifdef ENABLE_HOMEASSISTANT
-      if (strcmp(topic, mqtt_ha_state_in.c_str()) == 0) {
+      if (strcmp(topic, mqtt_ha_state_in) == 0) {
         if (!processJson((char*)payload)) {
           return;
         }
@@ -977,7 +977,7 @@ void checkForRequests() {
         } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
         #endif
         #ifdef ENABLE_AMQTT
-        } else if (strcmp(topic, mqtt_intopic.c_str()) == 0) {
+        } else if (strcmp(topic, mqtt_intopic) == 0) {
       #endif
     #endif
 
@@ -1007,7 +1007,7 @@ void checkForRequests() {
         mqtt_client.subscribe(mqtt_intopic, qossub);
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
-          mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
+          mqtt_client.subscribe(mqtt_ha_state_in, qossub);
           ha_send_data.once(5, tickerSendState);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
             DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
@@ -1099,13 +1099,13 @@ void checkForRequests() {
       char * message = new char[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, message);
+      amqttClient.publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic.c_str(), qossub);
+      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
       #ifdef ENABLE_HOMEASSISTANT
         ha_send_data.detach();
-        uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
+        uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in, qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         ha_send_data.once(5, tickerSendState);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
@@ -1182,7 +1182,7 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static white").c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =static white").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -1198,7 +1198,7 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =off").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = false;
@@ -1218,7 +1218,7 @@ void checkForRequests() {
       mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fire flicker").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =fire flicker").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -1237,7 +1237,7 @@ void checkForRequests() {
       mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fireworks random").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =fireworks random").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
      stateOn = true;
@@ -1412,6 +1412,7 @@ bool readStateFS() {
         main_color.green = json["green"];
         main_color.blue = json["blue"];
 
+        if(mode != OFF) stateOn = true; 
         strip->setMode(ws2812fx_mode);
         strip->setSpeed(convertSpeed(ws2812fx_speed));
         strip->setBrightness(brightness);
@@ -1441,10 +1442,12 @@ bool readStateFS() {
 #endif
 
 //Strip Config
+char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
+
 struct
 {
   uint16_t stripSize = NUMLEDS;
-  uint16_t RGBOrder = NEO_GRB;
+  uint8_t RGBOrder = NEO_GRB;
   #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
     #ifdef USE_WS2812FX_DMA
       uint8_t pin = 3;
@@ -1456,7 +1459,7 @@ struct
       uint8_t pin = 1;
     #endif
   #else
-    uint8_t pin = PIN;
+    uint8_t pin = LED_PIN;
   #endif
 } WS2812FXStripSettings;
 
@@ -1504,7 +1507,7 @@ bool readStripConfigFS(void) {
 void writeStripConfigFS(void){
   updateFS = true;
   //save the strip config to FS JSON
-  DBG_OUTPUT_PORT.print("Saving cfg: ");
+  DBG_OUTPUT_PORT.print("Saving Strip cfg: ");
   DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["pixel_pount"] = WS2812FXStripSettings.stripSize;
@@ -1519,6 +1522,7 @@ void writeStripConfigFS(void){
   }
   serializeJson(json, DBG_OUTPUT_PORT);
   serializeJson(json, configFile);
+  DBG_OUTPUT_PORT.println();
   configFile.close();
   updateFS = false;
   //end save

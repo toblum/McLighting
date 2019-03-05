@@ -74,4 +74,7 @@
  * - Bump PIO core to 2.0.1
  * - Send HA state on MQTT connect, address https://github.com/toblum/McLighting/issues/349
  * - Add LWT for MQTT and AMQTT, address https://github.com/toblum/McLighting/issues/340
+ * - Added file for custom WS2812FX animations in custom slots
+ * - Rename varaibles to be char instead of String
+ * - Added LED pixel count and PIN settings to WiFiManager
  */
