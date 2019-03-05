@@ -773,6 +773,19 @@ void setup() {
 
   server.on("/pixelconf", []() {
 
+    /*
+
+    // This will be used later when web-interface is ready and HTTP_GET will not be allowed to update the Strip Settings
+
+    if(server.args() == 0 and server.method() != HTTP_POST)
+    {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "text/plain", "Only HTTP POST method is allowed and check the number of arguments!");
+      return;
+    }
+
+    */
+
     bool updateStrip = false;
     if(server.hasArg("ct")){
       uint16_t pixelCt = server.arg("ct").toInt();
