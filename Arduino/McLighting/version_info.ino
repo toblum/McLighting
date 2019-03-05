@@ -66,9 +66,9 @@
  * - Modify platformio.ini for future bump to esp8266-arduino v2.5.0 (shamelessly stolen settings from espurna project)
  * - Gzipped index2.htm & edit.htm.gz(untouched), convereted to hex format using xxd -i abcd.gz > html_gz.h
  * - Pointers added for WS2812FX & NeoPixelBus
- * - new "REST API": /pixels?ct=xxx to change length of LED strip
- * - new "REST API": /pixels?rgbo=xxx to change RGB order
- * - new "REST API": /pixels?pin=GPIO_NO to change PIN# (Allowed GPIO values: 16/5/4/0/2/14/12/13/15/3/1)
+ * - new "REST API": /pixelconf?ct=xxx to change length of LED strip
+ * - new "REST API": /pixelconf?rgbo=xxx to change RGB order
+ * - new "REST API": /pixelconf?pin=GPIO_NO to change PIN# (Allowed GPIO values: 16/5/4/0/2/14/12/13/15/3/1)
  * - added HA 0.87 version support https://github.com/toblum/McLighting/issues/327
  * - Added alternative way to send large messages using PubSubClient
  * - Bump PIO core to 2.0.1

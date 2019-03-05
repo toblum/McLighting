@@ -265,7 +265,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   //strip->setMode(ws2812fx_mode);
   strip->setColor(main_color.red, main_color.green, main_color.blue);
 #ifdef CUSTOM_WS2812FX_ANIMATIONS
-  strip->setCustomMode(myCustomEffect);
+  strip->setCustomMode(F("Fire 2012"), myCustomEffect);
 #endif
   strip->start();
   if(mode != HOLD) mode = SET_MODE;
@@ -771,7 +771,7 @@ void setup() {
     getStatusJSON();
   });
 
-  server.on("/pixels", []() {
+  server.on("/pixelconf", []() {
 
     bool updateStrip = false;
     if(server.hasArg("ct")){
@@ -842,7 +842,6 @@ void setup() {
       ws2812fx_mode = strip->getMode();
       if(strip->isRunning()) strip->stop();
       initStrip();
-      writeStripConfigFS();
       strip->setMode(ws2812fx_mode);
       strip->trigger();
     }
