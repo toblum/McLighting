@@ -264,6 +264,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   strip->setSpeed(convertSpeed(ws2812fx_speed));
   //strip->setMode(ws2812fx_mode);
   strip->setColor(main_color.red, main_color.green, main_color.blue);
+  strip->setOptions(0, GAMMA);  // We only have one WS2812FX segment, set color to human readable GAMMA correction
 #ifdef CUSTOM_WS2812FX_ANIMATIONS
   strip->setCustomMode(F("Fire 2012"), myCustomEffect);
 #endif

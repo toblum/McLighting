@@ -77,4 +77,5 @@
  * - Added file for custom WS2812FX animations in custom slots
  * - Rename varaibles to be char instead of String
  * - Added LED pixel count and PIN settings to WiFiManager
+ * - Gamma correction to LEDs
  */

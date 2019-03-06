@@ -69,6 +69,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/272)
+- [ ] Make switching between methods: Adafruit NeoPixel, NeoPixelBus's DMA, NeoPixelBus's UART1 and NeoPixelBus's UART2 via REST API
 - [x] Make number of pixels, RGB Order and PIN configurable via REST API
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
