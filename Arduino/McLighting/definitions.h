@@ -19,7 +19,7 @@
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
 #define ENABLE_E131              // E1.31 implementation
-//#define USE_HTML_MIN_GZ             //uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
+#define USE_HTML_MIN_GZ             //comment for using index.htm & edit.htm from SPIFFs instead of PROGMEM
 //#define CUSTOM_WS2812FX_ANIMATIONS  //uncomment and put animations in "custom_ws2812fx_animations.h" 
 
 #ifdef ENABLE_E131

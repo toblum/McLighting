@@ -71,7 +71,7 @@
  * - new "REST API": /pixelconf?pin=GPIO_NO to change PIN# (Allowed GPIO values: 16/5/4/0/2/14/12/13/15/3/1)
  * - added HA 0.87 version support https://github.com/toblum/McLighting/issues/327
  * - Added alternative way to send large messages using PubSubClient
- * - Bump PIO core to 2.0.1
+ * - Bump PIO core to 2.0.4
  * - Send HA state on MQTT connect, address https://github.com/toblum/McLighting/issues/349
  * - Add LWT for MQTT and AMQTT, address https://github.com/toblum/McLighting/issues/340
  * - Added file for custom WS2812FX animations in custom slots
