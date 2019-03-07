@@ -27,9 +27,9 @@ void handleE131(){
     uint16_t len = (170 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 170;
     for (uint16_t i = 0; i < len; i++){
       uint16_t j = i * 3;
-      strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
+      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2]);
     }
-    strip.show();
+    strip->show();
     checkForRequests();
   }
 }
@@ -63,7 +63,7 @@ void getArgs() {
   }
 
   if (server.arg("m") != "") {
-    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
+    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
   }
   
   if (server.arg("c").toInt() > 0) {
@@ -114,7 +114,7 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-//  strip.setColor(main_color.red, main_color.green, main_color.blue);
+//  strip->setColor(main_color.red, main_color.green, main_color.blue);
   mode = SETCOLOR;
 }
 
@@ -140,14 +140,17 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
-  if (led <= strip.numPixels()) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip->numPixels(), mypayload );
+  if (led <= strip->numPixels()) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
     strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
     strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
     strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
+    redhex[2] = 0x00;
+    greenhex[2] = 0x00;
+    bluehex[2] = 0x00;
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
@@ -156,8 +159,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, mypayload);
 
 
-    strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
-    strip.show();
+    strip->setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue);
+    strip->show();
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     exit_func = true;
@@ -234,10 +237,10 @@ void setModeByStateString(String saved_state_string) {
   DBG_OUTPUT_PORT.printf("main_color.green: %d\n", main_color.green);
   DBG_OUTPUT_PORT.printf("main_color.blue: %d\n", main_color.blue);
 
-  strip.setMode(ws2812fx_mode);
-  strip.setSpeed(convertSpeed(ws2812fx_speed));
-  strip.setBrightness(brightness);
-  strip.setColor(main_color.red, main_color.green, main_color.blue);
+  strip->setMode(ws2812fx_mode);
+  strip->setSpeed(convertSpeed(ws2812fx_speed));
+  strip->setBrightness(brightness);
+  strip->setColor(main_color.red, main_color.green, main_color.blue);
 }
 
 #ifdef ENABLE_LEGACY_ANIMATIONS
@@ -306,7 +309,7 @@ void setModeByStateString(String saved_state_string) {
   void handleE131NamedMode(String str_mode) {
     exit_func = true;
     if (str_mode.startsWith("=e131") or str_mode.startsWith("/e131")) {
-      if(strip.isRunning()) strip.stop();
+      if(strip->isRunning()) strip->stop();
       mode = E131;
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -318,18 +321,18 @@ void setModeByStateString(String saved_state_string) {
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   mode = SET_MODE;
   uint8_t ws2812fx_mode_tmp = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip.getModeCount() - 1);
+  ws2812fx_mode = constrain(ws2812fx_mode_tmp, 0, strip->getModeCount() - 1);
 }
 
 String listStatusJSON(void) {
-  uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode();
+  uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode();
   
   const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = tmp_mode;
-  root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
+  root["ws2812fx_mode_name"] = strip->getModeName(tmp_mode);
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
@@ -349,7 +352,7 @@ void getStatusJSON() {
 }
 
 String listModesJSON(void) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+1) + strip.getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+1) + strip->getModeCount()*JSON_OBJECT_SIZE(2) + 1000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray json = jsonBuffer.to<JsonArray>();
   #ifdef ENABLE_E131
@@ -357,10 +360,10 @@ String listModesJSON(void) {
   objecte131["mode"] = "e131";
   objecte131["name"] = "E131";
   #endif
-  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+  for (uint8_t i = 0; i < strip->getModeCount(); i++) {
     JsonObject object = json.createNestedObject();
     object["mode"] = i;
-    object["name"] = strip.getModeName(i);
+    object["name"] = strip->getModeName(i);
   }
   JsonObject object = json.createNestedObject();
   
@@ -422,12 +425,11 @@ Ticker autoTicker;
 int autoCount = 0;
 
 void autoTick() {
-  strip.setColor(autoParams[autoCount][0]);
-  strip.setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
-  strip.setMode((uint8_t)autoParams[autoCount][2]);
-  autoTicker.once((float)autoParams[autoCount][3], autoTick);
-  DBG_OUTPUT_PORT.print("autoTick ");
-  DBG_OUTPUT_PORT.println(autoCount);
+  strip->setColor(autoParams[autoCount][0]);
+  strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][1]));
+  strip->setMode((uint8_t)autoParams[autoCount][2]);
+  autoTicker.once_ms((uint32_t)autoParams[autoCount][3], autoTick);
+  DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%06x, %d, %d, %d}\n", autoCount, autoParams[autoCount][0], (uint8_t)autoParams[autoCount][1], (uint8_t)autoParams[autoCount][2], (uint32_t)autoParams[autoCount][3]);
 
   autoCount++;
   if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
@@ -436,12 +438,12 @@ void autoTick() {
 void handleAutoStart() {
   autoCount = 0;
   autoTick();
-  strip.start();
+  strip->start();
 }
 
 void handleAutoStop() {
   autoTicker.detach();
-  strip.stop();
+  strip->stop();
 }
 
 void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
@@ -459,7 +461,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -490,7 +492,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -510,7 +512,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -535,7 +537,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -560,7 +562,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -578,7 +580,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -597,7 +599,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
   }
 
@@ -622,7 +624,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
@@ -642,7 +644,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         mqtt_client.publish(mqtt_outtopic, json.c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
@@ -669,7 +671,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, json.c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
@@ -698,7 +700,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     mqtt_client.publish(mqtt_outtopic, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_AMQTT
-    amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String(String("OK ") + String((char *)payload)).c_str());
+    amqttClient.publish(mqtt_outtopic, qospub, false, String(String("OK ") + String((char *)payload)).c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -748,15 +750,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 }
 
-#ifdef ENABLE_LEGACY_ANIMATIONS
-  void checkForRequests() {
-    webSocket.loop();
-    server.handleClient();
-    #ifdef ENABLE_MQTT
-    mqtt_client.loop();
-    #endif
-  }
-#endif
+void checkForRequests() {
+  webSocket.loop();
+  server.handleClient();
+  #ifdef ENABLE_MQTT
+  mqtt_client.loop();
+  #endif
+}
 
 
 // ***************************************************************************
@@ -841,26 +841,26 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       root["speed"] = ws2812fx_speed;
 
       //char modeName[30];
-      //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+      //strncpy_P(modeName, (PGM_P)strip->getModeName(strip->getMode()), sizeof(modeName)); // copy from progmem
       #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
       if (mode == E131)
         root["effect"] = "E131";
       else
-        root["effect"] = strip.getModeName(strip.getMode());
+        root["effect"] = strip->getModeName(strip->getMode());
       #else
-        root["effect"] = strip.getModeName(strip.getMode());
+        root["effect"] = strip->getModeName(strip->getMode());
       #endif
 
       char buffer[measureJson(root) + 1];
       serializeJson(root, buffer, sizeof(buffer));
 
       #ifdef ENABLE_MQTT
-      mqtt_client.publish(mqtt_ha_state_out.c_str(), buffer, true);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), buffer);
+      mqtt_client.publish(mqtt_ha_state_out, buffer, true);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
       #endif
       #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_ha_state_out.c_str(), 1, true, buffer);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out.c_str(), buffer);
+      amqttClient.publish(mqtt_ha_state_out, 1, true, buffer);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
       #endif
       new_ha_mqtt_msg = false;
       ha_send_data.detach();
@@ -927,15 +927,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         animation_on = true;
         String effectString = root["effect"].as<String>();
 
-        for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+        for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
           if(effectString == "E131"){
-            if(strip.isRunning()) strip.stop();
+            if(strip->isRunning()) strip->stop();
             mode = E131;
             break;
           }
           #endif
-          if(String(strip.getModeName(i)) == effectString) {
+          if(String(strip->getModeName(i)) == effectString) {
             mode = SET_MODE;
             ws2812fx_mode = i;
             break;
@@ -965,7 +965,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
   #endif
     #ifdef ENABLE_HOMEASSISTANT
-      if (strcmp(topic, mqtt_ha_state_in.c_str()) == 0) {
+      if (strcmp(topic, mqtt_ha_state_in) == 0) {
         if (!processJson((char*)payload)) {
           return;
         }
@@ -977,7 +977,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
         #endif
         #ifdef ENABLE_AMQTT
-        } else if (strcmp(topic, mqtt_intopic.c_str()) == 0) {
+        } else if (strcmp(topic, mqtt_intopic) == 0) {
       #endif
     #endif
 
@@ -996,7 +996,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       mqtt_reconnect_retries++;
       DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
-      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic.c_str(), 2, true, mqtt_will_payload, true)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];
@@ -1007,34 +1007,46 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         mqtt_client.subscribe(mqtt_intopic, qossub);
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
-          mqtt_client.subscribe(mqtt_ha_state_in.c_str(), qossub);
+          mqtt_client.subscribe(mqtt_ha_state_in, qossub);
+          ha_send_data.once(5, tickerSendState);
           #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
+            DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
-            #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+            #ifdef MQTT_HOME_ASSISTANT_0_87_SUPPORT
             json["schema"] = "json";
             #else
             json["platform"] = "mqtt_json";
             #endif
             json["state_topic"] = mqtt_ha_state_out;
             json["command_topic"] = mqtt_ha_state_in;
+            #ifndef MQTT_HOME_ASSISTANT_0_87_SUPPORT
             json["on_command_type"] = "first";
+            #endif
             json["brightness"] = "true";
             json["rgb"] = "true";
             json["optimistic"] = "false";
             json["color_temp"] = "true";
             json["effect"] = "true";
             JsonArray effect_list = json.createNestedArray("effect_list");
-            for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-              effect_list.add(strip.getModeName(i));
+            for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+              effect_list.add(strip->getModeName(i));
             }
             #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
               effect_list.add("E131");
             #endif
-            char buffer[measureJson(json) + 1];
+            // Following will never work for PubSubClient as message size > 1.6kB
+            // char buffer[measureJson(json) + 1];
+            // serializeJson(json, buffer, sizeof(buffer));
+            // mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+
+            // Alternate way to publish large messages using PubSubClient
+            unsigned int msg_len = measureJson(json) + 1;
+            char buffer[msg_len];
             serializeJson(json, buffer, sizeof(buffer));
-            mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+            mqtt->beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len, true);
+            mqtt->write((const uint8_t*)buffer, msg_len);
+            mqtt->endPublish();
           #endif
         #endif
 
@@ -1087,34 +1099,37 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       char * message = new char[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, message);
+      amqttClient.publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic.c_str(), qossub);
+      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
       #ifdef ENABLE_HOMEASSISTANT
         ha_send_data.detach();
-        uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in.c_str(), qossub);
+        uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in, qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
+        ha_send_data.once(5, tickerSendState);
         #ifdef MQTT_HOME_ASSISTANT_SUPPORT
-          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip.getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
+          DynamicJsonDocument jsonBuffer(JSON_ARRAY_SIZE(strip->getModeCount()) + JSON_OBJECT_SIZE(12) + 1500);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
-          #ifdef MQTT_HOME_ASSISTANT_0_84_SUPPORT
+          #ifdef MQTT_HOME_ASSISTANT_0_87_SUPPORT
           json["schema"] = "json";
           #else
           json["platform"] = "mqtt_json";
           #endif
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
+          #ifndef MQTT_HOME_ASSISTANT_0_87_SUPPORT
           json["on_command_type"] = "first";
+          #endif
           json["brightness"] = "true";
           json["rgb"] = "true";
           json["optimistic"] = "false";
           json["color_temp"] = "true";
           json["effect"] = "true";
           JsonArray effect_list = json.createNestedArray("effect_list");
-          for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-            effect_list.add(strip.getModeName(i));
+          for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+            effect_list.add(strip->getModeName(i));
           }
           #if defined(ENABLE_E131) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
             effect_list.add("E131");
@@ -1167,7 +1182,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         mqtt_client.publish(mqtt_outtopic, String("OK =static white").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =static white").c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =static white").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = true;
@@ -1183,7 +1198,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         mqtt_client.publish(mqtt_outtopic, String("OK =off").c_str());
       #endif
       #ifdef ENABLE_AMQTT
-        amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =off").c_str());
+        amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =off").c_str());
       #endif
       #ifdef ENABLE_HOMEASSISTANT
         stateOn = false;
@@ -1203,7 +1218,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       mqtt_client.publish(mqtt_outtopic, String("OK =fire flicker").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fire flicker").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =fire flicker").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       stateOn = true;
@@ -1222,7 +1237,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       mqtt_client.publish(mqtt_outtopic, String("OK =fireworks random").c_str());
     #endif
     #ifdef ENABLE_AMQTT
-      amqttClient.publish(mqtt_outtopic.c_str(), qospub, false, String("OK =fireworks random").c_str());
+      amqttClient.publish(mqtt_outtopic, qospub, false, String("OK =fireworks random").c_str());
     #endif
     #ifdef ENABLE_HOMEASSISTANT
      stateOn = true;
@@ -1273,7 +1288,7 @@ bool writeConfigFS(bool saveConfig){
     //FS save
     updateFS = true;
     DBG_OUTPUT_PORT.print("Saving config: ");
-    DynamicJsonDocument jsonBuffer;
+    DynamicJsonDocument jsonBuffer(200);
     JsonObject json = jsonBuffer.to<JsonObject>();
     json["mqtt_host"] = mqtt_host;
     json["mqtt_port"] = mqtt_port;
@@ -1342,10 +1357,10 @@ bool writeStateFS(){
   updateFS = true;
   //save the strip state to FS JSON
   DBG_OUTPUT_PORT.print("Saving cfg: ");
-  DynamicJsonDocument jsonBuffer;
+  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(7)+200);
   JsonObject json = jsonBuffer.to<JsonObject>();
   json["mode"] = static_cast<int>(mode);
-  json["strip_mode"] = (int) strip.getMode();
+  json["strip_mode"] = (int) strip->getMode();
   json["brightness"] = brightness;
   json["speed"] = ws2812fx_speed;
   json["red"] = main_color.red;
@@ -1397,14 +1412,15 @@ bool readStateFS() {
         main_color.green = json["green"];
         main_color.blue = json["blue"];
 
-        strip.setMode(ws2812fx_mode);
-        strip.setSpeed(convertSpeed(ws2812fx_speed));
-        strip.setBrightness(brightness);
-        strip.setColor(main_color.red, main_color.green, main_color.blue);
+        if(mode != OFF) stateOn = true; 
+        strip->setMode(ws2812fx_mode);
+        strip->setSpeed(convertSpeed(ws2812fx_speed));
+        strip->setBrightness(brightness);
+        strip->setColor(main_color.red, main_color.green, main_color.blue);
 
         #ifdef ENABLE_E131
         if (mode == E131) {
-          strip.stop();
+          strip->stop();
         }
         #endif
         
@@ -1424,3 +1440,90 @@ bool readStateFS() {
   return false;
 }
 #endif
+
+//Strip Config
+char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
+
+struct
+{
+  uint16_t stripSize = NUMLEDS;
+  uint8_t RGBOrder = NEO_GRB;
+  #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
+    #ifdef USE_WS2812FX_DMA
+      uint8_t pin = 3;
+    #endif
+    #ifdef USE_WS2812FX_UART1
+      uint8_t pin = 2;
+    #endif
+    #ifdef USE_WS2812FX_UART2
+      uint8_t pin = 1;
+    #endif
+  #else
+    uint8_t pin = LED_PIN;
+  #endif
+} WS2812FXStripSettings;
+
+Ticker saveWS2812FXStripSettings;
+
+bool readStripConfigFS(void) {
+  //read stripconfiguration from FS JSON
+  updateFS = true;
+  if (SPIFFS.exists("/neoconfig.json")) {
+    //file exists, reading and loading
+    DBG_OUTPUT_PORT.print("Reading neoconfig file... ");
+    File configFile = SPIFFS.open("/neoconfig.json", "r");
+    if (configFile) {
+      DBG_OUTPUT_PORT.println("Opened!");
+      size_t size = configFile.size();
+      std::unique_ptr<char[]> buf(new char[size]);
+      configFile.readBytes(buf.get(), size);
+      DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
+      DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+      DBG_OUTPUT_PORT.print("Config: ");
+      if (!error) {
+        DBG_OUTPUT_PORT.println(" Parsed!");
+        JsonObject json = jsonBuffer.as<JsonObject>();
+        serializeJson(json, DBG_OUTPUT_PORT);
+        WS2812FXStripSettings.stripSize = json["pixel_pount"];
+        WS2812FXStripSettings.RGBOrder = json["rgb_order"];
+        WS2812FXStripSettings.pin = json["pin"];
+        updateFS = false;
+        return true;
+      } else {
+        DBG_OUTPUT_PORT.print("Failed to load json config: ");
+        DBG_OUTPUT_PORT.println(error.c_str());
+      }
+    } else {
+      DBG_OUTPUT_PORT.println("Failed to open /config.json");
+    }
+  } else {
+    DBG_OUTPUT_PORT.println("Coudnt find config.json");
+  }
+  //end read
+  updateFS = false;
+  return false;
+}
+
+void writeStripConfigFS(void){
+  updateFS = true;
+  //save the strip config to FS JSON
+  DBG_OUTPUT_PORT.print("Saving Strip cfg: ");
+  DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
+  JsonObject json = jsonBuffer.to<JsonObject>();
+  json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+  json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
+  json["pin"] = WS2812FXStripSettings.pin;
+
+  //SPIFFS.remove("/neoconfig.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+  File configFile = SPIFFS.open("/neoconfig.json", "w");
+  if (!configFile) {
+    DBG_OUTPUT_PORT.println("Failed!");
+    updateFS = false;
+  }
+  serializeJson(json, DBG_OUTPUT_PORT);
+  serializeJson(json, configFile);
+  DBG_OUTPUT_PORT.println();
+  configFile.close();
+  updateFS = false;
+  //end save
+}

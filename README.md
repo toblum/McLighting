@@ -1,6 +1,6 @@
 # McLighting v2 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.0-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.1-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
 
 McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
@@ -61,17 +61,19 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
-- [ ] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
-- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
-- [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
-- [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/272)
+- [ ] Make switching between methods: Adafruit NeoPixel, NeoPixelBus's DMA, NeoPixelBus's UART1 and NeoPixelBus's UART2 via REST API
+- [x] Make number of pixels, RGB Order and PIN configurable via REST API
+- [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
+- [x] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [x] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 - [x] MQTT support
 - [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
