@@ -56,11 +56,11 @@
  * 23 Dec 2018 v 2.2.0 
  * - Add E1.31 mode to getModes(), no need to change McLightingUI
  * 
- * 6 Jan 2018 v 2.2.0
+ * 6 Jan 2019 v 2.2.0
  * - fix webserver not responding when E1.31 is mode is acivated: do a webserver.loop() for every 1.31 packet
  * - HA E1.31 mode added
  * 
- * 24 Jan 2018 v 2.2.1
+ * 24 Jan 2019 v 2.2.1
  * - checkForRequests() is vital for e131 mode, remove from #ifdef ENABLE_LEGACY_ANIMATIONS
  * - Minor fixes related to NeoPixelBus UART methods
  * - Modify platformio.ini for future bump to esp8266-arduino v2.5.0 (shamelessly stolen settings from espurna project)
@@ -78,4 +78,7 @@
  * - Rename varaibles to be char instead of String
  * - Added LED pixel count and PIN settings to WiFiManager
  * - Gamma correction to LEDs
+ * 
+ * 7 Mar 2019 v 2.2.2
+ * - Add compiler flag for WS2811 strips #define LED_TYPE_WS2811
  */
