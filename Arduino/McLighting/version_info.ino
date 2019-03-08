@@ -81,4 +81,5 @@
  * 
  * 7 Mar 2019 v 2.2.2
  * - Add compiler flag for WS2811 strips #define LED_TYPE_WS2811
+ * - Hotfix #351
  */
