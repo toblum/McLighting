@@ -1412,7 +1412,9 @@ bool readStateFS() {
         main_color.green = json["green"];
         main_color.blue = json["blue"];
 
-        if(mode != OFF) stateOn = true; 
+        #ifdef ENABLE_HOMEASSISTANT
+          if(mode != OFF) stateOn = true;
+        #endif
         strip->setMode(ws2812fx_mode);
         strip->setSpeed(convertSpeed(ws2812fx_speed));
         strip->setBrightness(brightness);

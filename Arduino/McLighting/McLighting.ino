@@ -889,7 +889,7 @@ void setup() {
     
     DynamicJsonDocument jsonBuffer(200);
     JsonObject json = jsonBuffer.to<JsonObject>();
-    json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+    json["pixel_count"] = WS2812FXStripSettings.stripSize;
     json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
     json["pin"] = WS2812FXStripSettings.pin;
     String json_str;
