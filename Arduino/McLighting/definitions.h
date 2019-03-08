@@ -66,9 +66,10 @@ uint32_t autoParams[][4] = {  // color, speed, mode, duration (milliseconds)
 #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
 
   const char mqtt_will_topic[] = HOSTNAME "/status";
-  const char mqtt_will_payload[] = "ONLINE";
+  const char mqtt_will_payload[] = "OFFLINE";
   const char mqtt_intopic[] = HOSTNAME "/in";
   const char mqtt_outtopic[] = HOSTNAME "/out";
+  bool mqtt_lwt_boot_flag = true;
 
   #ifdef ENABLE_MQTT
     #define MQTT_MAX_PACKET_SIZE 512

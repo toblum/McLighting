@@ -996,7 +996,7 @@ void checkForRequests() {
       mqtt_reconnect_retries++;
       DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
-      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic.c_str(), 2, true, mqtt_will_payload, true)) {
+      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic, 2, true, mqtt_will_payload, true)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];
@@ -1005,6 +1005,11 @@ void checkForRequests() {
         mqtt_client.publish(mqtt_outtopic, message);
         // ... and resubscribe
         mqtt_client.subscribe(mqtt_intopic, qossub);
+        if(mqtt_lwt_boot_flag)
+        {
+          mqtt_client.publish(mqtt_will_topic, "ONLINE");
+          mqtt_lwt_boot_flag = false;
+        }
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
           mqtt_client.subscribe(mqtt_ha_state_in, qossub);
@@ -1103,6 +1108,11 @@ void checkForRequests() {
       //Subscribe
       uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
+      if(mqtt_lwt_boot_flag)
+      {
+        amqttClient.publish(mqtt_will_topic, qospub, false, "ONLINE");
+        mqtt_lwt_boot_flag = false;
+      }
       #ifdef ENABLE_HOMEASSISTANT
         ha_send_data.detach();
         uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in, qossub);
