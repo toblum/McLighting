@@ -999,7 +999,7 @@ void checkForRequests() {
       if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic, 2, true, mqtt_will_payload, true)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
-        char * message = new char[18 + strlen(HOSTNAME) + 1];
+        char message[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
         strcat(message, HOSTNAME);
         mqtt_client.publish(mqtt_outtopic, message);
@@ -1008,7 +1008,7 @@ void checkForRequests() {
         if(mqtt_lwt_boot_flag)
         {
           mqtt_client.publish(mqtt_will_topic, "ONLINE");
-          mqtt_lwt_boot_flag = false;
+          //mqtt_lwt_boot_flag = false;
         }
         #ifdef ENABLE_HOMEASSISTANT
           ha_send_data.detach();
@@ -1102,12 +1102,12 @@ void checkForRequests() {
       DBG_OUTPUT_PORT.println("Connected to MQTT.");
       DBG_OUTPUT_PORT.print("Session present: ");
       DBG_OUTPUT_PORT.println(sessionPresent);
-      char * message = new char[18 + strlen(HOSTNAME) + 1];
+      char message[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
       amqttClient.publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic, qossub);
+      uint16_t packetIdSub1 = amqttClient.subscribe(mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
       if(mqtt_lwt_boot_flag)
       {

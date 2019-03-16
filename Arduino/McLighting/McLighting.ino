@@ -99,16 +99,16 @@ WS2812FX* strip;
 #endif
 #ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #ifndef LED_TYPE_WS2811
-    NeoEsp8266Uart0800KbpsMethod* dma; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    NeoEsp8266Uart1800KbpsMethod* dma; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #else
-    NeoEsp8266Uart0400KbpsMethod* dma; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+    NeoEsp8266Uart1400KbpsMethod* dma; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
   #endif
 #endif
 #ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #ifndef LED_TYPE_WS2811
-    NeoEsp8266Uart1800KbpsMethod* dma; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    NeoEsp8266Uart0800KbpsMethod* dma; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #else
-    NeoEsp8266Uart1400KbpsMethod* dma; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+    NeoEsp8266Uart0400KbpsMethod* dma; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
   #endif
 #endif
 
@@ -123,16 +123,16 @@ void initDMA(uint16_t stripSize = NUMLEDS){
 #endif
 #ifdef USE_WS2812FX_UART1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #ifndef LED_TYPE_WS2811
-    dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, 3); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, 3); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #else
-    dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, 3); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+    dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, 3); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
   #endif
 #endif
 #ifdef USE_WS2812FX_UART2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
   #ifndef LED_TYPE_WS2811
-    dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, 3); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, 3); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
   #else
-    dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, 3); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+    dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, 3); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
   #endif
 #endif
   dma->Initialize();
@@ -293,7 +293,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   strip->setColor(main_color.red, main_color.green, main_color.blue);
   strip->setOptions(0, GAMMA);  // We only have one WS2812FX segment, set color to human readable GAMMA correction
 #ifdef CUSTOM_WS2812FX_ANIMATIONS
-  strip->setCustomMode(F("Fire 2012"), myCustomEffect);
+  strip->setCustomMode(0, F("Fire 2012"), myCustomEffect);
 #endif
   strip->start();
   if(mode != HOLD) mode = SET_MODE;
