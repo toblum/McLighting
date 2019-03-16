@@ -1049,9 +1049,10 @@ void checkForRequests() {
             unsigned int msg_len = measureJson(json) + 1;
             char buffer[msg_len];
             serializeJson(json, buffer, sizeof(buffer));
-            mqtt->beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len, true);
-            mqtt->write((const uint8_t*)buffer, msg_len);
-            mqtt->endPublish();
+            DBG_OUTPUT_PORT.println(buffer);
+            mqtt_client.beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len-1, true);
+            mqtt_client.write((const uint8_t*)buffer, msg_len-1);
+            mqtt_client.endPublish();
           #endif
         #endif
 
