@@ -1167,6 +1167,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (root.containsKey("brightness")) {
         uint8_t json_brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
         if (json_brightness != brightness) {
+          brightness = json_brightness;
           mode = SET_BRIGHTNESS;
         }
       }
