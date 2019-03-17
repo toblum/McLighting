@@ -68,6 +68,7 @@ light:
     brightness: true
     color_temp: true
     rgb: true
+    white_value: true
     optimistic: false
     qos: 0
     retain: true
