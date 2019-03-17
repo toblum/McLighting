@@ -56,13 +56,74 @@
  * 23 Dec 2018 v 2.2.0 
  * - Add E1.31 mode to getModes(), no need to change McLightingUI
  * 
- * 6 Jan 2018 v 2.2.0
+ * 6 Jan 2019 v 2.2.0
  * - fix webserver not responding when E1.31 is mode is acivated: do a webserver.loop() for every 1.31 packet
  * - HA E1.31 mode added
-  * 
- * 15 Feb 2018 v 2.2.0 rgbw 3colors
+ * 
+ * 15 Feb 2019 v 2.2.0 rgbw 3colors
  * - Code cleanup
  * - Implemented support for back- and xtra-color
  * - Implemented IR remote control
  * - Remove some string data types (to be continued)
+ *
+ * 08 Mar 2018 v 2.2.1 rgbw 3colors
+ * - checkForRequests() is not needed
+ * - Minor fixes related to NeoPixelBus UART methods
+ * - Modify platformio.ini for future bump to esp8266-arduino v2.5.0 (shamelessly stolen settings from espurna project)
+ * - Gzipped index.htm & edit.htm, convereted to hex format using xxd -i abcd.gz > html_gz.h
+ * - Pointers added for WS2812FX & NeoPixelBus
+ * - new "REST API": /config?ws_cnt=xxx to change length of LED strip
+ * - new "REST API": /config?ws_rgbo=xxx to change RGB order
+ * - new "REST API": /config?ws_pin=GPIO_NO to change PIN# (Allowed GPIO values: 16/5/4/0/2/14/12/13/15/3/1) if not used DMA or UART. Otherwise it is ignored
+ * - added HA 0.87 version support https://github.com/toblum/McLighting/issues/327
+ * - Added alternative way to send large messages using PubSubClient
+ * - Bump PIO core to 2.0.4
+ * - Send HA state on MQTT connect, address https://github.com/toblum/McLighting/issues/349
+ * - Add LWT for MQTT and AMQTT, address https://github.com/toblum/McLighting/issues/340
+ * - Added file for custom WS2812FX animations in custom slots
+ * - Rename variables to be char instead of String
+ * - Added LED pixel count and PIN settings to WiFiManager
+ * - Gamma correction to LEDs via ws_fxopts
+ * 
+ * 10 Mar 2019 v 2.2.2 rgbw 3colors
+ * - integraded neoconfig.json into config.json
+ * - Add compiler flag for WS2811 strips #define LED_TYPE_WS2811
+ * - new "REST API": /config?hostname=xxx to change hostname
+ * - new "REST API": /config?mqtt_host=xxx to change mqtt hostname
+ * - new "REST API": /config?mqtt_port=xxx to change mqtt port
+ * - new "REST API": /config?mqtt_user=xxx to change mqtt username
+ * - new "REST API": /config?mqtt_pass=xxx to change mqtt password
+ * - new "REST API": /config?ws_fxopt=xxx to change ws2812fx options
+ * - Pointers added for PubSubClient & AMQTTCLient
+ * - RGBOrder is now stored human readable not as integer
+ * - Bugfix on Fire 2012 animation as one variable was destroyed
+ * 
+ * 15 Mar 2019 v 2.2.2 rgbw 3colors
+ * websocket commands
+ * #   Set Maincolor
+ * ##  Set Back color
+ * ### Set xtra Color
+ * ?   Set speed
+ * %   Set brightness
+ * *   Set all
+ * !   Set single LED
+ * +   Set multiple LEDs
+ * R   Set Range
+ * =   Set named Mode (legacy)
+ * $   Get Status
+ * new from here
+ * C   Get Config  
+ * Ch  Set hostname
+ * Cmh Set mqtt hostname
+ * Cmp Set mqtt port
+ * Cmu Set mqtt username
+ * Cmw Set mqtt password
+ * Csc Set Strip LED count
+ * Csr Set Strip RGB Order
+ * Csp Set Strip pin
+ * Cso Set Strip FX Options
+ * to here
+ * ~   Get Modes
+ * /   Set modes
+ * 
  */

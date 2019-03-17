@@ -3,15 +3,16 @@
 // ***************************************************************************
 
 // Prototypes
-void   handleAutoStart(void);
-String listStatusJSON(void);
+void   handleAutoStart();
+String listStatusJSON();
+bool   writeConfigFS(bool);
 
 #if defined(ENABLE_E131)
 void handleE131(){
-  if (!e131.isEmpty())
+  if (!e131->isEmpty())
   {
     e131_packet_t packet;
-    e131.pull(&packet); // Pull packet from ring buffer
+    e131->pull(&packet); // Pull packet from ring buffer
 
     uint16_t universe = htons(packet.universe);
     uint8_t *data = packet.property_values + 1;
@@ -36,12 +37,12 @@ void handleE131(){
     for (uint16_t i = 0; i < len; i++){
       uint16_t j = i * 3;
 /*  #if defined(RGBW)
-      strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
+      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
   #else */
-      strip.setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
+      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
 /*  #endif */
     }
-    strip.show();
+    strip->show();
   }
 }
 #endif
@@ -82,7 +83,7 @@ void getArgs() {
     back_color.blue = ((rgb2 >> 0) & 0xFF);
   } else {
     if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
-      back_color.red = server.arg("r2").toInt();
+      back_color.red = constrain(server.arg("r2").toInt(), 0, 255);
     }
     if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
       back_color.green = server.arg("g2").toInt();
@@ -118,8 +119,8 @@ void getArgs() {
   ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
   }
 
-  if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip.getModeCount())) {
-    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip.getModeCount() - 1);
+  if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
+    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
   }
 
   if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
@@ -198,7 +199,7 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
+  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
   ws2812fx_mode = FX_MODE_STATIC;
   mode = SET_ALL;
 }
@@ -209,8 +210,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\n", led, strip.numPixels(), mypayload );
-  if (led <= strip.numPixels()) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, strip->numPixels(), mypayload );
+  if (led <= strip->numPixels()) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
@@ -219,15 +220,18 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
     strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
     strncpy (whitehex, (const char *) &mypayload[8 + firstChar], 2 );
+    redhex[2] = 0x00;
+    greenhex[2] = 0x00;
+    bluehex[2] = 0x00;
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
     ledstates[led].white =  strtol(whitehex, NULL, 16);
-    DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s] rgb.white: [%s]\n", redhex, greenhex, bluehex, whitehex);
-    DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
-    DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white, mypayload);
-    strip.setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
-    strip.show();
+    DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s] rgb.white: [%s]\r\n", redhex, greenhex, bluehex, whitehex);
+    DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\r\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
+    DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\r\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white, mypayload);
+    strip->setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
+    strip->show();
   }
   mode = CUSTOM;
 }
@@ -248,25 +252,25 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 
   while (nextCommand) {
     // Loop for each LED.
-    char startled[3] = { 0, 0, 0 };
-    char endled[3] = { 0, 0, 0 };
-    char colorval[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    char startled[4] = { 0, 0, 0 };
+    char endled[4] = { 0, 0, 0 };
+    char colorval[9] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     strncpy ( startled, (const char *) &nextCommand[0], 2 );
     strncpy ( endled, (const char *) &nextCommand[2], 2 );
     strncpy ( colorval, (const char *) &nextCommand[4], 8 );
     int rangebegin = atoi(startled);
     int rangeend = atoi(endled);
-    DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \n", rangebegin, rangeend, colorval);
+    DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \r\n", rangebegin, rangeend, colorval);
 
     while ( rangebegin <= rangeend ) {
-      char rangeData[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+      char rangeData[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
       if ( rangebegin < 10 ) {
         // Create the valid 'nextCommand' structure
-        sprintf(rangeData, "0%d%s", rangebegin, colorval);
+        snprintf(rangeData, sizeof(rangeData), "0%d%s", rangebegin, colorval);
       }
       if ( rangebegin >= 10 ) {
         // Create the valid 'nextCommand' structure
-        sprintf(rangeData, "%d%s", rangebegin, colorval);
+        snprintf(rangeData, sizeof(rangeData), "%d%s", rangebegin, colorval);
       }
       // Set one LED
       handleSetSingleLED((uint8_t*) rangeData, 0);
@@ -278,44 +282,158 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
   }
 }
 
-void setModeByStateString(String saved_state_string) {
-  String str_mode = getValue(saved_state_string, '|', 1);
-  mode = static_cast<MODE>(str_mode.toInt());
-  DBG_OUTPUT_PORT.print("mode: ");
-  DBG_OUTPUT_PORT.println(mode);
-  String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
-  ws2812fx_mode = str_ws2812fx_mode.toInt();
-  String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
-  ws2812fx_speed = str_ws2812fx_speed.toInt();
-  String str_brightness = getValue(saved_state_string, '|', 4);
-  brightness = str_brightness.toInt();
-  String str_red = getValue(saved_state_string, '|', 5);
-  main_color.red = str_red.toInt();
-  String str_green = getValue(saved_state_string, '|', 6);
-  main_color.green = str_green.toInt();
-  String str_blue = getValue(saved_state_string, '|', 7);
-  main_color.blue = str_blue.toInt();
-  String str_white = getValue(saved_state_string, '|', 8);
-  main_color.white = str_white.toInt();
-  str_red = getValue(saved_state_string, '|', 9);
-  back_color.red = str_red.toInt();
-  str_green = getValue(saved_state_string, '|', 10);
-  back_color.green = str_green.toInt();
-  str_blue = getValue(saved_state_string, '|', 11);
-  back_color.blue = str_blue.toInt();
-  str_white = getValue(saved_state_string, '|', 12);
-  back_color.white = str_white.toInt();
-  str_red = getValue(saved_state_string, '|', 13);
-  xtra_color.red = str_red.toInt();
-  str_green = getValue(saved_state_string, '|', 14);
-  xtra_color.green = str_green.toInt();
-  str_blue = getValue(saved_state_string, '|', 15);
-  xtra_color.blue = str_blue.toInt();
-  str_white = getValue(saved_state_string, '|', 16);
-  xtra_color.white = str_white.toInt();
-  convertColors();
-  DBG_OUTPUT_PORT.print("Set to state: ");
-  DBG_OUTPUT_PORT.println(listStatusJSON());
+bool checkPin(uint8_t pin) {  
+  if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != WS2812FXStripSettings.pin)) {
+    WS2812FXStripSettings.pin = pin;
+    return true;
+  }
+  return false;
+}
+
+
+neoPixelType checkRGBOrder(char rgbOrder[5]) {
+  for( int i=0 ; i < sizeof(rgbOrder) ; ++i ) rgbOrder[i] = toupper(rgbOrder[i]) ;
+  DBG_OUTPUT_PORT.printf("Checking RGB Order: %s ...", rgbOrder);
+  neoPixelType returnOrder;
+  if (strcmp(rgbOrder, "GRB") == 0)  {
+    returnOrder = NEO_GRB;
+  } else if (strcmp(rgbOrder, "GBR") == 0) {
+    returnOrder = NEO_GBR;
+  } else if (strcmp(rgbOrder, "RGB") == 0) {
+    returnOrder = NEO_RGB;
+  } else if (strcmp(rgbOrder, "RBG") == 0) {
+    returnOrder = NEO_RBG;
+  } else if (strcmp(rgbOrder, "BRG") == 0) {
+    returnOrder = NEO_BRG;
+  } else if (strcmp(rgbOrder, "BGR") == 0) {
+    returnOrder = NEO_BGR;
+  } else if (strcmp(rgbOrder, "WGRB") == 0) {
+    returnOrder = NEO_WGRB;
+  } else if (strcmp(rgbOrder, "WGBR") == 0) {
+    returnOrder = NEO_WGBR;
+  } else if (strcmp(rgbOrder, "WRGB") == 0) {
+    returnOrder = NEO_WRGB;
+  } else if (strcmp(rgbOrder, "WRBG") == 0) {
+    returnOrder = NEO_WRBG;
+  } else if (strcmp(rgbOrder, "WBRG") == 0) {
+    returnOrder = NEO_WBRG;
+  } else if (strcmp(rgbOrder, "WBGR") == 0) {
+    returnOrder = NEO_WBGR;
+  } else if (strcmp(rgbOrder, "GWRB") == 0) {
+    returnOrder = NEO_GWRB;
+  } else if (strcmp(rgbOrder, "GWBR") == 0) {
+    returnOrder = NEO_GWBR;
+  } else if (strcmp(rgbOrder, "RWGB") == 0) {
+    returnOrder = NEO_RWGB;
+  } else if (strcmp(rgbOrder, "RWBG") == 0) {
+    returnOrder = NEO_RWBG;
+  } else if (strcmp(rgbOrder, "BWRG") == 0) {
+    returnOrder = NEO_BWRG;
+  } else if (strcmp(rgbOrder, "BWGR") == 0) {
+    returnOrder = NEO_BWGR;
+  } else if (strcmp(rgbOrder, "GRWB") == 0) {
+    returnOrder = NEO_GRWB;
+  } else if (strcmp(rgbOrder, "GBWR") == 0) {
+    returnOrder = NEO_GBWR;
+  } else if (strcmp(rgbOrder, "RGWB") == 0) {
+    returnOrder = NEO_RGWB;
+  } else if (strcmp(rgbOrder, "RBWG") == 0) {
+    returnOrder = NEO_RBWG;
+  } else if (strcmp(rgbOrder, "BRWG") == 0){
+    returnOrder = NEO_BRWG;
+  } else if (strcmp(rgbOrder, "BGWR") == 0) {
+    returnOrder = NEO_GRBW;
+  } else if (strcmp(rgbOrder, "GRBW") == 0) {
+    returnOrder = NEO_GRBW;
+  } else if (strcmp(rgbOrder, "GBWR") == 0) {
+    returnOrder = NEO_GBRW;
+  } else if (strcmp(rgbOrder, "RGBW") == 0) {
+    returnOrder = NEO_RGBW;
+  } else if (strcmp(rgbOrder, "RBGW") == 0) {
+    returnOrder = NEO_RBGW;
+  } else if (strcmp(rgbOrder, "BRGW") == 0) {
+    returnOrder = NEO_BRGW;
+  } else if (strcmp(rgbOrder, "BGRW") == 0) {
+    returnOrder = NEO_BGRW;
+  } else {
+    DBG_OUTPUT_PORT.print("invalid input!");
+    returnOrder = static_cast<neoPixelType>(checkRGBOrder(WS2812FXStripSettings.RGBOrder));
+  }
+  DBG_OUTPUT_PORT.println("success!");
+  strcpy(WS2812FXStripSettings.RGBOrder, rgbOrder);
+  return returnOrder;
+}
+
+bool setConfByConfString(String saved_conf_string) {
+  if (getValue(saved_conf_string, '|', 0) == "CNF") {
+    DBG_OUTPUT_PORT.printf("Parsed conf: %s\r\n", saved_conf_string.c_str());
+    getValue(saved_conf_string, '|', 1).toCharArray(HOSTNAME, 64);
+  #if defined(ENABLE_MQTT)
+    getValue(saved_conf_string, '|', 2).toCharArray(mqtt_host, 64);
+    mqtt_port = getValue(saved_conf_string, '|', 3).toInt();
+    getValue(saved_conf_string, '|', 4).toCharArray(mqtt_user, 32);
+    getValue(saved_conf_string, '|', 5).toCharArray(mqtt_pass, 32);
+  #endif
+    WS2812FXStripSettings.stripSize = getValue(saved_conf_string, '|', 6).toInt();
+    checkPin(getValue(saved_conf_string, '|', 7).toInt());
+    char tmp_rgbOrder[5];
+    getValue(saved_conf_string, '|', 8).toCharArray(tmp_rgbOrder, 4);
+    checkRGBOrder(tmp_rgbOrder);
+    WS2812FXStripSettings.fxoptions = getValue(saved_conf_string, '|', 9).toInt();
+    return true;
+  } else {
+    DBG_OUTPUT_PORT.println("Saved conf not found!");
+    return false;
+  }
+  return false;
+}
+
+
+
+bool setModeByStateString(String saved_state_string) {
+  if (getValue(saved_state_string, '|', 0) == "STA") {
+    DBG_OUTPUT_PORT.printf("Parsed state: %s\r\n", saved_state_string.c_str());
+    String str_mode = getValue(saved_state_string, '|', 1);
+    mode = static_cast<MODE>(str_mode.toInt());
+    String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
+    ws2812fx_mode = str_ws2812fx_mode.toInt();
+    String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
+    ws2812fx_speed = str_ws2812fx_speed.toInt();
+    String str_brightness = getValue(saved_state_string, '|', 4);
+    brightness = str_brightness.toInt();
+    String str_red = getValue(saved_state_string, '|', 5);
+    main_color.red = str_red.toInt();
+    String str_green = getValue(saved_state_string, '|', 6);
+    main_color.green = str_green.toInt();
+    String str_blue = getValue(saved_state_string, '|', 7);
+    main_color.blue = str_blue.toInt();
+    String str_white = getValue(saved_state_string, '|', 8);
+    main_color.white = str_white.toInt();
+    str_red = getValue(saved_state_string, '|', 9);
+    back_color.red = str_red.toInt();
+    str_green = getValue(saved_state_string, '|', 10);
+    back_color.green = str_green.toInt();
+    str_blue = getValue(saved_state_string, '|', 11);
+    back_color.blue = str_blue.toInt();
+    str_white = getValue(saved_state_string, '|', 12);
+    back_color.white = str_white.toInt();
+    str_red = getValue(saved_state_string, '|', 13);
+    xtra_color.red = str_red.toInt();
+    str_green = getValue(saved_state_string, '|', 14);
+    xtra_color.green = str_green.toInt();
+    str_blue = getValue(saved_state_string, '|', 15);
+    xtra_color.blue = str_blue.toInt();
+    str_white = getValue(saved_state_string, '|', 16);
+    xtra_color.white = str_white.toInt();
+    convertColors();
+    DBG_OUTPUT_PORT.print("Set to state: ");
+    DBG_OUTPUT_PORT.println(listStatusJSON());
+    return true;
+  } else {
+    DBG_OUTPUT_PORT.println("Saved conf not found!");
+    return false;    
+  }
+  return false;
 }
 
 #if defined(ENABLE_LEGACY_ANIMATIONS)
@@ -373,7 +491,7 @@ void handleSetNamedMode(uint8_t * mypayload) {
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   if (isDigit(mypayload[1])) {
     ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-    ws2812fx_mode = constrain(ws2812fx_mode, 0, strip.getModeCount() - 1);
+    ws2812fx_mode = constrain(ws2812fx_mode, 0, strip->getModeCount() - 1);
     mode = SET_MODE;
   } else  {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
@@ -398,16 +516,16 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   }    
 }
 
-String listStatusJSON(void) {
-  //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip.getMode(); 
-  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 150;
+String listStatusJSON() {
+  //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
+  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = ws2812fx_mode;
-  root["ws2812fx_mode_name"] = strip.getModeName(ws2812fx_mode);
+  root["ws2812fx_mode_name"] = strip->getModeName(ws2812fx_mode);
   //root["ws2812fx_mode"] = tmp_mode;
-  //root["ws2812fx_mode_name"] = strip.getModeName(tmp_mode);
+  //root["ws2812fx_mode_name"] = strip->getModeName(tmp_mode);
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
@@ -422,20 +540,53 @@ String listStatusJSON(void) {
   color.add(xtra_color.white);
   color.add(xtra_color.red);
   color.add(xtra_color.green);
-  color.add(xtra_color.blue);  
+  color.add(xtra_color.blue);
   String json;
   serializeJson(root, json);
   jsonBuffer.clear();
   return json;
 }
 
+String listConfigJSON() {
+  //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
+  #if defined(ENABLE_MQTT)
+    const size_t bufferSize = JSON_OBJECT_SIZE(9) + 500;
+  #else
+    const size_t bufferSize = JSON_OBJECT_SIZE(5) + 150;
+  #endif
+  DynamicJsonDocument jsonBuffer(bufferSize);
+  JsonObject root = jsonBuffer.to<JsonObject>();
+  root["hostname"] = HOSTNAME;
+  #if defined(ENABLE_MQTT)
+    root["mqtt_host"] = mqtt_host;
+    root["mqtt_port"] = mqtt_port;
+    root["mqtt_user"] = mqtt_user;
+    root["mqtt_pass"] = mqtt_pass;
+  #endif
+  root["ws_cnt"]    = WS2812FXStripSettings.stripSize;
+  root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
+  root["ws_pin"]    = WS2812FXStripSettings.pin;
+  root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
+  String json;
+  serializeJson(root, json);
+  jsonBuffer.clear();
+  return json;
+}
+
+
 void getStatusJSON() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", listStatusJSON() );
 }
 
-String listModesJSON(void) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount() + 3) + (strip.getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
+void getConfigJSON() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send ( 200, "application/json", listConfigJSON() );
+}
+
+
+String listModesJSON() {
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray root = jsonBuffer.to<JsonArray>();
   JsonObject objectoff = root.createNestedObject();
@@ -451,10 +602,10 @@ String listModesJSON(void) {
   objecte131["mode"] = "e131";
   objecte131["name"] = "E131";
   #endif
-  for (uint8_t i = 0; i < strip.getModeCount(); i++) {
+  for (uint8_t i = 0; i < strip->getModeCount(); i++) {
     JsonObject object = root.createNestedObject();
     object["mode"] = i;
-    object["name"] = strip.getModeName(i);
+    object["name"] = strip->getModeName(i);
   }
   String json;
   serializeJson(root, json);
@@ -496,7 +647,7 @@ void handleMinimalUpload() {
 }
 
 void handleNotFound() {
-  String message = "File Not Found\n\n";
+  String message = "File Not Found\r\n";
   message += "URI: ";
   message += server.uri();
   message += "\nMethod: ";
@@ -518,12 +669,12 @@ int autoCount = 0;
 
 void autoTick() {
   uint32_t setcolors[] = {autoParams[autoCount][0],autoParams[autoCount][1],autoParams[autoCount][2]};
-  strip.setColors(0, setcolors);
-  strip.setSpeed(convertSpeed((uint8_t)autoParams[autoCount][3]));
-  strip.setMode((uint8_t)autoParams[autoCount][4]);
-  autoTicker.once((float)autoParams[autoCount][5], autoTick);
+  strip->setColors(0, setcolors);
+  strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][3]));
+  strip->setMode((uint8_t)autoParams[autoCount][4]);
+  autoTicker.once_ms((uint32_t)autoParams[autoCount][5], autoTick);
   DBG_OUTPUT_PORT.print("autoTick ");
-  DBG_OUTPUT_PORT.println(autoCount);
+    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%06x, %d, %d, %d}\r\n", autoCount, autoParams[autoCount][0], (uint8_t)autoParams[autoCount][1], (uint8_t)autoParams[autoCount][2], (uint32_t)autoParams[autoCount][3], (uint32_t)autoParams[autoCount][4], (uint32_t)autoParams[autoCount][5]);
 
   autoCount++;
   if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
@@ -556,17 +707,17 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   // # ==> Set main color - ## ==> Set 2nd color - ### ==> Set 3rd color
   if (payload[0] == '#') {
     #if defined(ENABLE_MQTT)
-      sprintf(mqtt_buf, "OK %s", payload);
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
     #endif
     if (payload[2] == '#') {
       handleSetXtraColor(payload);
-      DBG_OUTPUT_PORT.printf("Set 3rd color to: R: [%u] G: [%u] B: [%u] W: [%u]\n",  xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
+      DBG_OUTPUT_PORT.printf("Set 3rd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
     } else if (payload[1] == '#') {
       handleSetBackColor(payload);
-      DBG_OUTPUT_PORT.printf("Set 2nd color to: R: [%u] G: [%u] B: [%u] W: [%u]\n",  back_color.red, back_color.green, back_color.blue, back_color.white);
+      DBG_OUTPUT_PORT.printf("Set 2nd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  back_color.red, back_color.green, back_color.blue, back_color.white);
     } else {
       handleSetMainColor(payload);
-      DBG_OUTPUT_PORT.printf("Set main color to: R: [%u] G: [%u] B: [%u] W: [%u]\n", main_color.red, main_color.green, main_color.blue, main_color.white);
+      DBG_OUTPUT_PORT.printf("Set main color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
     }
   }
 
@@ -576,7 +727,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     ws2812fx_speed = constrain(d, 0, 255);
     mode = SET_SPEED;
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\n", ws2812fx_speed);
+    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", ws2812fx_speed);
   }
 
   // % ==> Set brightness
@@ -585,14 +736,14 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     brightness = constrain(b, 0, 255);
     mode = SET_BRIGHTNESS;
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\n", brightness);
+    DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", brightness);
   }
 
   // * ==> Set main color and light all LEDs (Shortcut)
   if (payload[0] == '*') {
     handleSetAllMode(payload);
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\r\n", payload);
   }
 
   // ! ==> Set single LED in given color
@@ -600,9 +751,9 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     handleSetSingleLED(payload, 1);
     Dbg_Prefix(mqtt, num);
     #if defined(ENABLE_MQTT)
-      sprintf(mqtt_buf, "OK %s", payload);
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
     #endif
-    DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\r\n", payload);
   }
 
   // + ==> Set multiple LED in the given colors
@@ -610,18 +761,18 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     handleSetDifferentColors(payload);
     Dbg_Prefix(mqtt, num);
     #if defined(ENABLE_MQTT)
-      sprintf(mqtt_buf, "OK %s", payload);
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
     #endif
-    DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\r\n", payload);
   }
 
   // + ==> Set range of LEDs in the given color
   if (payload[0] == 'R') {
     handleRangeDifferentColors(payload);
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\r\n", payload);
     #if defined(ENABLE_MQTT)
-      sprintf(mqtt_buf, "OK %s", payload);
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
     #endif
   }
 
@@ -631,7 +782,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       // we get mode data
       handleSetNamedMode(payload);
       Dbg_Prefix(mqtt, num);
-      DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", mode);
+      DBG_OUTPUT_PORT.printf("Activated mode [%u]!\r\n", mode);
     }
   #endif
 
@@ -642,10 +793,110 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
-          mqtt_client.publish(mqtt_outtopic, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, json.c_str());
         #endif
         #if ENABLE_MQTT == 1
-          amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, qospub, false, json.c_str());
+        #endif
+      #endif
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+      webSocket.sendTXT(num, json);
+    }
+    DBG_OUTPUT_PORT.println("Get status info: " + json);
+  }
+
+
+    // $ ==> Get config Info.
+  if (payload[0] == 'C') {
+    bool updateFSE = false;
+    if (payload[1] == 'h') {
+      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &payload[2]);
+      updateFSE=true;
+    #if defined(ENABLE_MQTT)
+      initMqtt();
+    #endif
+    }
+  #if defined(ENABLE_MQTT)
+    if (payload[1] == 'm') {
+      if (payload[2] == 'h') {
+        snprintf(mqtt_host, sizeof(mqtt_host), "%s", &payload[3]);
+        updateFSE=true;
+      }
+      if (payload[2] == 'p') {
+        char tmp_port[6];
+        snprintf(tmp_port, sizeof(tmp_port), "%s", &payload[3]);
+        mqtt_port = constrain(atoi(tmp_port), 0, 65535);
+        updateFSE=true;
+      }
+      if (payload[2] == 'u') {
+        snprintf(mqtt_user, sizeof(mqtt_user), "%s", &payload[3]);
+        updateFSE=true;
+      }
+      if (payload[2] == 'w') {
+        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &payload[3]);
+        updateFSE=true;
+      }
+      initMqtt();      
+    }
+  #endif
+    if (payload[1] == 's') {
+      if (payload[2] == 'c') {
+        char tmp_count[6];
+        snprintf(tmp_count, sizeof(tmp_count), "%s", &payload[3]);
+        WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 0, 65535);
+        updateFSE=true;
+      }
+      if (payload[2] == 'r') {     
+        char tmp_rgbOrder[5];
+        snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", &payload[3]);
+        checkRGBOrder(tmp_rgbOrder);
+        updateFSE=true;    
+      }
+    #if !defined(USE_WS2812FX_DMA)
+      if (payload[2] == 'p') {
+        char tmp_pin[3];
+        snprintf(tmp_pin, sizeof(tmp_pin), "%s", &payload[3]);
+        checkPin(atoi(tmp_pin));
+        updateFSE=true;
+      }
+    #endif
+      if (payload[2] == 'o') {
+         char tmp_fxoptions[4];
+         snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%s", &payload[3]);
+         WS2812FXStripSettings.fxoptions = constrain(atoi(tmp_fxoptions), 0, 255);
+         updateFSE=true; 
+      }
+      mode = INIT_STRIP;          
+    }   
+  
+    #if defined(ENABLE_STATE_SAVE)
+      #if ENABLE_STATE_SAVE == 1  
+        (writeConfigFS(updateFSE)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
+      #endif
+      #if ENABLE_STATE_SAVE == 0 
+        if (updateFSE) {
+          char last_conf[223];
+        #if defined(ENABLE_MQTT)
+          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+        #else
+          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+        #endif
+          writeEEPROM(0, 222, last_conf);
+          EEPROM.commit();
+        }
+      #endif
+    #endif     
+    String json = listConfigJSON();
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: ");
+      #if defined(ENABLE_MQTT)
+        #if ENABLE_MQTT == 0
+          mqtt_client->publish(mqtt_outtopic, json.c_str());
+        #endif
+        #if ENABLE_MQTT == 1
+          mqtt_client->publish(mqtt_outtopic, qospub, false, json.c_str());
         #endif
       #endif
     } else {
@@ -663,18 +914,16 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("MQTT: "); 
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
-          // TODO: Fix this, doesn't return anything. Too long?
-          // Hint: https://github.com/knolleary/pubsubclient/issues/110
-          DBG_OUTPUT_PORT.printf("Error: Not implemented. Message too large for pubsubclient.");
-          mqtt_client.publish(mqtt_outtopic, "ERROR: Not implemented. Message too large for pubsubclient.");
-          //String json_modes = listModesJSON();
-          //DBG_OUTPUT_PORT.printf(json_modes.c_str());
-      
-          //int res = mqtt_client.publish(mqtt_outtopic, json_modes.c_str(), json_modes.length());
-          //DBG_OUTPUT_PORT.printf("Result: %d / %d", res, json_modes.length());
+          String json = listModesJSON();
+          unsigned int msg_len = measureJson(json) + 1;
+          char buffer[msg_len];
+          serializeJson(json, buffer, sizeof(buffer));
+          mqtt_client->beginPublish(mqtt_outtopic, msg_len, true);
+          mqtt_client->write((const uint8_t*)buffer, msg_len);
+          mqtt_client->endPublish();       
         #endif
         #if ENABLE_MQTT == 1
-          amqttClient.publish(mqtt_outtopic, qospub, false, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, qospub, false, json.c_str());
         #endif  
       #endif
     } else {
@@ -690,7 +939,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '/') {
     handleSetWS2812FXMode(payload);
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\r\n", payload);
   }
 }
 
@@ -700,12 +949,12 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
   switch (type) {
     case WStype_DISCONNECTED:
-      DBG_OUTPUT_PORT.printf("WS: [%u] Disconnected!\n", num);
+      DBG_OUTPUT_PORT.printf("WS: [%u] Disconnected!\r\n", num);
       break;
 
     case WStype_CONNECTED: {
         IPAddress ip = webSocket.remoteIP(num);
-        DBG_OUTPUT_PORT.printf("WS: [%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        DBG_OUTPUT_PORT.printf("WS: [%u] Connected from %d.%d.%d.%d url: %s\r\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
         // send message to client
         webSocket.sendTXT(num, "Connected");
@@ -713,7 +962,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       break;
 
     case WStype_TEXT:
-      DBG_OUTPUT_PORT.printf("WS: [%u] get Text: %s\n", num, payload);
+      DBG_OUTPUT_PORT.printf("WS: [%u] get Text: %s\r\n", num, payload);
 
       checkpayload(payload, false, num);
 
@@ -821,7 +1070,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        root["color_temp"] = color_temp;
        root["speed"] = ws2812fx_speed;
        //char modeName[30];
-       //strncpy_P(modeName, (PGM_P)strip.getModeName(strip.getMode()), sizeof(modeName)); // copy from progmem
+       //strncpy_P(modeName, (PGM_P)strip->getModeName(strip->getMode()), sizeof(modeName)); // copy from progmem
        #if defined(ENABLE_HOMEASSISTANT)
        if (mode == OFF){
          root["effect"] = "OFF";
@@ -835,7 +1084,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
              if (mode == E131){
                root["effect"] = "E131";
              } else {
-               root["effect"] = strip.getModeName(strip.getMode());
+               root["effect"] = strip->getModeName(strip->getMode());
              }
            }
          }
@@ -845,16 +1094,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       serializeJson(root, buffer, sizeof(buffer));
       jsonBuffer.clear();
       #if ENABLE_MQTT == 0
-      mqtt_client.publish(mqtt_ha_state_out, buffer, true);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
+      mqtt_client->publish(mqtt_ha_state_out, buffer, true);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\r\n", mqtt_ha_state_out, buffer);
       #endif
       #if ENABLE_MQTT == 1
-      amqttClient.publish(mqtt_ha_state_out, 1, true, buffer);
-      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\n", mqtt_ha_state_out, buffer);
+      mqtt_client->publish(mqtt_ha_state_out, 1, true, buffer);
+      DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\r\n", mqtt_ha_state_out, buffer);
       #endif
       new_ha_mqtt_msg = false;
       ha_send_data.detach();
-      DBG_OUTPUT_PORT.printf("Heap size: %u\n", ESP.getFreeHeap());
+      DBG_OUTPUT_PORT.printf("Heap size: %u\r\n", ESP.getFreeHeap());
     }
 
     bool processJson(char* message) {
@@ -942,8 +1191,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             mode = E131;
           }
          #endif
-        for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-          if(String(strip.getModeName(i)) == effectString) {
+        for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+          if(String(strip->getModeName(i)) == effectString) {
             mode = SET_MODE;
             ws2812fx_mode = i;
             break;
@@ -962,7 +1211,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     uint8_t * payload = (uint8_t *) malloc(length + 1);
     memcpy(payload, payload_in, length);
     payload[length] = 0;
-    DBG_OUTPUT_PORT.printf("]: %s\n", payload);
+    DBG_OUTPUT_PORT.printf("]: %s\r\n", payload);
   #endif
 
   #if ENABLE_MQTT == 0
@@ -970,7 +1219,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     uint8_t * payload = (uint8_t *)malloc(length + 1);
     memcpy(payload, payload_in, length);
     payload[length] = 0;
-    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\n", payload);
+    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\r\n", payload);
   #endif
   
     #if defined(ENABLE_HOMEASSISTANT)
@@ -978,13 +1227,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (!processJson((char*)payload)) {
           return;
         }
-        if(!ha_send_data.active())  ha_send_data.once(5, tickerSendState);
-      #if ENABLE_MQTT == 0
-        } else if (strcmp(topic, (char *)mqtt_intopic) == 0) {
-      #endif
-      #if ENABLE_MQTT == 1
+        if(!ha_send_data.active()) ha_send_data.once(5, tickerSendState);
         } else if (strcmp(topic, mqtt_intopic) == 0) {
-      #endif 
     #endif
 
     checkpayload(payload, true);
@@ -998,35 +1242,37 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   #if ENABLE_MQTT == 0
   void mqtt_reconnect() {
     // Loop until we're reconnected
-    while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+    while (!mqtt_client->connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
       mqtt_reconnect_retries++;
-      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
+      DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\r\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
-      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+      if (mqtt_client->connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
         char * message = new char[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
         strcat(message, HOSTNAME);
-        mqtt_client.publish(mqtt_outtopic, message);
+        mqtt_client->publish(mqtt_outtopic, message);
         // ... and resubscribe
-        mqtt_client.subscribe(mqtt_intopic, qossub);
+        mqtt_client->subscribe(mqtt_intopic, qossub);
         #if defined(ENABLE_HOMEASSISTANT)
           ha_send_data.detach();
-          mqtt_client.subscribe(mqtt_ha_state_in, qossub);
+          mqtt_client->subscribe(mqtt_ha_state_in, qossub);
           #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-            const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
+            const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);
             JsonObject json = jsonBuffer.to<JsonObject>();
             json["name"] = HOSTNAME;
-            #if defined(MQTT_HOME_ASSISTANT_0_84_SUPPORT)
+            #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
             json["schema"] = "json";
             #else
             json["platform"] = "mqtt_json";
             #endif
             json["state_topic"] = mqtt_ha_state_out;
             json["command_topic"] = mqtt_ha_state_in;
+            #if !defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
             json["on_command_type"] = "first";
+            #endif
             json["brightness"] = "true";
             json["rgb"] = "true";
             json["optimistic"] = "false";
@@ -1041,28 +1287,37 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             #if defined(ENABLE_E131)
                effect_list.add("E131");
             #endif
-            for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-              effect_list.add(strip.getModeName(i));
+            for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+              effect_list.add(strip->getModeName(i));
             }
-            char buffer[measureJson(json) + 1];
+            // Following will never work for PubSubClient as message size > 1.6kB
+            // char buffer[measureJson(json) + 1];
+            // serializeJson(json, buffer, sizeof(buffer));
+            // mqtt_client->publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+
+            // Alternate way to publish large messages using PubSubClient
+            unsigned int msg_len = measureJson(json) + 1;
+            char buffer[msg_len];
             serializeJson(json, buffer, sizeof(buffer));
-            jsonBuffer.clear();
-            mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+
+            mqtt_client->beginPublish(mqtt_ha_config, msg_len, true);
+            mqtt_client->write((const uint8_t*)buffer, msg_len);
+            mqtt_client->endPublish();
           #endif
         #endif
 
-        DBG_OUTPUT_PORT.printf("MQTT topic in: %s\n", mqtt_intopic);
-        DBG_OUTPUT_PORT.printf("MQTT topic out: %s\n", mqtt_outtopic);
+        DBG_OUTPUT_PORT.printf("MQTT topic in: %s\r\n", mqtt_intopic);
+        DBG_OUTPUT_PORT.printf("MQTT topic out: %s\r\n", mqtt_outtopic);
       } else {
         DBG_OUTPUT_PORT.print("failed, rc=");
-        DBG_OUTPUT_PORT.print(mqtt_client.state());
+        DBG_OUTPUT_PORT.print(mqtt_client->state());
         DBG_OUTPUT_PORT.println(" try again in 5 seconds");
         // Wait 5 seconds before retrying
         delay(5000);
       }
     }
     if (mqtt_reconnect_retries >= MQTT_MAX_RECONNECT_TRIES) {
-      DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\n", mqtt_reconnect_retries);
+      DBG_OUTPUT_PORT.printf("MQTT connection failed, giving up after %d tries ...\r\n", mqtt_reconnect_retries);
     }
   }
   #endif
@@ -1076,7 +1331,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
     void connectToMqtt() {
       DBG_OUTPUT_PORT.println("Connecting to MQTT...");
-      amqttClient.connect();
+      mqtt_client->connect();
     }
 
     void onWifiConnect(const WiFiEventStationModeGotIP& event) {
@@ -1100,27 +1355,29 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       char * message = new char[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
-      amqttClient.publish(mqtt_outtopic, qospub, false, message);
+      mqtt_client->publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = amqttClient.subscribe((char *)mqtt_intopic, qossub);
+      uint16_t packetIdSub1 = mqtt_client->subscribe((char *)mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
       #if defined(ENABLE_HOMEASSISTANT)
         ha_send_data.detach();
-        uint16_t packetIdSub2 = amqttClient.subscribe((char *)mqtt_ha_state_in, qossub);
+        uint16_t packetIdSub2 = mqtt_client->subscribe((char *)mqtt_ha_state_in, qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-          const size_t bufferSize = JSON_ARRAY_SIZE(strip.getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
+          const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
           DynamicJsonDocument jsonBuffer(bufferSize);
           JsonObject json = jsonBuffer.to<JsonObject>();
           json["name"] = HOSTNAME;
-          #if defined(MQTT_HOME_ASSISTANT_0_84_SUPPORT)
+          #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
           json["schema"] = "json";
           #else
           json["platform"] = "mqtt_json";
           #endif
           json["state_topic"] = mqtt_ha_state_out;
           json["command_topic"] = mqtt_ha_state_in;
+          #if !defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
           json["on_command_type"] = "first";
+          #endif
           json["brightness"] = "true";
           json["rgb"] = "true";
           json["optimistic"] = "false";
@@ -1135,13 +1392,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #if defined(ENABLE_E131)
              effect_list.add("E131");
           #endif
-          for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-            effect_list.add(strip.getModeName(i));
+          for (uint8_t i = 0; i < strip->getModeCount(); i++) {
+            effect_list.add(strip->getModeName(i));
           }
           char buffer[measureJson(json) + 1];
           serializeJson(json, buffer, sizeof(buffer));
           jsonBuffer.clear();
-          amqttClient.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), qospub, true, buffer);
+          mqtt_client->publish(mqtt_ha_config, qospub, true, buffer);
         #endif
       #endif
     }
@@ -1178,7 +1435,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 // ***************************************************************************
 #if defined(ENABLE_BUTTON)
   void shortKeyPress() {
-    DBG_OUTPUT_PORT.printf("Short button press\n");
+    DBG_OUTPUT_PORT.printf("Short button press\r\n");
     if (mode == OFF) {
       setModeByStateString(BTN_MODE_SHORT);
       mode = SET_ALL;
@@ -1189,14 +1446,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
   // called when button is kept pressed for less than 2 seconds
   void mediumKeyPress() {
-    DBG_OUTPUT_PORT.printf("Medium button press\n");
+    DBG_OUTPUT_PORT.printf("Medium button press\r\n");
     setModeByStateString(BTN_MODE_MEDIUM);
     mode = SET_ALL;
   }
 
   // called when button is kept pressed for 2 seconds or more
   void longKeyPress() {
-    DBG_OUTPUT_PORT.printf("Long button press\n");
+    DBG_OUTPUT_PORT.printf("Long button press\r\n");
     setModeByStateString(BTN_MODE_LONG);
     mode = SET_ALL;
   }
@@ -1231,18 +1488,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
   }
 #endif
-
+  
 #if defined(ENABLE_BUTTON_GY33)
   void shortKeyPress_gy33() {
-    DBG_OUTPUT_PORT.printf("Short GY-33 button press\n");
+    DBG_OUTPUT_PORT.printf("Short GY-33 button press\r\n");
 //    tcs.setConfig(MCU_LED_04, MCU_WHITE_OFF);
 //    delay(500);
     uint16_t red, green, blue, cl, ct, lux;
     tcs.getRawData(&red, &green, &blue, &cl, &lux, &ct);
-    DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
+    DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\r\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
     uint8_t r, g, b, col, conf;
     tcs.getData(&r, &g, &b, &col, &conf);
-    DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
+    DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
     main_color.red = (pow((r/255.0), 2.5)*255); main_color.green = (pow((g/255.0), 2.5)*255); main_color.blue = (pow((b/255.0), 2.5)*255);main_color.white = 0; 
     ws2812fx_mode = 0;
     mode = SET_ALL;
@@ -1294,128 +1551,132 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void tickerSaveState(){
     updateState = true;
   }
-  #if ENABLE_STATE_SAVE == 1
-    bool updateFS = false;
-    
-    #if defined(ENABLE_MQTT)
-      // Write configuration to FS JSON
-      bool writeConfigFS(bool saveConfig){
-        if (saveConfig) {
-          //FS save
-          updateFS = true;
-          DBG_OUTPUT_PORT.print("Saving config: ");
-          const size_t bufferSize = JSON_OBJECT_SIZE(4) + 150;
-          DynamicJsonDocument jsonBuffer(bufferSize);
-          JsonObject json = jsonBuffer.to<JsonObject>();
-          json["mqtt_host"] = mqtt_host;
-          json["mqtt_port"] = mqtt_port;
-          json["mqtt_user"] = mqtt_user;
-          json["mqtt_pass"] = mqtt_pass;
-        
-          //SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-          File configFile = SPIFFS.open("/config.json", "w");
-          if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
-      
-          serializeJson(json, DBG_OUTPUT_PORT);
-          serializeJson(json, configFile);
-          jsonBuffer.clear();
-          configFile.close();
-          updateFS = false;
-          return true;
-          //end save
-        } else {
-          DBG_OUTPUT_PORT.println("SaveConfig is False!");
-          return false;
-        }
+
+  #if ENABLE_STATE_SAVE == 1  
+    // Write configuration to FS JSON
+    bool writeConfigFS(bool saveConfig){
+      if (saveConfig) {
+        //FS save
+        DBG_OUTPUT_PORT.println("Saving config: ");    
+        File configFile = SPIFFS.open("/config.json", "w");
+        if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
+        DBG_OUTPUT_PORT.println(listConfigJSON());
+        configFile.print(listConfigJSON());
+        configFile.close();
+        return true;
+        //end save
+      } else {
+        DBG_OUTPUT_PORT.println("SaveConfig is false!");
+        return false;
       }
+    }
       
-      // Read search_str to FS
-      bool readConfigFS() {
-        //read configuration from FS JSON
-        updateFS = true;
-        if (SPIFFS.exists("/config.json")) {
-          //file exists, reading and loading
-          DBG_OUTPUT_PORT.print("Reading config file... ");
-          File configFile = SPIFFS.open("/config.json", "r");
-          if (configFile) {
-            DBG_OUTPUT_PORT.println("Opened!");
-            size_t size = configFile.size();
-            std::unique_ptr<char[]> buf(new char[size]);
-            configFile.readBytes(buf.get(), size);
-            const size_t bufferSize = JSON_OBJECT_SIZE(4) + 150;
-            DynamicJsonDocument jsonBuffer(bufferSize);
-            DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-            DBG_OUTPUT_PORT.print("Config: ");
-            if (!error) {
-              DBG_OUTPUT_PORT.println(" Parsed!");
-              JsonObject json = jsonBuffer.as<JsonObject>();
-              serializeJson(json, DBG_OUTPUT_PORT);
-              strcpy(mqtt_host, json["mqtt_host"]);
-              strcpy(mqtt_port, json["mqtt_port"]);
-              strcpy(mqtt_user, json["mqtt_user"]);
-              strcpy(mqtt_pass, json["mqtt_pass"]);
-              updateFS = false;
-              jsonBuffer.clear();
-              return true;
-            } else {
-              DBG_OUTPUT_PORT.print("Failed to load json config: ");
-              DBG_OUTPUT_PORT.println(error.c_str());
-              jsonBuffer.clear();
-            }
+    // Read search_str to FS
+    bool readConfigFS() {
+      //read configuration from FS JSON
+      if (SPIFFS.exists("/config.json")) {
+        //file exists, reading and loading
+        DBG_OUTPUT_PORT.print("Reading config file... ");
+        File configFile = SPIFFS.open("/config.json", "r");
+        if (configFile) {
+          DBG_OUTPUT_PORT.println("Opened!");
+          size_t size = configFile.size();
+          std::unique_ptr<char[]> buf(new char[size]);
+          configFile.readBytes(buf.get(), size);
+          configFile.close();
+       #if defined(ENABLE_MQTT)
+          const size_t bufferSize = JSON_OBJECT_SIZE(5) + 500;
+       #else
+          const size_t bufferSize = JSON_OBJECT_SIZE(1) + 150;
+       #endif
+          DynamicJsonDocument jsonBuffer(bufferSize);
+          DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+          DBG_OUTPUT_PORT.print("Config: ");
+          if (!error) {
+            DBG_OUTPUT_PORT.println("Parsed!");
+            JsonObject json = jsonBuffer.as<JsonObject>();
+            serializeJson(json, DBG_OUTPUT_PORT);
+            DBG_OUTPUT_PORT.println("");
+            strcpy(HOSTNAME, json["hostname"]);
+          #if defined(ENABLE_MQTT)
+            strcpy(mqtt_host, json["mqtt_host"]);
+            mqtt_port = (uint16_t) json["mqtt_port"];
+            strcpy(mqtt_user, json["mqtt_user"]);
+            strcpy(mqtt_pass, json["mqtt_pass"]);
+          #endif
+            WS2812FXStripSettings.stripSize = (uint8_t) json["ws_cnt"];
+            char tmp_rgbOrder[5];
+            strcpy(tmp_rgbOrder, json["ws_rgbo"]);
+            checkRGBOrder(tmp_rgbOrder);
+            uint8_t temp_pin;
+            WS2812FXStripSettings.pin = (uint8_t) json["ws_pin"];  
+            WS2812FXStripSettings.fxoptions = (uint8_t) json["ws_fxopt"];        
+            jsonBuffer.clear();
+            return true;
           } else {
-            DBG_OUTPUT_PORT.println("Failed to open /config.json");
+            DBG_OUTPUT_PORT.print("Failed to load json config: ");
+            DBG_OUTPUT_PORT.println(error.c_str());
+            jsonBuffer.clear();
           }
         } else {
-          DBG_OUTPUT_PORT.println("Coudnt find config.json");
+          DBG_OUTPUT_PORT.println("Failed to open /config.json");
         }
-        //end read
-        updateFS = false;
-        return false;
+      } else {
+        DBG_OUTPUT_PORT.println("Coudnt find config.json");
+        writeConfigFS(true);
       }
-    #endif
+      //end read
+      return false;
+    }
   
-    bool writeStateFS(){
-      updateFS = true;
-      //save the strip state to FS JSON
-      DBG_OUTPUT_PORT.print("Saving cfg: ");
-      //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-      File configFile = SPIFFS.open("/stripstate.json", "w");
-      if (!configFile) {
-        DBG_OUTPUT_PORT.println("Failed!");
-        updateFS = false;
+    bool writeStateFS(bool saveConfig){
+      if (saveConfig) {
+        //save the strip state to FS JSON
+        DBG_OUTPUT_PORT.print("Saving cfg: ");
+        //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+        File configFile = SPIFFS.open("/stripstate.json", "w");
+        if (!configFile) {
+          DBG_OUTPUT_PORT.println("Failed!");
+          settings_save_state.detach();
+          updateState = false;
+          return false;
+        }
+        DBG_OUTPUT_PORT.println(listStatusJSON());
+        configFile.print(listStatusJSON());
+        configFile.close();
         settings_save_state.detach();
         updateState = false;
+        return true;
+        //end save
+      } else {
+        DBG_OUTPUT_PORT.println("SaveStateConfig is false!");
         return false;
       }
-      DBG_OUTPUT_PORT.println(listStatusJSON());
-      configFile.print(listStatusJSON());
-      configFile.close();
-      updateFS = false;
-      settings_save_state.detach();
-      updateState = false;
-      return true;
-      //end save
     }
     
     bool readStateFS() {
       //read strip state from FS JSON
-      updateFS = true;
       //if (resetsettings) { SPIFFS.begin(); SPIFFS.remove("/config.json"); SPIFFS.format(); delay(1000);}
       if (SPIFFS.exists("/stripstate.json")) {
         //file exists, reading and loading
-        DBG_OUTPUT_PORT.print("Read cfg: ");
+        DBG_OUTPUT_PORT.print("Reading state file... ");
         File configFile = SPIFFS.open("/stripstate.json", "r");
         if (configFile) {
+          DBG_OUTPUT_PORT.println("Opened!");
           size_t size = configFile.size();
           // Allocate a buffer to store contents of the file.
           std::unique_ptr<char[]> buf(new char[size]);
           configFile.readBytes(buf.get(), size);
+          configFile.close();
           const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_ARRAY_SIZE(12) + 500;
           DynamicJsonDocument jsonBuffer(bufferSize);
           DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+          DBG_OUTPUT_PORT.print("Config: ");
           if (!error) {
+            DBG_OUTPUT_PORT.print("Parsed");
             JsonObject json = jsonBuffer.as<JsonObject>();
             serializeJson(json, DBG_OUTPUT_PORT);
+            DBG_OUTPUT_PORT.println("");
             mode = static_cast<MODE>((int) json["mode"]);
             ws2812fx_mode = json["ws2812fx_mode"];
             ws2812fx_speed = json["speed"];
@@ -1433,15 +1694,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             xtra_color.green = (uint8_t) json["color"][10];
             xtra_color.blue = (uint8_t) json["color"][11];
             convertColors();
-            strip.setMode(ws2812fx_mode);
-            strip.setSpeed(convertSpeed(ws2812fx_speed));
-            strip.setBrightness(brightness);
-            strip.setColors(0, hex_colors);       
-            updateFS = false;
             jsonBuffer.clear();
             return true;
           } else {
-            DBG_OUTPUT_PORT.println("Failed to parse JSON!");
+            DBG_OUTPUT_PORT.print("Failed to load json config: ");
+            DBG_OUTPUT_PORT.println(error.c_str());
             jsonBuffer.clear();
           }
         } else {
@@ -1449,9 +1706,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         }
       } else {
         DBG_OUTPUT_PORT.println("Couldn't find \"/stripstate.json\"");
+        writeStateFS(true);
       }
       //end read
-      updateFS = false;
       return false;
     }
   #endif
@@ -1467,12 +1724,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         res += char(EEPROM.read(i + offset));
         //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
       }
-      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\n", res.c_str());
+      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\r\n", res.c_str());
       return res;
     }
     
     void writeEEPROM(int offset, int len, String value) {
-      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\n", value.c_str());
+      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\r\n", value.c_str());
       for (int i = 0; i < len; ++i)
       {
         if (i < value.length()) {
@@ -1482,6 +1739,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         }
       }
     }
+
+
+    
   #endif
 #endif
 
@@ -1724,7 +1984,7 @@ void handleRemote() {
       } // end of if HOLD
       if (results.value == rmt_commands[MODE_UP]) { //Mode Up
         last_remote_cmd = results.value;
-        if ((ws2812fx_mode < strip.getModeCount()-1) && (mode == HOLD)) {
+        if ((ws2812fx_mode < strip->getModeCount()-1) && (mode == HOLD)) {
           ws2812fx_mode = ws2812fx_mode + 1;
         }
         mode = SET_MODE;
