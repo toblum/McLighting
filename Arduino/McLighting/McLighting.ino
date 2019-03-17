@@ -149,16 +149,16 @@ WS2812FX* strip = NULL;
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
     dma->Initialize();
@@ -322,7 +322,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
   #endif
   strip->setBrightness(brightness);
 //parameters: index, start, stop, mode, color, speed, options
-  strip->setSegment(0,  0,  WS2812FXStripSettings.stripSize - 1, ws2812fx_mode, hex_colors, convertSpeed(ws2812fx_speed), WS2812FXStripSettings.fxoptions);
+  strip->setSegment(0,  0,  stripSize - 1, ws2812fx_mode, hex_colors, convertSpeed(ws2812fx_speed), fxoptions);
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   strip->setCustomMode(0, F("Fire 2012"), myCustomEffect0);
 //strip->setCustomMode(1, F("CustEffect"), myCustomEffect1); 

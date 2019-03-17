@@ -28,11 +28,11 @@ void handleE131(){
 /*  #if defined(RGBW)
     uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
     if (NUMLEDS <= multipacketOffset) return;
-    uint16_t len = (128 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 128;
+    uint16_t len = (128 + multipacketOffset > WS2812FXStripSettings.stripSize) ? (WS2812FXStripSettings.stripSize - multipacketOffset) : 128;
   #else*/
     uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-    if (NUMLEDS <= multipacketOffset) return;
-    uint16_t len = (170 + multipacketOffset > NUMLEDS) ? (NUMLEDS - multipacketOffset) : 170;
+    if (WS2812FXStripSettings.stripSize <= multipacketOffset) return;
+    uint16_t len = (170 + multipacketOffset > WS2812FXStripSettings.stripSize) ? (WS2812FXStripSettings.stripSize - multipacketOffset) : 170;
 /*  #endif */
     for (uint16_t i = 0; i < len; i++){
       uint16_t j = i * 3;
