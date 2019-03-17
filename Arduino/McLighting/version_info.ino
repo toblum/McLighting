@@ -126,4 +126,7 @@
  * ~   Get Modes
  * /   Set modes
  * 
+ * 17 Mar 2019 
+ * adressed issue: #2
+ * adressed issue: #3
  */

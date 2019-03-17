@@ -272,25 +272,27 @@
 
     */
 
-    bool updateFSE = false;
+    bool updateStrip = false;
+    bool updateConf  = false;
     if(server.hasArg("ws_cnt")){
       uint16_t pixelCt = server.arg("ws_cnt").toInt();
       if (pixelCt > 0) {
         WS2812FXStripSettings.stripSize = pixelCt;
-        updateFSE = true;
+        updateStrip = true;
       }
     }
     if(server.hasArg("ws_rgbo")){
       char tmp_rgbOrder[5];
       snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", server.arg("ws_rgbo").c_str());
       checkRGBOrder(tmp_rgbOrder);
-      updateFSE = true;
+      updateStrip = true;
+      updateConf = true;
     }
     
 #if !defined(USE_WS2812FX_DMA)    
     if(server.hasArg("wspin")){
       if (checkPin(server.arg("wspin").toInt()) {
-        updateFSE = true;
+        updateStrip = true;
         DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
@@ -300,45 +302,48 @@
     
     if(server.hasArg("ws_fxopt")){
       WS2812FXStripSettings.fxoptions = server.arg("ws_fxopt").toInt();
-      updateFSE = true;
+      updateStrip = true;
     }
 
-    if(updateFSE) {
+    if(updateStrip) {
       mode = INIT_STRIP;
     }
     
     if(server.hasArg("hostname")){
       snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", server.arg("hostname").c_str());
-      updateFSE = true;
+      updateConf = true;
     }
     
 #if defined(ENABLE_MQTT)   
     if(server.hasArg("mqtt_host")){
       snprintf(mqtt_host, sizeof(mqtt_host), "%s", server.arg("mqtt_host").c_str());
-      updateFSE = true;
+      updateConf = true;
     }
     if(server.hasArg("mqtt_port")){
       if ((server.arg("mqtt_port").toInt() >= 0) && (server.arg("mqtt_port").toInt() <=65535)) {
         mqtt_port = server.arg("mqttport").toInt();
-        updateFSE = true;
+        updateConf = true;
       }    
     }
     if(server.hasArg("mqtt_user")){
       snprintf(mqtt_user, sizeof(mqtt_user), "%s", server.arg("mqtt_user").c_str());
-      updateFSE = true;
+      updateConf = true;
     }
     if(server.hasArg("mqtt_pass")){
       snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
-      updateFSE = true;
-    } 
+      updateConf = true;
+    }
+    if (updateConf) {
+      initMqtt();
+    }  
 #endif
 
 #if defined(ENABLE_STATE_SAVE)
   #if ENABLE_STATE_SAVE == 1  
-    (writeConfigFS(updateFSE)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
+    (writeConfigFS(updateConf || updateStrip)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
   #endif
   #if ENABLE_STATE_SAVE == 0 
-    if (updateFSE) {
+    if (updateConf || updateStrip) {
       char last_conf[223];
     #if defined(ENABLE_MQTT)
       snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
@@ -352,14 +357,8 @@
 #endif
     getConfigJSON();
     delay(500);
-  
-#if defined(ENABLE_MQTT)
-    if (updateFSE) {
-      initMqtt();
-    }  
-#endif
-
-    updateFSE = false;
+    updateStrip = false;
+    updateConf = false;
   });
   
   server.on("/off", []() {

@@ -810,73 +810,76 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
 
     // $ ==> Get config Info.
   if (payload[0] == 'C') {
-    bool updateFSE = false;
-    if (payload[1] == 'h') {
-      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &payload[2]);
-      updateFSE=true;
-    #if defined(ENABLE_MQTT)
-      initMqtt();
-    #endif
-    }
-  #if defined(ENABLE_MQTT)
-    if (payload[1] == 'm') {
-      if (payload[2] == 'h') {
-        snprintf(mqtt_host, sizeof(mqtt_host), "%s", &payload[3]);
-        updateFSE=true;
-      }
-      if (payload[2] == 'p') {
-        char tmp_port[6];
-        snprintf(tmp_port, sizeof(tmp_port), "%s", &payload[3]);
-        mqtt_port = constrain(atoi(tmp_port), 0, 65535);
-        updateFSE=true;
-      }
-      if (payload[2] == 'u') {
-        snprintf(mqtt_user, sizeof(mqtt_user), "%s", &payload[3]);
-        updateFSE=true;
-      }
-      if (payload[2] == 'w') {
-        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &payload[3]);
-        updateFSE=true;
-      }
-      initMqtt();      
-    }
-  #endif
+    bool updateStrip = false;
+    bool updateConf  = false;
     if (payload[1] == 's') {
       if (payload[2] == 'c') {
         char tmp_count[6];
         snprintf(tmp_count, sizeof(tmp_count), "%s", &payload[3]);
         WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 0, 65535);
-        updateFSE=true;
+        updateStrip = true;
       }
       if (payload[2] == 'r') {     
         char tmp_rgbOrder[5];
         snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", &payload[3]);
         checkRGBOrder(tmp_rgbOrder);
-        updateFSE=true;    
+        updateStrip=true;    
       }
     #if !defined(USE_WS2812FX_DMA)
       if (payload[2] == 'p') {
         char tmp_pin[3];
         snprintf(tmp_pin, sizeof(tmp_pin), "%s", &payload[3]);
         checkPin(atoi(tmp_pin));
-        updateFSE=true;
+        updateStrip = true;
+        updateConf = true;
       }
     #endif
       if (payload[2] == 'o') {
          char tmp_fxoptions[4];
          snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%s", &payload[3]);
          WS2812FXStripSettings.fxoptions = constrain(atoi(tmp_fxoptions), 0, 255);
-         updateFSE=true; 
+         updateStrip = true;
+      }        
+    }
+    if (updateStrip){
+      mode = INIT_STRIP;   
+    }
+    if (payload[1] == 'h') {
+      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &payload[2]);
+      updateConf = true;
+    }
+  #if defined(ENABLE_MQTT)
+    if (payload[1] == 'm') {
+      if (payload[2] == 'h') {
+        snprintf(mqtt_host, sizeof(mqtt_host), "%s", &payload[3]);
+        updateConf = true;
       }
-      mode = INIT_STRIP;          
-    }   
-  
+      if (payload[2] == 'p') {
+        char tmp_port[6];
+        snprintf(tmp_port, sizeof(tmp_port), "%s", &payload[3]);
+        mqtt_port = constrain(atoi(tmp_port), 0, 65535);
+        updateConf = true;
+      }
+      if (payload[2] == 'u') {
+        snprintf(mqtt_user, sizeof(mqtt_user), "%s", &payload[3]);
+        updateConf = true;
+      }
+      if (payload[2] == 'w') {
+        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &payload[3]);
+        updateConf = true;
+      }    
+    }
+    if (updateConf) {
+      initMqtt();
+    }    
+  #endif   
+ 
     #if defined(ENABLE_STATE_SAVE)
       #if ENABLE_STATE_SAVE == 1  
-        (writeConfigFS(updateFSE)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
+        (writeConfigFS(updateConf || updateStrip)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
       #endif
       #if ENABLE_STATE_SAVE == 0 
-        if (updateFSE) {
+        if (updateConf || updateStrip) {
           char last_conf[223];
         #if defined(ENABLE_MQTT)
           snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
@@ -904,6 +907,8 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, json);
     }
+    updateStrip = false;
+    updateConf  = false;
     DBG_OUTPUT_PORT.println("Get status info: " + json);
   }
 
@@ -1066,6 +1071,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        color["g3"] = xtra_color.green;
        color["b3"] = xtra_color.blue;
        color["w3"] = xtra_color.white;
+       if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+         root["white_value"]= main_color.white;
+       }
        root["brightness"] = brightness;
        root["color_temp"] = color_temp;
        root["speed"] = ws2812fx_speed;
@@ -1147,7 +1155,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         xtra_color.white = (uint8_t) color["w3"];
         mode = SET_COLOR;
       }
-
+      
+      if (root.containsKey("white_value")) {
+        uint8_t json_white_value = constrain((uint8_t) root["white_value"], 0, 255);
+        if (json_white_value != main_color.white) {
+          main_color.white = json_white_value;
+          mode = SET_COLOR;
+        }
+      }
+      
       if (root.containsKey("speed")) {
         uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (json_speed != ws2812fx_speed) {
@@ -1276,6 +1292,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             #endif
             json["brightness"] = "true";
             json["rgb"] = "true";
+            if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+              json["white_value"]= "true";
+            }
             json["optimistic"] = "false";
             json["color_temp"] = "true";
             json["effect"] = "true";
@@ -1381,6 +1400,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #endif
           json["brightness"] = "true";
           json["rgb"] = "true";
+          if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+            json["white_value"]= "true";
+          }
           json["optimistic"] = "false";
           json["color_temp"] = "true";
           json["effect"] = "true";
