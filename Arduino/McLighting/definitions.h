@@ -147,7 +147,7 @@ struct ledstate                // Data structure to store a state of a single le
   uint8_t red;
   uint8_t green;
   uint8_t blue;
-  uint8_t white;               // is abused for tv_mode and custom animations as it is already here and white channel is not used there.
+  uint8_t white;
 };
 
 typedef struct ledstate LEDState;        // Define the datatype LEDState

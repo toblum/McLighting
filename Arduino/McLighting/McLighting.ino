@@ -312,6 +312,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   strip->setCustomMode(0, F("Fire 2012"), myCustomEffect0);
 //strip->setCustomMode(1, F("CustEffect"), myCustomEffect1);
+  gReverseDirection = (WS2812FXStripSettings.fxoptions & 128);
 #endif
 #if defined(ENABLE_E131)
 /*    

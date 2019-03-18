@@ -9,8 +9,6 @@ More info on how to create custom aniamtions for WS2812FX: https://github.com/ki
 
 #include <FastLED.h>  //https://github.com/FastLED/FastLED
 
-//byte* heat;
-
 /*
  * paste in the Fire2012 code with a small edit at the end which uses the
  * setPixelColor() function to copy the color data to the ws2812fx instance. 
