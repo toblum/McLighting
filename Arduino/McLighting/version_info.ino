@@ -82,4 +82,10 @@
  * 7 Mar 2019 v 2.2.2
  * - Add compiler flag for WS2811 strips #define LED_TYPE_WS2811
  * - Hotfix #351
+ * 
+ * 18 Mar 2019 v 2.2.3 (mostly bugfix)
+ * - PubSubClient related bug fixed
+ * - UART 1 and 0 were mixed up
+ * - LWT revisit
+ * - Custom mode needs index
  */
