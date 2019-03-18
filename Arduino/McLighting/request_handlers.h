@@ -208,10 +208,11 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   // decode led index
   char templed[3];
   strncpy (templed, (const char *) &mypayload[firstChar], 2 );
+  templed[2] = 0x00;
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, strip->numPixels(), mypayload );
-  if (led <= strip->numPixels()) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, WS2812FXStripSettings.stripSize, mypayload );
+  if (led <= WS2812FXStripSettings.stripSize) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
@@ -223,6 +224,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     redhex[2] = 0x00;
     greenhex[2] = 0x00;
     bluehex[2] = 0x00;
+    whitehex[2] = 0x00;
+    /*
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
     ledstates[led].blue =  strtol(bluehex, NULL, 16);
@@ -231,6 +234,16 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\r\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
     DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\r\n", led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white, mypayload);
     strip->setPixelColor(led, ledstates[led].red, ledstates[led].green, ledstates[led].blue, ledstates[led].white);
+    */
+    LEDState color;
+    color.red =   strtol(redhex, NULL, 16);
+    color.green = strtol(greenhex, NULL, 16);
+    color.blue =  strtol(bluehex, NULL, 16);
+    color.white =  strtol(whitehex, NULL, 16);
+    //DBG_OUTPUT_PORT.printf("rgb.red: [%s] rgb.green: [%s] rgb.blue: [%s] rgb.white: [%s]\r\n", redhex, greenhex, bluehex, whitehex);
+    //DBG_OUTPUT_PORT.printf("rgb.red: [%i] rgb.green: [%i] rgb.blue: [%i] rgb.white: [%i]\r\n", strtol(redhex, NULL, 16), strtol(greenhex, NULL, 16), strtol(bluehex, NULL, 16), strtol(whitehex, NULL, 16));
+    //DBG_OUTPUT_PORT.printf("WS: Set single led [%i] to [%i] [%i] [%i] [%i] (%s)!\r\n", led, color.red, color.green, color.blue, color.white, mypayload);
+    strip->setPixelColor(led, color.red, color.green, color.blue, color.white);
     strip->show();
   }
   mode = CUSTOM;
@@ -252,26 +265,22 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 
   while (nextCommand) {
     // Loop for each LED.
-    char startled[4] = { 0, 0, 0 };
-    char endled[4] = { 0, 0, 0 };
-    char colorval[9] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    char startled[4];
+    char endled[4];
+    char colorval[9];
     strncpy ( startled, (const char *) &nextCommand[0], 2 );
+    startled[3] = 0x00;
     strncpy ( endled, (const char *) &nextCommand[2], 2 );
+    endled[3] = 0x00;
     strncpy ( colorval, (const char *) &nextCommand[4], 8 );
-    int rangebegin = atoi(startled);
-    int rangeend = atoi(endled);
+    colorval[8] = 0x00;
+    uint8_t rangebegin = atoi(startled);
+    uint8_t rangeend = atoi(endled);
     DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \r\n", rangebegin, rangeend, colorval);
 
     while ( rangebegin <= rangeend ) {
-      char rangeData[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-      if ( rangebegin < 10 ) {
-        // Create the valid 'nextCommand' structure
-        snprintf(rangeData, sizeof(rangeData), "0%d%s", rangebegin, colorval);
-      }
-      if ( rangebegin >= 10 ) {
-        // Create the valid 'nextCommand' structure
-        snprintf(rangeData, sizeof(rangeData), "%d%s", rangebegin, colorval);
-      }
+      char rangeData[11];
+      snprintf(rangeData, sizeof(rangeData), "%02d%s", rangebegin, colorval);
       // Set one LED
       handleSetSingleLED((uint8_t*) rangeData, 0);
       rangebegin++;
@@ -374,7 +383,7 @@ bool setConfByConfString(String saved_conf_string) {
     getValue(saved_conf_string, '|', 4).toCharArray(mqtt_user, 32);
     getValue(saved_conf_string, '|', 5).toCharArray(mqtt_pass, 32);
   #endif
-    WS2812FXStripSettings.stripSize = getValue(saved_conf_string, '|', 6).toInt();
+    WS2812FXStripSettings.stripSize = constrain(getValue(saved_conf_string, '|', 6).toInt(), 0, MAXLEDS);
     checkPin(getValue(saved_conf_string, '|', 7).toInt());
     char tmp_rgbOrder[5];
     getValue(saved_conf_string, '|', 8).toCharArray(tmp_rgbOrder, 4);
@@ -816,18 +825,21 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       if (payload[2] == 'c') {
         char tmp_count[6];
         snprintf(tmp_count, sizeof(tmp_count), "%s", &payload[3]);
-        WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 0, 65535);
+        tmp_count[5] = 0x00;
+        WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 0, MAXLEDS);
         updateStrip = true;
       }
       if (payload[2] == 'r') {     
         char tmp_rgbOrder[5];
         snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", &payload[3]);
+        tmp_rgbOrder[4] = 0x00;
         checkRGBOrder(tmp_rgbOrder);
         updateStrip=true;    
       }
     #if !defined(USE_WS2812FX_DMA)
       if (payload[2] == 'p') {
         char tmp_pin[3];
+        tmp_pin[2] = 0x00;
         snprintf(tmp_pin, sizeof(tmp_pin), "%s", &payload[3]);
         checkPin(atoi(tmp_pin));
         updateStrip = true;
@@ -837,6 +849,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       if (payload[2] == 'o') {
          char tmp_fxoptions[4];
          snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%s", &payload[3]);
+         tmp_fxoptions[3] = 0x00;
          WS2812FXStripSettings.fxoptions = constrain(atoi(tmp_fxoptions), 0, 255);
          updateStrip = true;
       }        
@@ -886,6 +899,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         #else
           snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
         #endif
+          last_conf[sizeof(last_conf)-1]= 0x00;
           writeEEPROM(0, 222, last_conf);
           EEPROM.commit();
         }
@@ -1627,7 +1641,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             strcpy(mqtt_user, json["mqtt_user"]);
             strcpy(mqtt_pass, json["mqtt_pass"]);
           #endif
-            WS2812FXStripSettings.stripSize = (uint8_t) json["ws_cnt"];
+            WS2812FXStripSettings.stripSize = constrain ((uint8_t) json["ws_cnt"],0, MAXLEDS);
             char tmp_rgbOrder[5];
             strcpy(tmp_rgbOrder, json["ws_rgbo"]);
             checkRGBOrder(tmp_rgbOrder);

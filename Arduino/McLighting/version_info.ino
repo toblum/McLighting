@@ -129,4 +129,7 @@
  * 17 Mar 2019 
  * adressed issue: #2
  * adressed issue: #3
+ * 
+ * 18 Mar 2019 
+ * adressed issue: #6 (possibly affects R[r_start][r_end][hexrgb] [...]; +[numled][hexrgb]+[numled][hexrgb]+[numled][hexrgb] !<numled><hexrgb>)
  */

@@ -2,7 +2,8 @@
 
 // Neopixel
 #define LED_PIN 3          // PIN (15 / D8) where neopixel / WS2811 strip is attached; is configurable, if USE_WS2812FX_DMA is not defined. Just for the start
-#define NUMLEDS 144        // Number of leds in the; is configurable just for the start
+#define NUMLEDS 50         // Number of leds in the; is configurable just for the start
+#define MAXLEDS 700        // due to memory limit of esp8266 at the moment only 700 leds are supported.
 #define RGBORDER "GRBW"    // RGBOrder; is configurable just for the start
 #define FX_OPTIONS 56      // ws2812fx Options 56 = SIZE_SMALL + FADE_MEDIUM + GAMMA  is configurable just for the start; for WS2812FX setSegment OPTIONS, see: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -30,8 +31,8 @@ char HOSTNAME[65] = "McLightingRGBW_02";   // Friedly hostname  is configurable 
 #if defined(ENABLE_E131)
   #define MULTICAST false
   #define START_UNIVERSE 1            // First DMX Universe to listen for
-  #define END_UNIVERSE 2              // Total number of Universes to listen for, starting at UNIVERSE
-                                      // MUST: END_UNIVERSE >= START_UNIVERSE
+  uint8_t END_UNIVERSE = 1;            // Total number of Universes to listen for, starting at UNIVERSE
+
 #endif
 
 #if defined(ENABLE_REMOTE)
@@ -140,17 +141,17 @@ int ws2812fx_mode = 0;         // Global variable for storing the WS2812FX modes
 
 bool shouldSaveConfig = false; // For WiFiManger custom config
 
-uint32_t hex_colors[3] = {};  // Color array for setting WS2812FX
+uint32_t hex_colors[3] = {};   // Color array for setting WS2812FX
 struct ledstate                // Data structure to store a state of a single led
 {
   uint8_t red;
   uint8_t green;
   uint8_t blue;
-  uint8_t white;
+  uint8_t white;               // is abused for tv_mode and custom animations as it is already here and white channel is not used there.
 };
 
-typedef struct ledstate LEDState;     // Define the datatype LEDState
-LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
+typedef struct ledstate LEDState;        // Define the datatype LEDState
+uint8_t* ledstates;                      // Set a pointer to get an array of led states to store the state of the whole strip
 LEDState main_color = { 255, 0, 0, 0 };  // Store the "main color" of the strip used in single color modes
 LEDState back_color = {   0, 0, 0, 0 };  // Store the "2nd color" of the strip used in single color modes
 LEDState xtra_color = {   0, 0, 0, 0 };  // Store the "3rd color" of the strip used in single color modes

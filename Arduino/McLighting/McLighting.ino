@@ -135,7 +135,6 @@ WS2812FX* strip = NULL;
   #endif
   
   void initDMA(uint16_t stripSize = NUMLEDS){
-    if (dma) delete dma;
     uint8_t ledcolors = 3;
     if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
       ledcolors = 4;
@@ -267,18 +266,23 @@ void saveConfigCallback () {
   #include "mode_custom_ws2812fx_animations.h" // Add animations in this file
 #endif
 
-
 // function to Initialize the strip
 void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrder[5] = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin, uint8_t fxoptions = WS2812FXStripSettings.fxoptions ){
-  if (strip != NULL) {
-    DBG_OUTPUT_PORT.println("Deleting strip!");
+  DBG_OUTPUT_PORT.println("Initializing strip!");
+  if (dma != NULL) {
+     delete(dma);
+  }
+  if (strip != NULL) { //second one created second to delete
     delete(strip);
     WS2812FXStripSettings.stripSize = stripSize;
     strcpy(WS2812FXStripSettings.RGBOrder, RGBOrder);
     WS2812FXStripSettings.pin = pin;
     WS2812FXStripSettings.fxoptions = fxoptions;
   }
-  DBG_OUTPUT_PORT.println("Initializing strip!");
+  if (ledstates != NULL) {
+    delete(ledstates);
+  }
+  ledstates = new uint8_t [WS2812FXStripSettings.stripSize];
 #if !defined(LED_TYPE_WS2811)
   strip = new WS2812FX(stripSize, pin, checkRGBOrder(RGBOrder) + NEO_KHZ800);
 #else
@@ -297,24 +301,6 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
   // and minimize distance between Arduino and first pixel.  Avoid connecting
   // on a live circuit...if you must, connect GND first.
   
-#if defined(CUSTOM_WS2812FX_ANIMATIONS)
-  if (heat != NULL) {
-      delete(heat);
-  }
-  heat = new byte [WS2812FXStripSettings.stripSize];
-#endif
-#if defined(ENABLE_TV)
-  if (ledStates != NULL) {
-      delete(ledStates);
-  }
-  ledStates = new uint8_t [WS2812FXStripSettings.stripSize];
-#endif
-/*
-  if (ledstates != NULL) {
-    delete(ledstates);
-  }
-  ledStates = new LEDState ledstates[WS2812FXStripSettings.stripSize];
-*/
   strip->init();
   #if defined(USE_WS2812FX_DMA)
     initDMA(stripSize);
@@ -325,7 +311,20 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
   strip->setSegment(0,  0,  stripSize - 1, ws2812fx_mode, hex_colors, convertSpeed(ws2812fx_speed), fxoptions);
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   strip->setCustomMode(0, F("Fire 2012"), myCustomEffect0);
-//strip->setCustomMode(1, F("CustEffect"), myCustomEffect1); 
+//strip->setCustomMode(1, F("CustEffect"), myCustomEffect1);
+#endif
+#if defined(ENABLE_E131)
+/*    
+    uint8_t universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
+    if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+      universe_leds = 128.0;
+    }
+*/
+    float float_enduni = stripSize/170.0; 
+    uint8_t END_UNIVERSE = stripSize/170.0;
+    if (float_enduni > END_UNIVERSE) {
+      END_UNIVERSE = END_UNIVERSE +1;
+    }
 #endif
 }
 
@@ -532,7 +531,7 @@ void setup() {
       strcpy(mqtt_pass, custom_mqtt_pass.getValue());
     #endif
     strcpy(tmp_strip_size, custom_strip_size.getValue());
-    WS2812FXStripSettings.stripSize = atoi(custom_strip_size.getValue());
+    WS2812FXStripSettings.stripSize = constrain(atoi(custom_strip_size.getValue()), 0, MAXLEDS);
     #if !defined(USE_WS2812FX_DMA)
       checkPin(atoi(custom_led_pin.getValue()));
     #endif
@@ -557,8 +556,6 @@ void setup() {
       }
     #endif
   #endif
-
-  initStrip();
  
   //if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
@@ -618,6 +615,8 @@ void setup() {
   initMqtt();
 #endif
 
+  initStrip();
+
 #if ENABLE_MQTT == 1
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
@@ -667,7 +666,7 @@ void setup() {
       DBG_OUTPUT_PORT.println(F("*** e131.begin failed ***"));
   }
   #endif
- DBG_OUTPUT_PORT.println("You are here!: 1117"); 
+
   prevmode = mode;
   
   #if defined(ENABLE_BUTTON_GY33)
