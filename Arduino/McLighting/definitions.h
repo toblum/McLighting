@@ -9,7 +9,7 @@
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #define LED_BUILTIN 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 
-char HOSTNAME[65] = "McLightingRGBW_02";   // Friedly hostname  is configurable just for the start
+char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just for the start
 
 #define ENABLE_OTA 1                  // If defined, enable Arduino OTA code. If set to 0 enable Arduino OTA code, if set to 1 enable ESP8266HTTPUpdateServer OTA code.
 #define ENABLE_MQTT 1                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
@@ -37,7 +37,6 @@ char HOSTNAME[65] = "McLightingRGBW_02";   // Friedly hostname  is configurable 
 
 #if defined(ENABLE_REMOTE)
   int      selected_color = 1;
-  int      chng = 1;
   uint64_t last_remote_cmd;
   enum                     RMT_BTN {ON_OFF,    MODE_UP, MODE_DOWN,   RED_UP, RED_DOWN, GREEN_UP, GREEN_DOWN,  BLUE_UP, BLUE_DOWN, WHITE_UP, WHITE_DOWN, BRIGHTNESS_UP, BRIGHTNESS_DOWN, SPEED_UP, SPEED_DOWN,    COL_M,    COL_B,    COL_X, AUTOMODE,    CUST_1,   CUST_2,    CUST_3,   CUST_4,   CUST_5,          REPEATCMD, BTN_CNT};
   // Change your IR Commands here. You can see them in console, after you pressed a button on the remote

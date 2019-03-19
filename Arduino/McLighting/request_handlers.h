@@ -522,6 +522,9 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
         mode = E131;
       }
     #endif
+      if (strcmp((char *) &mypayload[1], "custom") == 0) {
+        mode = CUSTOM;
+      }
   }    
 }
 
@@ -611,6 +614,9 @@ String listModesJSON() {
   objecte131["mode"] = "e131";
   objecte131["name"] = "E131";
   #endif
+  JsonObject objectcustom = root.createNestedObject();
+  objectcustom["mode"] = "custom";
+  objectcustom["name"] = "CUSTOM WS";
   for (uint8_t i = 0; i < strip->getModeCount(); i++) {
     JsonObject object = root.createNestedObject();
     object["mode"] = i;
@@ -1787,6 +1793,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 // Request handler for IR remote support
 // ***************************************************************************
 void handleRemote() {
+    int chng = 1;
     if (irrecv.decode(&results)) {
       DBG_OUTPUT_PORT.print("IR Code: 0x");
       DBG_OUTPUT_PORT.print(uint64ToString(results.value, HEX));
@@ -1794,8 +1801,6 @@ void handleRemote() {
       if (results.value == rmt_commands[REPEATCMD]) { //Repeat
         results.value = last_remote_cmd;
         chng = 5;
-      } else {
-        chng = 1;       
       }
       if (results.value == rmt_commands[ON_OFF]) {   // ON/OFF TOGGLE
         last_remote_cmd = 0;
