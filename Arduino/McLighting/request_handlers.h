@@ -1283,18 +1283,23 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       mqtt_reconnect_retries++;
       DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\r\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
-      if (mqtt_client->connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+      if (mqtt_client->connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic, 2, true, mqtt_will_payload, true)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
-        char * message = new char[18 + strlen(HOSTNAME) + 1];
+        char message[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
         strcat(message, HOSTNAME);
         mqtt_client->publish(mqtt_outtopic, message);
         // ... and resubscribe
         mqtt_client->subscribe(mqtt_intopic, qossub);
+        if(mqtt_lwt_boot_flag) {
+          mqtt_client.publish(mqtt_will_topic, "ONLINE");
+          //mqtt_lwt_boot_flag = false;
+        }
         #if defined(ENABLE_HOMEASSISTANT)
           ha_send_data.detach();
           mqtt_client->subscribe(mqtt_ha_state_in, qossub);
+          ha_send_data.once(5, tickerSendState);
           #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
             const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);
@@ -1339,9 +1344,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             unsigned int msg_len = measureJson(json) + 1;
             char buffer[msg_len];
             serializeJson(json, buffer, sizeof(buffer));
-
-            mqtt_client->beginPublish(mqtt_ha_config, msg_len, true);
-            mqtt_client->write((const uint8_t*)buffer, msg_len);
+            DBG_OUTPUT_PORT.println(buffer);
+            mqtt_client->beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len-1, true);
+            mqtt_client->write((const uint8_t*)buffer, msg_len-1);
             mqtt_client->endPublish();
           #endif
         #endif
@@ -1392,13 +1397,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       DBG_OUTPUT_PORT.println("Connected to MQTT.");
       DBG_OUTPUT_PORT.print("Session present: ");
       DBG_OUTPUT_PORT.println(sessionPresent);
-      char * message = new char[18 + strlen(HOSTNAME) + 1];
+      char message[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
       mqtt_client->publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = mqtt_client->subscribe((char *)mqtt_intopic, qossub);
+      uint16_t packetIdSub1 = mqtt_client->subscribe(mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
+      if(mqtt_lwt_boot_flag) {
+        mqtt_client->publish(mqtt_will_topic, qospub, false, "ONLINE");
+        mqtt_lwt_boot_flag = false;
+      }
       #if defined(ENABLE_HOMEASSISTANT)
         ha_send_data.detach();
         uint16_t packetIdSub2 = mqtt_client->subscribe((char *)mqtt_ha_state_in, qossub);

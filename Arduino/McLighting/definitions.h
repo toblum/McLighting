@@ -86,9 +86,10 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #if defined(ENABLE_MQTT)
   char mqtt_buf[80];
   char mqtt_will_topic[sizeof(HOSTNAME) + 7]; // Topic 'will' will be:HOSTNAME "/status";
-  char mqtt_will_payload[] = "ONLINE";
+  const char mqtt_will_payload[] = "OFFLINE";
   char mqtt_intopic[sizeof(HOSTNAME) + 3];      // Topic 'in' will be: <HOSTNAME>/in
   char mqtt_outtopic[sizeof(HOSTNAME) + 4];     // Topic 'out' will be: <HOSTNAME>/out
+  bool mqtt_lwt_boot_flag = true;
   #if ENABLE_MQTT == 0
     #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
