@@ -1362,21 +1362,6 @@ function colorNumrVals(){
     speedNumVal.value = speed.value;
 }
 
-function configVals(){
-    document.getElementById("hostname").value = config.hostname;
-    document.getElementById("mqtt_host").value = config.mqtt_host;
-    document.getElementById("mqtt_port").value = config.mqtt_port;
-    document.getElementById("mqtt_user").value = config.mqtt_user;
-    document.getElementById("mqtt_pass").value = config.mqtt_pass;
-    document.getElementById("selectcount").value = config.ws_cnt;
-    document.getElementById("selectrgbo").value = config.ws_rgbo;
-    document.getElementById("selectpin").value = config.ws_pin;
-    document.getElementById("selectoptrev").value = (config.ws_fxopt & 128);
-    document.getElementById("selectoptfade").value = (config.ws_fxopt & 112);
-    document.getElementById("selectoptgamma").value = (config.ws_fxopt & 8);
-    document.getElementById("selectoptsize").value = (config.ws_fxopt & 6);
-}
-
 // initial colors when DOM is loaded
 function initSliderColors(){
     // label bg colors
@@ -2177,14 +2162,15 @@ function ws_connect() {
                     }
                 }
                 // Config starts here
-                if (typeof res.hostname  !== "undefined") config.hostname  = res.hostname;
-                if (typeof res.mqtt_host !== "undefined") config.mqtt_host = res.mqtt_host;
-                if (typeof res.mqtt_port !== "undefined") config.mqtt_port = res.mqtt_port;
-                if (typeof res.mqtt_user !== "undefined") config.mqtt_user = res.mqtt_user;
-                if (typeof res.mqtt_pass !== "undefined") config.mqtt_pass = res.mqtt_pass;
-                if (typeof res.ws_cnt    !== "undefined") config.ws_cnt = res.ws_cnt;
+                if (typeof res.hostname  !== "undefined") { config.hostname  = res.hostname; document.getElementById("hostname").value = config.hostname; }
+                if (typeof res.mqtt_host !== "undefined") { config.mqtt_host = res.mqtt_host; document.getElementById("mqtt_host").value = config.mqtt_host; }
+                if (typeof res.mqtt_port !== "undefined") { config.mqtt_port = res.mqtt_port; document.getElementById("mqtt_port").value = config.mqtt_port; }
+                if (typeof res.mqtt_user !== "undefined") { config.mqtt_user = res.mqtt_user; document.getElementById("mqtt_user").value = config.mqtt_user; }
+                if (typeof res.mqtt_pass !== "undefined") { config.mqtt_pass = res.mqtt_pass; document.getElementById("mqtt_pass").value = config.mqtt_pass; }
+                if (typeof res.ws_cnt    !== "undefined") { config.ws_cnt = res.ws_cnt; document.getElementById("selectcount").value = config.ws_cnt; }
                 if (typeof res.ws_rgbo   !== "undefined") {
                      config.ws_rgbo   = res.ws_rgbo;
+                     document.getElementById("selectrgbo").value = config.ws_rgbo;
                      config.enable_rgbw = config.ws_rgbo.includes("W");
                      if (config.enable_rgbw) {
                          document.getElementById("white").parentNode.className = "";
@@ -2197,8 +2183,14 @@ function ws_connect() {
                      }
 
                 }
-                if (typeof res.ws_pin    !== "undefined") config.ws_pin = res.ws_pin;
-                if (typeof res.ws_fxopt  !== "undefined") config.ws_fxopt = res.ws_fxopt;
+                if (typeof res.ws_pin    !== "undefined") { config.ws_pin = res.ws_pin; document.getElementById("selectpin").value = config.ws_pin; }
+                if (typeof res.ws_fxopt  !== "undefined") {
+                    config.ws_fxopt = res.ws_fxopt;
+                    document.getElementById("selectoptrev").value = (config.ws_fxopt & 128);
+                    document.getElementById("selectoptfade").value = (config.ws_fxopt & 112);
+                    document.getElementById("selectoptgamma").value = (config.ws_fxopt & 8);
+                    document.getElementById("selectoptsize").value = (config.ws_fxopt & 6); 
+                }
                 // Modes starts here
                 if (typeof res[0] !== "undefined") {
                      res.forEach(item => {
@@ -2207,9 +2199,8 @@ function ws_connect() {
                         }
                     });
                 }
-                // init Color Vals
+               // init Color Vals
                 colorNumrVals();
-                configVals();
                 initSliderColors();
                 // init Change Range Val
                 changeRangeNumVal();
