@@ -30,15 +30,6 @@
 
 #include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
 
-#if defined(ENABLE_E131)
-// ***************************************************************************
-// Load libraries for E131 support
-// ***************************************************************************
-  #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
-  #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
-  ESPAsyncE131* e131 = NULL; //(END_UNIVERSE - START_UNIVERSE + 1);
-#endif
-
 // MQTT
 #if defined(ENABLE_MQTT)
   #if ENABLE_MQTT == 0
@@ -66,6 +57,15 @@
   #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 9)
     #error "Install ArduinoJson v6.9.x"
   #endif
+#endif
+
+#if defined(ENABLE_E131)
+// ***************************************************************************
+// Load libraries for E131 support
+// ***************************************************************************
+  #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
+  #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
+  ESPAsyncE131* e131 = NULL; //(END_UNIVERSE - START_UNIVERSE + 1);
 #endif
 
 #if defined(ENABLE_REMOTE)
