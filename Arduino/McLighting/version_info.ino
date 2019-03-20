@@ -139,5 +139,5 @@
  *
  * Version Bump to 2.2.3 rgbw 3colors
  * PubSubClient Bug fixes
- * 
+ * Reverted Pointers for MQTT for the moment
  */
