@@ -129,4 +129,15 @@
  * 17 Mar 2019 
  * adressed issue: #2
  * adressed issue: #3
+ * 
+ * 18 Mar 2019 
+ * adressed issue: #6 (possibly affects R[r_start][r_end][hexrgb] [...]; +[numled][hexrgb]+[numled][hexrgb]+[numled][hexrgb] !<numled><hexrgb>)
+ *
+ * 19 Mar 2019
+ * included custom mode in UI
+ * adressed issue #4
+ *
+ * Version Bump to 2.2.3 rgbw 3colors
+ * PubSubClient Bug fixes
+ * 
  */

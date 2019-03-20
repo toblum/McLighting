@@ -2,16 +2,17 @@
 
 // Neopixel
 #define LED_PIN 3          // PIN (15 / D8) where neopixel / WS2811 strip is attached; is configurable, if USE_WS2812FX_DMA is not defined. Just for the start
-#define NUMLEDS 144        // Number of leds in the; is configurable just for the start
+#define NUMLEDS 50         // Number of leds in the; is configurable just for the start
+#define MAXLEDS 700        // due to memory limit of esp8266 at the moment only 700 leds are supported.
 #define RGBORDER "GRBW"    // RGBOrder; is configurable just for the start
 #define FX_OPTIONS 56      // ws2812fx Options 56 = SIZE_SMALL + FADE_MEDIUM + GAMMA  is configurable just for the start; for WS2812FX setSegment OPTIONS, see: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #define LED_BUILTIN 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 
-char HOSTNAME[65] = "McLightingRGBW_02";   // Friedly hostname  is configurable just for the start
+char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just for the start
 
 #define ENABLE_OTA 1                  // If defined, enable Arduino OTA code. If set to 0 enable Arduino OTA code, if set to 1 enable ESP8266HTTPUpdateServer OTA code.
-#define ENABLE_MQTT 1                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
+#define ENABLE_MQTT 0                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT_HOSTNAME_CHIPID   // Uncomment/comment to add ESPChipID to end of MQTT hostname
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
@@ -30,13 +31,12 @@ char HOSTNAME[65] = "McLightingRGBW_02";   // Friedly hostname  is configurable 
 #if defined(ENABLE_E131)
   #define MULTICAST false
   #define START_UNIVERSE 1            // First DMX Universe to listen for
-  #define END_UNIVERSE 2              // Total number of Universes to listen for, starting at UNIVERSE
-                                      // MUST: END_UNIVERSE >= START_UNIVERSE
+  uint8_t END_UNIVERSE = 1;            // Total number of Universes to listen for, starting at UNIVERSE
+
 #endif
 
 #if defined(ENABLE_REMOTE)
-  int      selected_color = 1;
-  int      chng = 1;
+  uint8_t  selected_color = 1;
   uint64_t last_remote_cmd;
   enum                     RMT_BTN {ON_OFF,    MODE_UP, MODE_DOWN,   RED_UP, RED_DOWN, GREEN_UP, GREEN_DOWN,  BLUE_UP, BLUE_DOWN, WHITE_UP, WHITE_DOWN, BRIGHTNESS_UP, BRIGHTNESS_DOWN, SPEED_UP, SPEED_DOWN,    COL_M,    COL_B,    COL_X, AUTOMODE,    CUST_1,   CUST_2,    CUST_3,   CUST_4,   CUST_5,          REPEATCMD, BTN_CNT};
   // Change your IR Commands here. You can see them in console, after you pressed a button on the remote
@@ -86,13 +86,14 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #if defined(ENABLE_MQTT)
   char mqtt_buf[80];
   char mqtt_will_topic[sizeof(HOSTNAME) + 7]; // Topic 'will' will be:HOSTNAME "/status";
-  char mqtt_will_payload[] = "ONLINE";
+  const char mqtt_will_payload[] = "OFFLINE";
   char mqtt_intopic[sizeof(HOSTNAME) + 3];      // Topic 'in' will be: <HOSTNAME>/in
   char mqtt_outtopic[sizeof(HOSTNAME) + 4];     // Topic 'out' will be: <HOSTNAME>/out
+  bool mqtt_lwt_boot_flag = true;
   #if ENABLE_MQTT == 0
     #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
-    int mqtt_reconnect_retries = 0;
+    uint8_t mqtt_reconnect_retries = 0;
     uint8_t qossub = 0; // PubSubClient can sub qos 0 or 1
   #endif
 
@@ -133,14 +134,14 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 MODE mode = SET_ALL;        // Standard mode that is active when software starts
 MODE prevmode = mode;
 
-int ws2812fx_speed = 196;      // Global variable for storing the delay between color changes --> smaller == faster
-int brightness = 196;          // Global variable for storing the brightness (255 == 100%)
+uint8_t ws2812fx_speed = 196;      // Global variable for storing the delay between color changes --> smaller == faster
+uint8_t brightness = 196;          // Global variable for storing the brightness (255 == 100%)
 
-int ws2812fx_mode = 0;         // Global variable for storing the WS2812FX modes
+uint8_t ws2812fx_mode = 0;         // Global variable for storing the WS2812FX modes
 
 bool shouldSaveConfig = false; // For WiFiManger custom config
 
-uint32_t hex_colors[3] = {};  // Color array for setting WS2812FX
+uint32_t hex_colors[3] = {};   // Color array for setting WS2812FX
 struct ledstate                // Data structure to store a state of a single led
 {
   uint8_t red;
@@ -149,8 +150,8 @@ struct ledstate                // Data structure to store a state of a single le
   uint8_t white;
 };
 
-typedef struct ledstate LEDState;     // Define the datatype LEDState
-LEDState ledstates[NUMLEDS];          // Get an array of led states to store the state of the whole strip
+typedef struct ledstate LEDState;        // Define the datatype LEDState
+uint8_t* ledstates;                      // Set a pointer to get an array of led states to store the state of the whole strip
 LEDState main_color = { 255, 0, 0, 0 };  // Store the "main color" of the strip used in single color modes
 LEDState back_color = {   0, 0, 0, 0 };  // Store the "2nd color" of the strip used in single color modes
 LEDState xtra_color = {   0, 0, 0, 0 };  // Store the "3rd color" of the strip used in single color modes

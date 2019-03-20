@@ -15,7 +15,6 @@ uint8_t  twitch = 50;
 uint8_t  dipCount = 0;
 uint8_t  analogLevel = 100;
 boolean  timeToDip = false;
-uint8_t* ledStates;
 
 
 void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
@@ -29,10 +28,10 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
 
 
 void updateLed (uint16_t led, uint8_t brightness) {
-  ledStates[led] = brightness; 
-  for (int i=0; i<WS2812FXStripSettings.stripSize; i++) {
+  ledstates[led] = brightness;
+  for (uint16_t i=0; i<WS2812FXStripSettings.stripSize; i++) {
     uint16_t index = (i%3 == 0) ? 400 : random(0,767);
-    hsb2rgbAN1(index, 200, ledStates[i], i);
+    hsb2rgbAN1(index, 200, ledstates[i], i);
   }
   strip->show();
 }
@@ -50,7 +49,7 @@ void handleTV() {
       dipCount = dipCount++;
     }
     if(currentMillis-previousMillis<twitch) {
-      led=random(0, (strip->numPixels()-1));
+      led=random(0, WS2812FXStripSettings.stripSize - 1);
       analogLevel=random(50,255);// set the range of the 3 pwm leds
       ledState = ledState == LOW ? HIGH: LOW; // if the LED is off turn it on and vice-versa: 
       updateLed(led, (ledState) ? 255 : 0);   
@@ -67,12 +66,12 @@ void handleTV() {
     DBG_OUTPUT_PORT.println("Dip Time");
     currentDipTime = millis();
     if (currentDipTime - dipStartTime < darkTime) {
-      for (int i=3; i<strip->numPixels(); i++) {
+      for (uint16_t i=3; i<WS2812FXStripSettings.stripSize; i++) {
         updateLed(i, 0);
       }
     } else {
       timeToDip = false;
     }
-    strip->show();
+    //strip->show();
   }
 }

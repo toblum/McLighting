@@ -9,8 +9,6 @@ More info on how to create custom aniamtions for WS2812FX: https://github.com/ki
 
 #include <FastLED.h>  //https://github.com/FastLED/FastLED
 
-byte* heat;
-
 /*
  * paste in the Fire2012 code with a small edit at the end which uses the
  * setPixelColor() function to copy the color data to the ws2812fx instance. 
@@ -60,31 +58,31 @@ void Fire2012() {
 // Array of temperature readings at each simulation cell
   
   // Step 1.  Cool down every cell a little
-  for( int i = 0; i < WS2812FXStripSettings.stripSize; i++) {
-    heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / WS2812FXStripSettings.stripSize) + 2));
+  for( uint16_t i = 0; i < WS2812FXStripSettings.stripSize; i++) {
+    ledstates[i] = qsub8( ledstates[i],  random8(0, ((COOLING * 10) / WS2812FXStripSettings.stripSize) + 2));
   }
 
   // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-  for( int k= WS2812FXStripSettings.stripSize - 1; k >= 2; k--) {
-    heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
+  for( uint16_t k= WS2812FXStripSettings.stripSize - 1; k >= 2; k--) {
+    ledstates[k] = (ledstates[k - 1] + ledstates[k - 2] + ledstates[k - 2]) / 3;
   }
 
   // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
   if( random8() < SPARKING ) {
-    int y = random8(7);
-    heat[y] = qadd8( heat[y], random8(160,255) );
+    uint8_t y = random8(7);
+    ledstates[y] = qadd8(ledstates[y], random8(160,255) );
   }
 
   // Step 4.  Map from heat cells to LED colors
-  for( int j = 0; j < WS2812FXStripSettings.stripSize; j++) {
-    CRGB color = HeatColor( heat[j]);
-    int pixelnumber;
+  for( uint16_t j = 0; j < WS2812FXStripSettings.stripSize; j++) {
+    CRGB color = HeatColor( ledstates[j]);
+    uint16_t pixelnumber;
     if( gReverseDirection ) {
       pixelnumber = (WS2812FXStripSettings.stripSize - 1) - j;
     } else {
       pixelnumber = j;
     }
-    strip->setPixelColor(pixelnumber, color.red, color.green, color.blue);
+    strip->setPixelColor(pixelnumber, color.red, color.green, color.blue, 0);
   }
 }
 
