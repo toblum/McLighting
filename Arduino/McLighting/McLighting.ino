@@ -38,7 +38,7 @@
 // ***************************************************************************
     #include <PubSubClient.h>
     WiFiClient espClient;
-    PubSubClient* mqtt_client = NULL;
+    PubSubClient mqtt_client(espClient);
   #endif
   
   #if ENABLE_MQTT == 1
@@ -47,7 +47,7 @@
 // ***************************************************************************
     #include <AsyncMqttClient.h>     //https://github.com/marvinroger/async-mqtt-client
                                      //https://github.com/me-no-dev/ESPAsyncTCP
-    AsyncMqttClient* mqtt_client = NULL;
+    AsyncMqttClient mqtt_client;
     WiFiEventHandler wifiConnectHandler;
     WiFiEventHandler wifiDisconnectHandler;
   #endif
@@ -189,7 +189,7 @@ Ticker ticker;
 
 void tick() {
   //toggle state
-  int state = digitalRead(LED_BUILTIN);  // get the current state of GPIO1 pin
+  uint16_t state = digitalRead(LED_BUILTIN);  // get the current state of GPIO1 pin
   digitalWrite(LED_BUILTIN, !state);     // set pin to the opposite state
 }
 
@@ -205,13 +205,13 @@ Ticker settings_save_state;
 // Saved state handling in WifiManager
 // ***************************************************************************
 // https://stackoverflow.com/questions/9072320/split-string-into-string-array
-String getValue(String data, char separator, int index)
+String getValue(String data, char separator, uint8_t index)
 {
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length()-1;
+  uint8_t found = 0;
+  uint8_t strIndex[] = {0, -1};
+  uint8_t maxIndex = data.length()-1;
 
-  for(int i=0; i<=maxIndex && found<=index; i++){
+  for(uint8_t i=0; i<=maxIndex && found<=index; i++){
     if(data.charAt(i)==separator || i==maxIndex){
         found++;
         strIndex[0] = strIndex[1]+1;
@@ -300,7 +300,6 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
   // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
   // and minimize distance between Arduino and first pixel.  Avoid connecting
   // on a live circuit...if you must, connect GND first.
-  
   strip->init();
   #if defined(USE_WS2812FX_DMA)
     initDMA(stripSize);
@@ -335,12 +334,12 @@ void initMqtt() {
   // ***************************************************************************
   // Configure MQTT
   // ***************************************************************************
-  #if ENABLE_MQTT == 0
+  /*#if ENABLE_MQTT == 0
     mqtt_client = new PubSubClient(espClient);
   #endif
   #if ENABLE_MQTT == 1
     mqtt_client = new AsyncMqttClient();
-  #endif
+  #endif*/
 
   #if defined(ENABLE_MQTT_HOSTNAME_CHIPID)
     snprintf(mqtt_clientid, sizeof(mqtt_clientid), "%s-%08X", HOSTNAME, ESP.getChipId());
@@ -358,24 +357,23 @@ void initMqtt() {
   if ((strlen(mqtt_host) != 0) && (mqtt_port != 0)) {
     #if ENABLE_MQTT == 0
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
-      mqtt_client->setServer(mqtt_host, mqtt_port);
-      mqtt_client->setCallback(mqtt_callback);
+      mqtt_client.setServer(mqtt_host, mqtt_port);
+      mqtt_client.setCallback(mqtt_callback);
     #endif
     #if ENABLE_MQTT == 1   
       DBG_OUTPUT_PORT.printf("AMQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
-      mqtt_client->onConnect(onMqttConnect);
-      mqtt_client->onDisconnect(onMqttDisconnect);
-      mqtt_client->onMessage(onMqttMessage);
-      if ((strlen(mqtt_user) != 0) || (strlen(mqtt_pass) != 0)) mqtt_client->setCredentials(mqtt_user, mqtt_pass);
-      mqtt_client->setClientId(mqtt_clientid);
-      mqtt_client->setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
-      mqtt_client->setServer(mqtt_host, mqtt_port);
+      mqtt_client.onConnect(onMqttConnect);
+      mqtt_client.onDisconnect(onMqttDisconnect);
+      mqtt_client.onMessage(onMqttMessage);
+      if ((strlen(mqtt_user) != 0) || (strlen(mqtt_pass) != 0)) mqtt_client.setCredentials(mqtt_user, mqtt_pass);
+      mqtt_client.setClientId(mqtt_clientid);
+      mqtt_client.setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
+      mqtt_client.setServer(mqtt_host, mqtt_port);
       connectToMqtt();
     #endif
   }
 }
 #endif
-
 
 // ***************************************************************************
 // MAIN Setup
@@ -504,7 +502,6 @@ void setup() {
   wifiManager.setConfigPortalTimeout(WIFIMGR_PORTAL_TIMEOUT);
 #endif
 
-  // Uncomment if you want to set static IP 
   // Order is: IP, Gateway and Subnet 
 #if defined(WIFIMGR_SET_MANUAL_IP)
   wifiManager.setSTAStaticIPConfig(IPAddress(_ip[0], _ip[1], _ip[2], _ip[3]), IPAddress(_gw[0], _gw[1], _gw[2], _gw[3]), IPAddress(_sn[0], _sn[1], _sn[2], _sn[3]));
@@ -532,7 +529,7 @@ void setup() {
       strcpy(mqtt_pass, custom_mqtt_pass.getValue());
     #endif
     strcpy(tmp_strip_size, custom_strip_size.getValue());
-    WS2812FXStripSettings.stripSize = constrain(atoi(custom_strip_size.getValue()), 0, MAXLEDS);
+    WS2812FXStripSettings.stripSize = constrain(atoi(custom_strip_size.getValue()), 1, MAXLEDS);
     #if !defined(USE_WS2812FX_DMA)
       checkPin(atoi(custom_led_pin.getValue()));
     #endif
@@ -541,7 +538,6 @@ void setup() {
     WS2812FXStripSettings.fxoptions = atoi(custom_fxoptions.getValue());
     #if ENABLE_STATE_SAVE == 1
       (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
-      (writeStateFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("State config FS Save success!"): DBG_OUTPUT_PORT.println("State config FS Save failure!");
     #endif
     #if ENABLE_STATE_SAVE == 0
       if (shouldSaveConfig) {
@@ -592,7 +588,7 @@ void setup() {
     ArduinoOTA.onEnd([]() {
       DBG_OUTPUT_PORT.println("Arduino OTA: End");
     });
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    ArduinoOTA.onProgress([](uint16_t progress, uint16_t total) {
       DBG_OUTPUT_PORT.printf("Arduino OTA Progress: %u%%\r", (progress / (total / 100)));
     });
     ArduinoOTA.onError([](ota_error_t error) {
@@ -716,14 +712,14 @@ void loop() {
         WiFi.begin();
       } else {
         if ((strlen(mqtt_host) != 0) && (mqtt_port != 0) && (mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES)) {
-          if (!mqtt_client->connected()) {
+          if (!mqtt_client.connected()) {
             #if defined(ENABLE_HOMEASSISTANT)
              ha_send_data.detach();
             #endif
             DBG_OUTPUT_PORT.println("MQTT disconnected, reconnecting!");
             mqtt_reconnect();
           } else {
-            mqtt_client->loop();
+            mqtt_client.loop();
           }
         }
       }
@@ -835,6 +831,7 @@ void loop() {
     strip->setColors(0, hex_colors);
     mode = prevmode;
     prevmode = SET_COLOR;
+    //DBG_OUTPUT_PORT.printf("mode: %d\r\n", mode);
     if (mode == HOLD) strip->trigger();
   }
   if (mode == SET_SPEED) {
@@ -853,6 +850,7 @@ void loop() {
     strip->setBrightness(brightness);
     mode = prevmode;
     prevmode = SET_BRIGHTNESS;
+    //DBG_OUTPUT_PORT.printf("mode: %d\r\n", mode);
     if (mode == HOLD) strip->trigger();
   }
  
@@ -865,10 +863,10 @@ void loop() {
     }
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
-        mqtt_client->publish(mqtt_outtopic, mqtt_buf);
+        mqtt_client.publish(mqtt_outtopic, mqtt_buf);
       #endif
       #if ENABLE_MQTT == 1
-        mqtt_client->publish(mqtt_outtopic, qospub, false, mqtt_buf);
+        mqtt_client.publish(mqtt_outtopic, qospub, false, mqtt_buf);
       #endif
       #if defined(ENABLE_HOMEASSISTANT)
         if(!ha_send_data.active())  ha_send_data.once(3, tickerSendState);

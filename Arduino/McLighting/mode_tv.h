@@ -29,7 +29,7 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint8_t myled) {
 
 void updateLed (uint16_t led, uint8_t brightness) {
   ledstates[led] = brightness;
-  for (int i=0; i<WS2812FXStripSettings.stripSize; i++) {
+  for (uint16_t i=0; i<WS2812FXStripSettings.stripSize; i++) {
     uint16_t index = (i%3 == 0) ? 400 : random(0,767);
     hsb2rgbAN1(index, 200, ledstates[i], i);
   }
@@ -66,12 +66,12 @@ void handleTV() {
     DBG_OUTPUT_PORT.println("Dip Time");
     currentDipTime = millis();
     if (currentDipTime - dipStartTime < darkTime) {
-      for (int i=3; i<WS2812FXStripSettings.stripSize; i++) {
+      for (uint16_t i=3; i<WS2812FXStripSettings.stripSize; i++) {
         updateLed(i, 0);
       }
     } else {
       timeToDip = false;
     }
-    strip->show();
+    //strip->show();
   }
 }

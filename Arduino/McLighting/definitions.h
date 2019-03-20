@@ -12,7 +12,7 @@
 char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just for the start
 
 #define ENABLE_OTA 1                  // If defined, enable Arduino OTA code. If set to 0 enable Arduino OTA code, if set to 1 enable ESP8266HTTPUpdateServer OTA code.
-#define ENABLE_MQTT 1                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
+#define ENABLE_MQTT 0                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT_HOSTNAME_CHIPID   // Uncomment/comment to add ESPChipID to end of MQTT hostname
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
@@ -36,7 +36,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #endif
 
 #if defined(ENABLE_REMOTE)
-  int      selected_color = 1;
+  uint8_t  selected_color = 1;
   uint64_t last_remote_cmd;
   enum                     RMT_BTN {ON_OFF,    MODE_UP, MODE_DOWN,   RED_UP, RED_DOWN, GREEN_UP, GREEN_DOWN,  BLUE_UP, BLUE_DOWN, WHITE_UP, WHITE_DOWN, BRIGHTNESS_UP, BRIGHTNESS_DOWN, SPEED_UP, SPEED_DOWN,    COL_M,    COL_B,    COL_X, AUTOMODE,    CUST_1,   CUST_2,    CUST_3,   CUST_4,   CUST_5,          REPEATCMD, BTN_CNT};
   // Change your IR Commands here. You can see them in console, after you pressed a button on the remote
@@ -93,7 +93,7 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
   #if ENABLE_MQTT == 0
     #define MQTT_MAX_PACKET_SIZE 512
     #define MQTT_MAX_RECONNECT_TRIES 4
-    int mqtt_reconnect_retries = 0;
+    uint8_t mqtt_reconnect_retries = 0;
     uint8_t qossub = 0; // PubSubClient can sub qos 0 or 1
   #endif
 
@@ -134,10 +134,10 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 MODE mode = SET_ALL;        // Standard mode that is active when software starts
 MODE prevmode = mode;
 
-int ws2812fx_speed = 196;      // Global variable for storing the delay between color changes --> smaller == faster
-int brightness = 196;          // Global variable for storing the brightness (255 == 100%)
+uint8_t ws2812fx_speed = 196;      // Global variable for storing the delay between color changes --> smaller == faster
+uint8_t brightness = 196;          // Global variable for storing the brightness (255 == 100%)
 
-int ws2812fx_mode = 0;         // Global variable for storing the WS2812FX modes
+uint8_t ws2812fx_mode = 0;         // Global variable for storing the WS2812FX modes
 
 bool shouldSaveConfig = false; // For WiFiManger custom config
 

@@ -277,7 +277,7 @@
     if(server.hasArg("ws_cnt")){
       uint16_t pixelCt = server.arg("ws_cnt").toInt();
       if (pixelCt > 0) {
-        WS2812FXStripSettings.stripSize = pixelCt;
+        WS2812FXStripSettings.stripSize = constrain(pixelCt, 1, MAXLEDS);
         updateStrip = true;
       }
     }
@@ -301,7 +301,7 @@
 #endif
     
     if(server.hasArg("ws_fxopt")){
-      WS2812FXStripSettings.fxoptions = server.arg("ws_fxopt").toInt();
+      WS2812FXStripSettings.fxoptions = ((constrain(server.arg("ws_fxopt").toInt(), 0, 255)>>1)<<1);
       updateStrip = true;
     }
 

@@ -995,11 +995,11 @@ input[type=number], label{
                 <div class="layout row wrap">
                     <div class="flex xs12" style="text-align: left; margin:20px 0;"><p>selectColors</p>
                         <span style="white-space: nowrap;">
-                        colorMain<input type="color" id="color-main" value="#ffffff">&nbsp;
-                        colorFont<input type="color" id="color-font" value="#ffffff">&nbsp;
-                        colorBack<input type="color" id="color-back" value="#ffffff">&nbsp;
-                        colorBtn<input type="color" id="color-btn" value="#ffffff">&nbsp;
-                        colorBtnSel<input type="color" id="color-btnsel" value="#ffffff">
+                        <span>colorMain</span><input type="color" id="color-main" value="#ffffff">
+                        <span>colorFont</span><input type="color" id="color-font" value="#ffffff">
+                        <span>colorBack</span><input type="color" id="color-back" value="#ffffff">
+                        <span>colorBtn</span><input type="color" id="color-btn" value="#ffffff">
+                        <span>colorBtnSel</span><input type="color" id="color-btnsel" value="#ffffff">
                         </span>
                     </div>
                     <div class="flex xs12" style="text-align: left; margin:20px 0;"><p>slaveNodes</p>
@@ -1239,6 +1239,7 @@ var selectoptrev = {
 };
 
 var selectoptfade = {
+     0: "NONE",
     16: "FADE_XFAST",
     32: "FADE_FAST",
     48: "FADE_MEDIUM",
@@ -1750,7 +1751,7 @@ function initSettings() {
     hostname.value = config.hostname;
     hostname.addEventListener('change', ()=>{
         config.hostname = hostname.value;
-        //ws_send("Ch" + config.hostname);
+        ws_send("Ch" + config.hostname);
         ws_send("C");
     });
     var mqtt_host = document.getElementById("mqtt_host");
