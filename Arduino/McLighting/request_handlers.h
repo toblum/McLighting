@@ -217,14 +217,14 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     char greenhex[3];
     char bluehex[3];
     char whitehex[3];
-    strncpy (redhex, (const char *) &mypayload[2 + firstChar], 2 );
-    strncpy (greenhex, (const char *) &mypayload[4 + firstChar], 2 );
-    strncpy (bluehex, (const char *) &mypayload[6 + firstChar], 2 );
-    strncpy (whitehex, (const char *) &mypayload[8 + firstChar], 2 );
+    strncpy (whitehex, (const char *) &mypayload[2 + firstChar], 2 );
+    strncpy (redhex, (const char *) &mypayload[4 + firstChar], 2 );
+    strncpy (greenhex, (const char *) &mypayload[6 + firstChar], 2 );
+    strncpy (bluehex, (const char *) &mypayload[8 + firstChar], 2 );
+    whitehex[2] = 0x00;
     redhex[2] = 0x00;
     greenhex[2] = 0x00;
     bluehex[2] = 0x00;
-    whitehex[2] = 0x00;
     /*
     ledstates[led].red =   strtol(redhex, NULL, 16);
     ledstates[led].green = strtol(greenhex, NULL, 16);
@@ -945,7 +945,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: "); 
       #if defined(ENABLE_MQTT)
-        #if ENABLE_MQTT == 2
+        #if ENABLE_MQTT == 0
           uint16_t msg_len = strlen(json.c_str()) + 1;
           mqtt_client.beginPublish(mqtt_outtopic, msg_len, true);
           mqtt_client.write((const uint8_t*)json.c_str(), msg_len);
