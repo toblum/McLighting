@@ -145,4 +145,5 @@
  * Bugfixes
  * added pointer for MQTT again
  * Removed some String datatype and replaced with char array
+ * better responsiveness in ui for sliders
  */

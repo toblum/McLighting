@@ -19,23 +19,23 @@
 // ***************************************************************************
 
   server.on("/", HTTP_GET, [&](){
-    if (USE_HTML_MIN_GZ) {
+    #if defined(USE_HTML_MIN_GZ)
       server.sendHeader("Content-Encoding", "gzip", true);
       server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
-    } else {
+    #else
       if (!handleFileRead(server.uri()))
         handleNotFound();
-    }
+    #endif
   });
   
   server.on("/edit", HTTP_GET, [&](){
-    if (USE_HTML_MIN_GZ) {
+    #if defined(USE_HTML_MIN_GZ)
       server.sendHeader("Content-Encoding", "gzip", true);
       server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
-    } else {
+    #else
       if (!handleFileRead("/edit.htm"))
         handleNotFound();
-    }
+    #endif
   });
 
 
@@ -340,26 +340,14 @@
 #endif
 
 #if defined(ENABLE_STATE_SAVE)
-  #if ENABLE_STATE_SAVE == 1  
-    (writeConfigFS(updateConf || updateStrip)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
-  #endif
-  #if ENABLE_STATE_SAVE == 0 
-    if (updateConf || updateStrip) {
-      char last_conf[223];
-    #if defined(ENABLE_MQTT)
-      snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
-    #else
-      snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
-    #endif
-      writeEEPROM(0, 222, last_conf);
-      EEPROM.commit();
+    if (updateStrip || updateConf) {
+      if(!settings_save_conf.active()) settings_save_conf.once(3, tickerSaveConfig);
     }
-  #endif
 #endif
-    getConfigJSON();
-    delay(500);
     updateStrip = false;
     updateConf = false;
+    getConfigJSON();
+    delay(500);
   });
   
   server.on("/off", []() {
