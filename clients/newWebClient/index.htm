@@ -1341,7 +1341,7 @@ function displayColors(all = false) {
         document.getElementById("colorHex" + data.color_num).innerHTML = "#" + rgbToHex([white.value, red.value, green.value, blue.value]);
         // Send color
         clearTimeout(sendIt);
-        sendIt = setTimeout(function() { set_color(); }, 500);
+        sendIt = setTimeout(function() { set_color(); }, 50);
     } else {
         document.getElementById("colorSel1").style.backgroundColor = `rgb(${data.color.r}, ${data.color.g}, ${data.color.b})`;
         document.getElementById("colorHex1").innerHTML = "#" + data.color.hex;
@@ -1430,7 +1430,7 @@ function changeRangeNumVal(){
         initSliderColors();
         // Send Brightness
         clearTimeout(sendIt);
-        sendIt = setTimeout(function() { set_brightness(); }, 500);
+        sendIt = setTimeout(function() { set_brightness(); }, 50);
     });
     speedNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
@@ -1438,7 +1438,7 @@ function changeRangeNumVal(){
         data.speed = speed.value;
         // Send Speed
         clearTimeout(sendIt);
-        sendIt = setTimeout(function() { set_speed(); }, 500);
+        sendIt = setTimeout(function() { set_speed(); }, 50);
     });
 }
 function checkNumVal(numVal, curVal) {

@@ -4,7 +4,7 @@
 
 // Prototypes
 void   handleAutoStart();
-String listStatusJSON();
+char * listStatusJSON();
 bool   writeConfigFS(bool);
 
 #if defined(ENABLE_E131)
@@ -535,7 +535,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   }    
 }
 
-String listStatusJSON() {
+char * listStatusJSON() {
   //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
   const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
@@ -560,13 +560,14 @@ String listStatusJSON() {
   color.add(xtra_color.red);
   color.add(xtra_color.green);
   color.add(xtra_color.blue);
-  String json;
-  serializeJson(root, json);
+  uint16_t msg_len = measureJson(root) + 1;
+  char * buffer = (char *) malloc(msg_len);
+  serializeJson(root, buffer, msg_len);
   jsonBuffer.clear();
-  return json;
+  return buffer;
 }
 
-String listConfigJSON() {
+char * listConfigJSON() {
   //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
   #if defined(ENABLE_MQTT)
     const size_t bufferSize = JSON_OBJECT_SIZE(9) + 500;
@@ -586,25 +587,30 @@ String listConfigJSON() {
   root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
   root["ws_pin"]    = WS2812FXStripSettings.pin;
   root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
-  String json;
-  serializeJson(root, json);
+  uint16_t msg_len = measureJson(root) + 1;
+  char * buffer = (char *) malloc(msg_len);
+  serializeJson(root, buffer, msg_len);
   jsonBuffer.clear();
-  return json;
+  return buffer;
 }
 
 
 void getStatusJSON() {
+  char * buffer = listStatusJSON();
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", listStatusJSON() );
+  server.send ( 200, "application/json", buffer);
+  free (buffer);
 }
 
 void getConfigJSON() {
+  char * buffer = listConfigJSON();
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", listConfigJSON() );
+  server.send ( 200, "application/json", buffer);
+  free (buffer);
 }
 
 
-String listModesJSON() {
+char * listModesJSON() {
   const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray root = jsonBuffer.to<JsonArray>();
@@ -629,15 +635,18 @@ String listModesJSON() {
     object["mode"] = i;
     object["name"] = strip->getModeName(i);
   }
-  String json;
-  serializeJson(root, json);
+  uint16_t msg_len = measureJson(root) + 1;
+  char * buffer = (char *) malloc(msg_len);
+  serializeJson(root, buffer, msg_len);
   jsonBuffer.clear();
-  return json;
+  return buffer;
 }
 
 void getModesJSON() {
+  char * buffer = listModesJSON();
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", listModesJSON() );
+  server.send ( 200, "application/json", buffer);
+  free (buffer);
 }
 
 // ***************************************************************************
@@ -810,23 +819,24 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
 
   // $ ==> Get status Info.
   if (payload[0] == '$') {
-    String json = listStatusJSON();
+    char * buffer = listStatusJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
-          mqtt_client.publish(mqtt_outtopic, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, buffer);
         #endif
         #if ENABLE_MQTT == 1
-          mqtt_client.publish(mqtt_outtopic, qospub, false, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, qospub, false, buffer);
         #endif
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
-      webSocket.sendTXT(num, json);
+      webSocket.sendTXT(num, buffer);
     }
-    DBG_OUTPUT_PORT.println("Get status info: " + json);
+    DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
+    free (buffer);
   }
 
 
@@ -918,50 +928,52 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         }
       #endif
     #endif
-    String json = listConfigJSON();
+    char * buffer = listConfigJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
-          mqtt_client.publish(mqtt_outtopic, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, buffer);
         #endif
         #if ENABLE_MQTT == 1
-          mqtt_client.publish(mqtt_outtopic, qospub, false, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, qospub, false, buffer);
         #endif
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
-      webSocket.sendTXT(num, json);
+      webSocket.sendTXT(num, buffer);
     }
     updateStrip = false;
     updateConf  = false;
-    DBG_OUTPUT_PORT.println("Get status info: " + json);
+    DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
+    free (buffer);
   }
 
   // ~ ==> Get WS2812 modes.
   if (payload[0] == '~') {
-    String json = listModesJSON();
+    char * buffer  = listModesJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: "); 
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
-          uint16_t msg_len = strlen(json.c_str()) + 1;
-          mqtt_client.beginPublish(mqtt_outtopic, msg_len, true);
-          mqtt_client.write((const uint8_t*)json.c_str(), msg_len);
-          mqtt_client.endPublish();       
+          uint16_t msg_len = strlen(buffer) + 1;
+          mqtt_client->beginPublish(mqtt_outtopic, msg_len, true);
+          mqtt_client->write((const uint8_t*)buffer, msg_len);
+          mqtt_client->endPublish();       
         #endif
         #if ENABLE_MQTT == 1
-          mqtt_client.publish(mqtt_outtopic, qospub, false, json.c_str());
+          mqtt_client->publish(mqtt_outtopic, qospub, false, buffer);
         #endif  
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
-      webSocket.sendTXT(num, json);
+      webSocket.sendTXT(num, buffer);
     }
     DBG_OUTPUT_PORT.println("Get WS2812 modes.");
-    DBG_OUTPUT_PORT.println(json);
+    DBG_OUTPUT_PORT.println(buffer);
+    free (buffer);
   }
 
   // / ==> Set WS2812 mode.
@@ -1126,11 +1138,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       serializeJson(root, buffer, sizeof(buffer));
       jsonBuffer.clear();
       #if ENABLE_MQTT == 0
-      mqtt_client.publish(mqtt_ha_state_out, buffer, true);
+      mqtt_client->publish(mqtt_ha_state_out, buffer, true);
       DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\r\n", mqtt_ha_state_out, buffer);
       #endif
       #if ENABLE_MQTT == 1
-      mqtt_client.publish(mqtt_ha_state_out, 1, true, buffer);
+      mqtt_client->publish(mqtt_ha_state_out, 1, true, buffer);
       DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\r\n", mqtt_ha_state_out, buffer);
       #endif
       new_ha_mqtt_msg = false;
@@ -1283,51 +1295,51 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   #if ENABLE_MQTT == 0
   void mqtt_reconnect() {
     // Loop until we're reconnected
-    while (!mqtt_client.connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
+    while (!mqtt_client->connected() && mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES) {
       mqtt_reconnect_retries++;
       DBG_OUTPUT_PORT.printf("Attempting MQTT connection %d / %d ...\r\n", mqtt_reconnect_retries, MQTT_MAX_RECONNECT_TRIES);
       // Attempt to connect
-      if (mqtt_client.connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic, 2, true, mqtt_will_payload, true)) {
+      if (mqtt_client->connect(mqtt_clientid, mqtt_user, mqtt_pass, mqtt_will_topic, 2, true, mqtt_will_payload, true)) {
         DBG_OUTPUT_PORT.println("MQTT connected!");
         // Once connected, publish an announcement...
         char message[18 + strlen(HOSTNAME) + 1];
         strcpy(message, "McLighting ready: ");
         strcat(message, HOSTNAME);
-        mqtt_client.publish(mqtt_outtopic, message);
+        mqtt_client->publish(mqtt_outtopic, message);
         // ... and resubscribe
-        mqtt_client.subscribe(mqtt_intopic, qossub);
+        mqtt_client->subscribe(mqtt_intopic, qossub);
         if(mqtt_lwt_boot_flag) {
-          mqtt_client.publish(mqtt_will_topic, "ONLINE");
+          mqtt_client->publish(mqtt_will_topic, "ONLINE");
           //mqtt_lwt_boot_flag = false;
         }
         #if defined(ENABLE_HOMEASSISTANT)
           ha_send_data.detach();
-          mqtt_client.subscribe(mqtt_ha_state_in, qossub);
+          mqtt_client->subscribe(mqtt_ha_state_in, qossub);
           ha_send_data.once(5, tickerSendState);
           #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
             const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);
-            JsonObject json = jsonBuffer.to<JsonObject>();
-            json["name"] = HOSTNAME;
+            JsonObject root = jsonBuffer.to<JsonObject>();
+            root["name"] = HOSTNAME;
             #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
-            json["schema"] = "json";
+            root["schema"] = "json";
             #else
-            json["platform"] = "mqtt_json";
+            root["platform"] = "mqtt_json";
             #endif
-            json["state_topic"] = mqtt_ha_state_out;
-            json["command_topic"] = mqtt_ha_state_in;
+            root["state_topic"] = mqtt_ha_state_out;
+            root["command_topic"] = mqtt_ha_state_in;
             #if !defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
-            json["on_command_type"] = "first";
+            root["on_command_type"] = "first";
             #endif
-            json["brightness"] = "true";
-            json["rgb"] = "true";
+            root["brightness"] = "true";
+            root["rgb"] = "true";
             if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-              json["white_value"]= "true";
+              root["white_value"]= "true";
             }
-            json["optimistic"] = "false";
-            json["color_temp"] = "true";
-            json["effect"] = "true";
-            JsonArray effect_list = json.createNestedArray("effect_list");
+            root["optimistic"] = "false";
+            root["color_temp"] = "true";
+            root["effect"] = "true";
+            JsonArray effect_list = root.createNestedArray("effect_list");
             effect_list.add("OFF");
             effect_list.add("AUTO");
             #if defined(ENABLE_TV)
@@ -1341,17 +1353,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             }
             // Following will never work for PubSubClient as message size > 1.6kB
             // char buffer[measureJson(json) + 1];
-            // serializeJson(json, buffer, sizeof(buffer));
-            // mqtt_client.publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
+            // serializeJson(root, buffer, sizeof(buffer));
+            // mqtt_client->publish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), buffer, true);
 
             // Alternate way to publish large messages using PubSubClient
-            uint16_t msg_len = measureJson(json) + 1;
+            uint16_t msg_len = measureJson(root) + 1;
             char buffer[msg_len];
-            serializeJson(json, buffer, sizeof(buffer));
+            serializeJson(root, buffer, sizeof(buffer));
             DBG_OUTPUT_PORT.println(buffer);
-            mqtt_client.beginPublish(String("homeassistant/light/" + String(HOSTNAME) + "/config").c_str(), msg_len-1, true);
-            mqtt_client.write((const uint8_t*)buffer, msg_len-1);
-            mqtt_client.endPublish();
+            mqtt_client->beginPublish(mqtt_ha_config, msg_len-1, true);
+            mqtt_client->write((const uint8_t*)buffer, msg_len-1);
+            mqtt_client->endPublish();
           #endif
         #endif
 
@@ -1359,7 +1371,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         DBG_OUTPUT_PORT.printf("MQTT topic out: %s\r\n", mqtt_outtopic);
       } else {
         DBG_OUTPUT_PORT.print("failed, rc=");
-        DBG_OUTPUT_PORT.print(mqtt_client.state());
+        DBG_OUTPUT_PORT.print(mqtt_client->state());
         DBG_OUTPUT_PORT.println(" try again in 5 seconds");
         // Wait 5 seconds before retrying
         delay(5000);
@@ -1380,7 +1392,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
     void connectToMqtt() {
       DBG_OUTPUT_PORT.println("Connecting to MQTT...");
-      mqtt_client.connect();
+      mqtt_client->connect();
     }
 
     void onWifiConnect(const WiFiEventStationModeGotIP& event) {
@@ -1404,42 +1416,42 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       char message[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");
       strcat(message, HOSTNAME);
-      mqtt_client.publish(mqtt_outtopic, qospub, false, message);
+      mqtt_client->publish(mqtt_outtopic, qospub, false, message);
       //Subscribe
-      uint16_t packetIdSub1 = mqtt_client.subscribe(mqtt_intopic, qossub);
+      uint16_t packetIdSub1 = mqtt_client->subscribe(mqtt_intopic, qossub);
       DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub1);
       if(mqtt_lwt_boot_flag) {
-        mqtt_client.publish(mqtt_will_topic, qospub, false, "ONLINE");
+        mqtt_client->publish(mqtt_will_topic, qospub, false, "ONLINE");
         mqtt_lwt_boot_flag = false;
       }
       #if defined(ENABLE_HOMEASSISTANT)
         ha_send_data.detach();
-        uint16_t packetIdSub2 = mqtt_client.subscribe((char *)mqtt_ha_state_in, qossub);
+        uint16_t packetIdSub2 = mqtt_client->subscribe((char *)mqtt_ha_state_in, qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
         #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
           const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
           DynamicJsonDocument jsonBuffer(bufferSize);
-          JsonObject json = jsonBuffer.to<JsonObject>();
-          json["name"] = HOSTNAME;
+          JsonObject root = jsonBuffer.to<JsonObject>();
+          root["name"] = HOSTNAME;
           #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
-          json["schema"] = "json";
+          root["schema"] = "json";
           #else
-          json["platform"] = "mqtt_json";
+          root["platform"] = "mqtt_json";
           #endif
-          json["state_topic"] = mqtt_ha_state_out;
-          json["command_topic"] = mqtt_ha_state_in;
+          root["state_topic"] = mqtt_ha_state_out;
+          root["command_topic"] = mqtt_ha_state_in;
           #if !defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
-          json["on_command_type"] = "first";
+          root["on_command_type"] = "first";
           #endif
-          json["brightness"] = "true";
-          json["rgb"] = "true";
+          root["brightness"] = "true";
+          root["rgb"] = "true";
           if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-            json["white_value"]= "true";
+            root["white_value"]= "true";
           }
-          json["optimistic"] = "false";
-          json["color_temp"] = "true";
-          json["effect"] = "true";
-          JsonArray effect_list = json.createNestedArray("effect_list");
+          root["optimistic"] = "false";
+          root["color_temp"] = "true";
+          root["effect"] = "true";
+          JsonArray effect_list = root.createNestedArray("effect_list");
           effect_list.add("OFF");
           effect_list.add("AUTO");
           #if defined(ENABLE_TV)
@@ -1451,10 +1463,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           for (uint8_t i = 0; i < strip->getModeCount(); i++) {
             effect_list.add(strip->getModeName(i));
           }
-          char buffer[measureJson(json) + 1];
-          serializeJson(json, buffer, sizeof(buffer));
+          char buffer[measureJson(root) + 1];
+          serializeJson(root, buffer, sizeof(buffer));
           jsonBuffer.clear();
-          mqtt_client.publish(mqtt_ha_config, qospub, true, buffer);
+          mqtt_client->publish(mqtt_ha_config, qospub, true, buffer);
         #endif
       #endif
     }
@@ -1650,23 +1662,23 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           DBG_OUTPUT_PORT.print("Config: ");
           if (!error) {
             DBG_OUTPUT_PORT.println("Parsed!");
-            JsonObject json = jsonBuffer.as<JsonObject>();
-            serializeJson(json, DBG_OUTPUT_PORT);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+            serializeJson(root, DBG_OUTPUT_PORT);
             DBG_OUTPUT_PORT.println("");
-            strcpy(HOSTNAME, json["hostname"]);
+            strcpy(HOSTNAME, root["hostname"]);
           #if defined(ENABLE_MQTT)
-            strcpy(mqtt_host, json["mqtt_host"]);
-            mqtt_port = (uint16_t) json["mqtt_port"];
-            strcpy(mqtt_user, json["mqtt_user"]);
-            strcpy(mqtt_pass, json["mqtt_pass"]);
+            strcpy(mqtt_host, root["mqtt_host"]);
+            mqtt_port = (uint16_t) root["mqtt_port"];
+            strcpy(mqtt_user, root["mqtt_user"]);
+            strcpy(mqtt_pass, root["mqtt_pass"]);
           #endif
-            WS2812FXStripSettings.stripSize = constrain ((uint8_t) json["ws_cnt"], 1, MAXLEDS);
+            WS2812FXStripSettings.stripSize = constrain ((uint16_t) root["ws_cnt"], 1, MAXLEDS);
             char tmp_rgbOrder[5];
-            strcpy(tmp_rgbOrder, json["ws_rgbo"]);
+            strcpy(tmp_rgbOrder, root["ws_rgbo"]);
             checkRGBOrder(tmp_rgbOrder);
             uint8_t temp_pin;
-            WS2812FXStripSettings.pin = checkPin((uint8_t) json["ws_pin"]);  
-            WS2812FXStripSettings.fxoptions = ((constrain((uint8_t) json["ws_fxopt"], 0, 255)>>1)<<1);        
+            checkPin((uint8_t) root["ws_pin"]);  
+            WS2812FXStripSettings.fxoptions = ((constrain((uint8_t) root["ws_fxopt"], 0, 255)>>1)<<1);        
             jsonBuffer.clear();
             return true;
           } else {
@@ -1730,25 +1742,25 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           DBG_OUTPUT_PORT.print("Config: ");
           if (!error) {
             DBG_OUTPUT_PORT.print("Parsed");
-            JsonObject json = jsonBuffer.as<JsonObject>();
-            serializeJson(json, DBG_OUTPUT_PORT);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+            serializeJson(root, DBG_OUTPUT_PORT);
             DBG_OUTPUT_PORT.println("");
-            mode = static_cast<MODE>((int) json["mode"]);
-            ws2812fx_mode = json["ws2812fx_mode"];
-            ws2812fx_speed = json["speed"];
-            brightness = json["brightness"];
-            main_color.white = (uint8_t) json["color"][0];
-            main_color.red = (uint8_t) json["color"][1];
-            main_color.green = (uint8_t) json["color"][2];
-            main_color.blue = (uint8_t) json["color"][3];
-            back_color.white = (uint8_t) json["color"][4];
-            back_color.red = (uint8_t) json["color"][5];
-            back_color.green = (uint8_t) json["color"][6];
-            back_color.blue = (uint8_t) json["color"][7];
-            xtra_color.white = (uint8_t) json["color"][8];  
-            xtra_color.red = (uint8_t) json["color"][9];
-            xtra_color.green = (uint8_t) json["color"][10];
-            xtra_color.blue = (uint8_t) json["color"][11];
+            mode = static_cast<MODE>((int) root["mode"]);
+            ws2812fx_mode = root["ws2812fx_mode"];
+            ws2812fx_speed = root["speed"];
+            brightness = root["brightness"];
+            main_color.white = (uint8_t) root["color"][0];
+            main_color.red = (uint8_t) root["color"][1];
+            main_color.green = (uint8_t) root["color"][2];
+            main_color.blue = (uint8_t) root["color"][3];
+            back_color.white = (uint8_t) root["color"][4];
+            back_color.red = (uint8_t) root["color"][5];
+            back_color.green = (uint8_t) root["color"][6];
+            back_color.blue = (uint8_t) root["color"][7];
+            xtra_color.white = (uint8_t) root["color"][8];  
+            xtra_color.red = (uint8_t) root["color"][9];
+            xtra_color.green = (uint8_t) root["color"][10];
+            xtra_color.blue = (uint8_t) root["color"][11];
             convertColors();
             jsonBuffer.clear();
             return true;

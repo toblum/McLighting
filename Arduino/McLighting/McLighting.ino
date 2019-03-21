@@ -38,7 +38,7 @@
 // ***************************************************************************
     #include <PubSubClient.h>
     WiFiClient espClient;
-    PubSubClient mqtt_client(espClient);
+    PubSubClient * mqtt_client;
   #endif
   
   #if ENABLE_MQTT == 1
@@ -47,7 +47,7 @@
 // ***************************************************************************
     #include <AsyncMqttClient.h>     //https://github.com/marvinroger/async-mqtt-client
                                      //https://github.com/me-no-dev/ESPAsyncTCP
-    AsyncMqttClient mqtt_client;
+    AsyncMqttClient * mqtt_client;
     WiFiEventHandler wifiConnectHandler;
     WiFiEventHandler wifiDisconnectHandler;
   #endif
@@ -65,7 +65,7 @@
 // ***************************************************************************
   #include <ESPAsyncUDP.h>         //https://github.com/me-no-dev/ESPAsyncUDP
   #include <ESPAsyncE131.h>        //https://github.com/forkineye/ESPAsyncE131
-  ESPAsyncE131* e131 = NULL; //(END_UNIVERSE - START_UNIVERSE + 1);
+  ESPAsyncE131 * e131 = NULL;
 #endif
 
 #if defined(ENABLE_REMOTE)
@@ -107,34 +107,35 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // Load and instanciate WS2812FX library
 // ***************************************************************************
 #include <WS2812FX.h>              // https://github.com/kitesurfer1404/WS2812FX
-WS2812FX* strip = NULL;
+WS2812FX * strip = NULL;
 
 #if defined(USE_WS2812FX_DMA)
   #include <NeoPixelBus.h>
 
   #if USE_WS2812FX_DMA == 0 // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Dma800KbpsMethod* dma = NULL ; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoEsp8266Dma800KbpsMethod * dma = NULL ; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Dma400KbpsMethod* dma = NULL;  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoEsp8266Dma400KbpsMethod * dma = NULL;  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Uart0800KbpsMethod* dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoEsp8266Uart0800KbpsMethod * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Uart0400KbpsMethod* dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoEsp8266Uart0400KbpsMethod * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Uart1800KbpsMethod* dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoEsp8266Uart1800KbpsMethod * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Uart1400KbpsMethod* dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoEsp8266Uart1400KbpsMethod * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   
   void initDMA(uint16_t stripSize = NUMLEDS){
+    if (dma != NULL) { delete(dma); }
     uint8_t ledcolors = 3;
     if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
       ledcolors = 4;
@@ -196,7 +197,6 @@ void tick() {
 #if defined(ENABLE_REMOTE)
   IRrecv irrecv(ENABLE_REMOTE);
   decode_results results;
-  
 #endif
 
 Ticker settings_save_state;
@@ -269,20 +269,26 @@ void saveConfigCallback () {
 // function to Initialize the strip
 void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrder[5] = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin, uint8_t fxoptions = WS2812FXStripSettings.fxoptions ){
   DBG_OUTPUT_PORT.println("Initializing strip!");
+/*#if defined(USE_WS2812FX_DMA)
   if (dma != NULL) {
      delete(dma);
   }
-  if (strip != NULL) { //second one created second to delete
+#endif*/
+  if (strip != NULL) {
     delete(strip);
     WS2812FXStripSettings.stripSize = stripSize;
     strcpy(WS2812FXStripSettings.RGBOrder, RGBOrder);
     WS2812FXStripSettings.pin = pin;
     WS2812FXStripSettings.fxoptions = fxoptions;
   }
+#if defined(ENABLE_E131)
+
+#endif  
   if (ledstates != NULL) {
     delete(ledstates);
-  }
+  } 
   ledstates = new uint8_t [WS2812FXStripSettings.stripSize];
+
 #if !defined(LED_TYPE_WS2811)
   strip = new WS2812FX(stripSize, pin, checkRGBOrder(RGBOrder) + NEO_KHZ800);
 #else
@@ -314,17 +320,24 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
   gReverseDirection = (WS2812FXStripSettings.fxoptions & 128);
 #endif
 #if defined(ENABLE_E131)
-/*    
-    uint8_t universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
-    if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-      universe_leds = 128.0;
-    }
-*/
-    float float_enduni = stripSize/170.0; 
-    uint8_t END_UNIVERSE = stripSize/170.0;
-    if (float_enduni > END_UNIVERSE) {
-      END_UNIVERSE = END_UNIVERSE +1;
-    }
+  if (e131 != NULL) { delete(e131); }
+  e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
+  float universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
+  if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+    //universe_leds = 128.0;
+  }
+  float float_enduni = stripSize/universe_leds; 
+  uint8_t END_UNIVERSE = stripSize/universe_leds;
+  if (float_enduni > END_UNIVERSE) {
+    END_UNIVERSE = END_UNIVERSE +1;
+  }
+    
+  // if (e131.begin(E131_UNICAST))                              // Listen via Unicast
+  if (e131->begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) {// Listen via Multicast
+      DBG_OUTPUT_PORT.println(F("Listening for data..."));
+  } else {
+      DBG_OUTPUT_PORT.println(F("*** e131.begin failed ***"));
+  }
 #endif
 }
 
@@ -334,12 +347,12 @@ void initMqtt() {
   // ***************************************************************************
   // Configure MQTT
   // ***************************************************************************
-  /*#if ENABLE_MQTT == 0
+  #if ENABLE_MQTT == 0
     mqtt_client = new PubSubClient(espClient);
   #endif
   #if ENABLE_MQTT == 1
     mqtt_client = new AsyncMqttClient();
-  #endif*/
+  #endif
 
   #if defined(ENABLE_MQTT_HOSTNAME_CHIPID)
     snprintf(mqtt_clientid, sizeof(mqtt_clientid), "%s-%08X", HOSTNAME, ESP.getChipId());
@@ -357,18 +370,18 @@ void initMqtt() {
   if ((strlen(mqtt_host) != 0) && (mqtt_port != 0)) {
     #if ENABLE_MQTT == 0
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
-      mqtt_client.setServer(mqtt_host, mqtt_port);
-      mqtt_client.setCallback(mqtt_callback);
+      mqtt_client->setServer(mqtt_host, mqtt_port);
+      mqtt_client->setCallback(mqtt_callback);
     #endif
     #if ENABLE_MQTT == 1   
       DBG_OUTPUT_PORT.printf("AMQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
-      mqtt_client.onConnect(onMqttConnect);
-      mqtt_client.onDisconnect(onMqttDisconnect);
-      mqtt_client.onMessage(onMqttMessage);
-      if ((strlen(mqtt_user) != 0) || (strlen(mqtt_pass) != 0)) mqtt_client.setCredentials(mqtt_user, mqtt_pass);
-      mqtt_client.setClientId(mqtt_clientid);
-      mqtt_client.setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
-      mqtt_client.setServer(mqtt_host, mqtt_port);
+      mqtt_client->onConnect(onMqttConnect);
+      mqtt_client->onDisconnect(onMqttDisconnect);
+      mqtt_client->onMessage(onMqttMessage);
+      if ((strlen(mqtt_user) != 0) || (strlen(mqtt_pass) != 0)) mqtt_client->setCredentials(mqtt_user, mqtt_pass);
+      mqtt_client->setClientId(mqtt_clientid);
+      mqtt_client->setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
+      mqtt_client->setServer(mqtt_host, mqtt_port);
       connectToMqtt();
     #endif
   }
@@ -449,21 +462,21 @@ void setup() {
   #if defined(ENABLE_MQTT)
     char tmp_mqtt_port[6]; //needed tempararily for WiFiManager Settings
     WiFiManagerParameter custom_mqtt_host("host", "MQTT hostname", mqtt_host, 64, " maxlength=64");
-    snprintf(tmp_mqtt_port, sizeof(tmp_mqtt_port), "%d", mqtt_port);
+    sprintf(tmp_mqtt_port, "%d", mqtt_port);
     WiFiManagerParameter custom_mqtt_port("port", "MQTT port", tmp_mqtt_port, 5, " maxlength=5 type=\"number\"");
     WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32, " maxlength=32");
     WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32, " maxlength=32 type=\"password\"");
   #endif
-  snprintf(tmp_strip_size, sizeof(tmp_strip_size), "%d", WS2812FXStripSettings.stripSize);
+  sprintf(tmp_strip_size, "%d", WS2812FXStripSettings.stripSize);
   WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", tmp_strip_size, 4, " maxlength=4 type=\"number\"");
   #if !defined(USE_WS2812FX_DMA)
     char tmp_led_pin[3];
-    snprintf(tmp_led_pin, sizeof(tmp_led_pin), "%d", WS2812FXStripSettings.pin);
+    sprintf(tmp_led_pin, "%d", WS2812FXStripSettings.pin);
     WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", tmp_led_pin, 2, " maxlength=2 type=\"number\"");
   #endif
-  snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", WS2812FXStripSettings.RGBOrder);
+  sprintf(tmp_rgbOrder, "%s", WS2812FXStripSettings.RGBOrder);
   WiFiManagerParameter custom_rgbOrder("rgbOrder", "RGBOrder", tmp_rgbOrder, 4, " maxlength=4");
-  snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%d", WS2812FXStripSettings.fxoptions);
+  sprintf(tmp_fxoptions, "%d", WS2812FXStripSettings.fxoptions);
   WiFiManagerParameter custom_fxoptions("fxoptions", "fxOptions", tmp_fxoptions, 3, " maxlength=3");
 #endif
 
@@ -548,6 +561,7 @@ void setup() {
         #else
           snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
         #endif
+        last_conf[sizeof(last_conf)]=0;
         writeEEPROM(0, 222, last_conf);
         EEPROM.commit();
       }
@@ -612,8 +626,6 @@ void setup() {
   initMqtt();
 #endif
 
-  initStrip();
-
 #if ENABLE_MQTT == 1
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
@@ -653,17 +665,6 @@ void setup() {
     MDNS.addService("http", "tcp", 80);
   }
 
-  #if defined(ENABLE_E131)
-  // Choose one to begin listening for E1.31 data
-  e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
-  // if (e131.begin(E131_UNICAST))                              // Listen via Unicast
-  if (e131->begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) {// Listen via Multicast
-      DBG_OUTPUT_PORT.println(F("Listening for data..."));
-  } else {
-      DBG_OUTPUT_PORT.println(F("*** e131.begin failed ***"));
-  }
-  #endif
-
   prevmode = mode;
   
   #if defined(ENABLE_BUTTON_GY33)
@@ -676,6 +677,8 @@ void setup() {
     snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
   #endif
   DBG_OUTPUT_PORT.println("finished Main Setup!");
+
+  initStrip();
 }
 
 // ***************************************************************************
@@ -712,14 +715,14 @@ void loop() {
         WiFi.begin();
       } else {
         if ((strlen(mqtt_host) != 0) && (mqtt_port != 0) && (mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES)) {
-          if (!mqtt_client.connected()) {
+          if (!mqtt_client->connected()) {
             #if defined(ENABLE_HOMEASSISTANT)
              ha_send_data.detach();
             #endif
             DBG_OUTPUT_PORT.println("MQTT disconnected, reconnecting!");
             mqtt_reconnect();
           } else {
-            mqtt_client.loop();
+            mqtt_client->loop();
           }
         }
       }
@@ -863,10 +866,10 @@ void loop() {
     }
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
-        mqtt_client.publish(mqtt_outtopic, mqtt_buf);
+        mqtt_client->publish(mqtt_outtopic, mqtt_buf);
       #endif
       #if ENABLE_MQTT == 1
-        mqtt_client.publish(mqtt_outtopic, qospub, false, mqtt_buf);
+        mqtt_client->publish(mqtt_outtopic, qospub, false, mqtt_buf);
       #endif
       #if defined(ENABLE_HOMEASSISTANT)
         if(!ha_send_data.active())  ha_send_data.once(3, tickerSendState);

@@ -140,4 +140,9 @@
  * Version Bump to 2.2.3 rgbw 3colors
  * PubSubClient Bug fixes
  * Reverted Pointers for MQTT for the moment
+ * 
+ * 21 Mar 2019
+ * Bugfixes
+ * added pointer for MQTT again
+ * Removed some String datatype and replaced with char array
  */
