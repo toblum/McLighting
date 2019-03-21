@@ -200,6 +200,7 @@ void tick() {
 #endif
 
 Ticker settings_save_state;
+Ticker settings_save_conf;
 
 // ***************************************************************************
 // Saved state handling in WifiManager
@@ -564,6 +565,7 @@ void setup() {
         last_conf[sizeof(last_conf)]=0;
         writeEEPROM(0, 222, last_conf);
         EEPROM.commit();
+        shouldSaveConfig = false;
       }
     #endif
   #endif
@@ -887,8 +889,26 @@ void loop() {
       updateState = false;
       settings_save_state.detach();
     #endif
+    }
+    if (shouldSaveConfig) {
+    #if ENABLE_STATE_SAVE == 1  
+      (writeConfigFS(true)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
+    #endif
+    #if ENABLE_STATE_SAVE == 0 
+      char last_conf[223];
+      #if defined(ENABLE_MQTT)
+        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+      #else
+        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+      #endif
+      last_conf[sizeof(last_conf)-1]= 0x00;
+      writeEEPROM(0, 222, last_conf);
+      EEPROM.commit();
+      shouldSaveConfig = false;
+      settings_save_conf.detach();
+    #endif
+    }
   #endif
-  }
   
   prevmode = mode;
   

@@ -5,7 +5,10 @@
 // Prototypes
 void   handleAutoStart();
 char * listStatusJSON();
-bool   writeConfigFS(bool);
+#if defined(ENABLE_STATE_SAVE)
+  bool   writeConfigFS(bool);
+  void   tickerSaveConfig();
+#endif
 
 #if defined(ENABLE_E131)
 void handleE131(){
@@ -291,7 +294,16 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
   }
 }
 
-bool checkPin(uint8_t pin) {  
+bool checkPin(uint8_t pin) { 
+    #if USE_WS2812FX_DMA == 0
+      pin = 3;
+    #endif
+    #if USE_WS2812FX_DMA == 1
+      pin = 2;
+    #endif
+    #if USE_WS2812FX_DMA == 2
+      pin = 1;
+    #endif
   if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != WS2812FXStripSettings.pin)) {
     WS2812FXStripSettings.pin = pin;
     return true;
@@ -567,6 +579,13 @@ char * listStatusJSON() {
   return buffer;
 }
 
+void getStatusJSON() {
+  char * buffer = listStatusJSON();
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send ( 200, "application/json", buffer);
+  free (buffer);
+}
+
 char * listConfigJSON() {
   //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
   #if defined(ENABLE_MQTT)
@@ -594,21 +613,12 @@ char * listConfigJSON() {
   return buffer;
 }
 
-
-void getStatusJSON() {
-  char * buffer = listStatusJSON();
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", buffer);
-  free (buffer);
-}
-
 void getConfigJSON() {
   char * buffer = listConfigJSON();
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", buffer);
   free (buffer);
 }
-
 
 char * listModesJSON() {
   const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
@@ -909,25 +919,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       initMqtt();
     }    
   #endif   
- 
-    #if defined(ENABLE_STATE_SAVE)
-      #if ENABLE_STATE_SAVE == 1  
-        (writeConfigFS(updateConf || updateStrip)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
-      #endif
-      #if ENABLE_STATE_SAVE == 0 
-        if (updateConf || updateStrip) {
-          char last_conf[223];
-        #if defined(ENABLE_MQTT)
-          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
-        #else
-          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
-        #endif
-          last_conf[sizeof(last_conf)-1]= 0x00;
-          writeEEPROM(0, 222, last_conf);
-          EEPROM.commit();
-        }
-      #endif
-    #endif
+
     char * buffer = listConfigJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
@@ -944,6 +936,11 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, buffer);
     }
+#if defined(ENABLE_STATE_SAVE)
+    if (updateStrip || updateConf) {
+      if(!settings_save_conf.active()) settings_save_conf.once(3, tickerSaveConfig);
+    }
+#endif
     updateStrip = false;
     updateConf  = false;
     DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
@@ -1620,6 +1617,37 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     updateState = true;
   }
 
+  void tickerSaveConfig(){
+    shouldSaveConfig = true;
+  }
+  
+  #if ENABLE_STATE_SAVE == 0 
+    // ***************************************************************************
+    // EEPROM helper
+    // ***************************************************************************
+    String readEEPROM(uint16_t offset, uint16_t len) {
+      String res = "";
+      for (uint16_t i = 0; i < len; ++i)
+      {
+        res += char(EEPROM.read(i + offset));
+        //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
+      }
+      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\r\n", res.c_str());
+      return res;
+    }
+    
+    void writeEEPROM(uint16_t offset, uint16_t len, String value) {
+      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\r\n", value.c_str());
+      for (uint16_t i = 0; i < len; ++i)
+      {
+        if (i < value.length()) {
+          EEPROM.write(i + offset, value[i]);
+        } else {
+          EEPROM.write(i + offset, 0);
+        }
+      }
+    } 
+  #endif
   #if ENABLE_STATE_SAVE == 1  
     // Write configuration to FS JSON
     bool writeConfigFS(bool saveConfig){
@@ -1631,6 +1659,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         DBG_OUTPUT_PORT.println(listConfigJSON());
         configFile.print(listConfigJSON());
         configFile.close();
+        shouldSaveConfig = false;
         return true;
         //end save
       } else {
@@ -1779,37 +1808,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       //end read
       return false;
     }
-  #endif
-
-  #if ENABLE_STATE_SAVE == 0 
-    // ***************************************************************************
-    // EEPROM helper
-    // ***************************************************************************
-    String readEEPROM(uint16_t offset, uint16_t len) {
-      String res = "";
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        res += char(EEPROM.read(i + offset));
-        //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
-      }
-      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\r\n", res.c_str());
-      return res;
-    }
-    
-    void writeEEPROM(uint16_t offset, uint16_t len, String value) {
-      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\r\n", value.c_str());
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        if (i < value.length()) {
-          EEPROM.write(i + offset, value[i]);
-        } else {
-          EEPROM.write(i + offset, 0);
-        }
-      }
-    }
-
-
-    
   #endif
 #endif
 
