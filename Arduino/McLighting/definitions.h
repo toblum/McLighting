@@ -1,9 +1,12 @@
 #define USE_WS2812FX_DMA 0      // 0 = Used PIN is ignored & set to RX/GPIO3; 1 = Used PIN is ignored & set to D4/GPIO2; 2 = Uses PIN is ignored & set to TX/GPIO1;  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
-
+#if defined(USE_WS2812FX_DMA)
+  #define MAXLEDS 384           // due to memory limit of esp8266 at the moment only 384 leds are supported in DMA Mode. More can crash if mqtt is used.
+#else
+  #define MAXLEDS 4096
+#endif 
 // Neopixel
 #define LED_PIN 3          // PIN (15 / D8) where neopixel / WS2811 strip is attached; is configurable, if USE_WS2812FX_DMA is not defined. Just for the start
-#define NUMLEDS 50         // Number of leds in the; is configurable just for the start
-#define MAXLEDS 700        // due to memory limit of esp8266 at the moment only 700 leds are supported.
+#define NUMLEDS 50         // Number of leds in the; is configurable just for the start 
 #define RGBORDER "GRBW"    // RGBOrder; is configurable just for the start
 #define FX_OPTIONS 56      // ws2812fx Options 56 = SIZE_SMALL + FADE_MEDIUM + GAMMA  is configurable just for the start; for WS2812FX setSegment OPTIONS, see: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -17,7 +20,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-//#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 #define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
 
 #define ENABLE_STATE_SAVE 1           // If defined, load saved state on reboot and save state. If set to 0 from EEPROM, if set to 1 from SPIFFS
@@ -26,7 +29,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define CUSTOM_WS2812FX_ANIMATIONS    //uncomment and put animations in "custom_ws2812fx_animations.h" 
 #define ENABLE_E131                   // E1.31 implementation You have to uncomment #define USE_WS2812FX_DMA and set it to 0
 #define ENABLE_TV                     // Enable TV Animation 
-#define USE_HTML_MIN_GZ               //uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
+bool USE_HTML_MIN_GZ = true;          //uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs -> next version i will make it customizable
 
 #if defined(ENABLE_E131)
   #define MULTICAST false

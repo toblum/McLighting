@@ -19,23 +19,23 @@
 // ***************************************************************************
 
   server.on("/", HTTP_GET, [&](){
-#if defined(USE_HTML_MIN_GZ)
-    server.sendHeader("Content-Encoding", "gzip", true);
-    server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
-#else
-    if (!handleFileRead(server.uri()))
-      handleNotFound();
-#endif
+    if (USE_HTML_MIN_GZ) {
+      server.sendHeader("Content-Encoding", "gzip", true);
+      server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
+    } else {
+      if (!handleFileRead(server.uri()))
+        handleNotFound();
+    }
   });
   
   server.on("/edit", HTTP_GET, [&](){
-#if defined(USE_HTML_MIN_GZ)
-    server.sendHeader("Content-Encoding", "gzip", true);
-    server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
-#else
-    if (!handleFileRead("/edit.htm"))
-      handleNotFound();
-#endif
+    if (USE_HTML_MIN_GZ) {
+      server.sendHeader("Content-Encoding", "gzip", true);
+      server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
+    } else {
+      if (!handleFileRead("/edit.htm"))
+        handleNotFound();
+    }
   });
 
 
@@ -51,114 +51,115 @@
   server.on("/esp_status", HTTP_GET, []() { //get heap status, analog input value and all GPIO statuses in one json call 
     const size_t bufferSize = JSON_OBJECT_SIZE(31) + 1500;
     DynamicJsonDocument jsonBuffer(bufferSize);
-    JsonObject json = jsonBuffer.to<JsonObject>();
-    json["HOSTNAME"] = HOSTNAME;
-    json["version"] = SKETCH_VERSION;
-    json["heap"] = ESP.getFreeHeap();
-    json["sketch_size"] = ESP.getSketchSize();
-    json["free_sketch_space"] = ESP.getFreeSketchSpace();
-    json["flash_chip_size"] = ESP.getFlashChipSize();
-    json["flash_chip_real_size"] = ESP.getFlashChipRealSize();
-    json["flash_chip_speed"] = ESP.getFlashChipSpeed();
-    json["sdk_version"] = ESP.getSdkVersion();
-    json["core_version"] = ESP.getCoreVersion();
-    json["cpu_freq"] = ESP.getCpuFreqMHz();
-    json["chip_id"] = ESP.getFlashChipId();
+    JsonObject root = jsonBuffer.to<JsonObject>();
+    root["HOSTNAME"] = HOSTNAME;
+    root["version"] = SKETCH_VERSION;
+    root["heap"] = ESP.getFreeHeap();
+    root["sketch_size"] = ESP.getSketchSize();
+    root["free_sketch_space"] = ESP.getFreeSketchSpace();
+    root["flash_chip_size"] = ESP.getFlashChipSize();
+    root["flash_chip_real_size"] = ESP.getFlashChipRealSize();
+    root["flash_chip_speed"] = ESP.getFlashChipSpeed();
+    root["sdk_version"] = ESP.getSdkVersion();
+    root["core_version"] = ESP.getCoreVersion();
+    root["cpu_freq"] = ESP.getCpuFreqMHz();
+    root["chip_id"] = ESP.getFlashChipId();
     #if defined(USE_WS2812FX_DMA)
       #if USE_WS2812FX_DMA == 0
-        json["animation_lib"] = "WS2812FX_DMA";
+        root["animation_lib"] = "WS2812FX_DMA";
       #endif
       #if USE_WS2812FX_DMA == 1
-        json["animation_lib"] = "WS2812FX_UART1";
+        root["animation_lib"] = "WS2812FX_UART1";
       #endif
       #if USE_WS2812FX_DMA == 2
-        json["animation_lib"] = "WS2812FX_UART2";
+        root["animation_lib"] = "WS2812FX_UART2";
       #endif
     #else
-      json["animation_lib"] = "WS2812FX";
+      root["animation_lib"] = "WS2812FX";
     #endif
-    json["ws2812_pin"]  = WS2812FXStripSettings.pin;
-    json["led_count"] = WS2812FXStripSettings.stripSize;
-    json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
+    root["ws2812_pin"]  = WS2812FXStripSettings.pin;
+    root["led_count"] = WS2812FXStripSettings.stripSize;
+    root["rgb_order"] = WS2812FXStripSettings.RGBOrder;
     if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-      json["rgbw_mode"] = "ON";
+      root["rgbw_mode"] = "ON";
     } else {
-      json["rgbw_mode"] = "OFF";
+      root["rgbw_mode"] = "OFF";
     }
     #if defined(ENABLE_BUTTON)
-      json["button_mode"] = "ON";
-      json["button_pin"] = ENABLE_BUTTON;
+      root["button_mode"] = "ON";
+      root["button_pin"] = ENABLE_BUTTON;
     #else
-      json["button_mode"] = "OFF";
+      root["button_mode"] = "OFF";
     #endif
     #if defined(ENABLE_BUTTON_GY33)
-      json["button_gy33"] = "ON";
-      json["gy33_pin"] = ENABLE_BUTTON_GY33;
+      root["button_gy33"] = "ON";
+      root["gy33_pin"] = ENABLE_BUTTON_GY33;
     #else
-      json["button_gy33"] = "OFF";
+      root["button_gy33"] = "OFF";
     #endif
     #if defined(ENABLE_REMOTE)
-      json["ir_remote"] = "ON";
-      json["tsop_ir_pin"] = ENABLE_REMOTE;
+      root["ir_remote"] = "ON";
+      root["tsop_ir_pin"] = ENABLE_REMOTE;
     #else
-      json["ir_remote"] = "OFF";
+      root["ir_remote"] = "OFF";
     #endif
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
-        json["mqtt"] = "MQTT";
+        root["mqtt"] = "MQTT";
       #endif
       #if ENABLE_MQTT == 1
-        json["mqtt"] = "AMQTT";
+        root["mqtt"] = "AMQTT";
       #endif
     #else
-      json["mqtt"] = "OFF";
+      root["mqtt"] = "OFF";
     #endif
     #if defined(ENABLE_HOMEASSISTANT)
-      json["home_assistant"] = "ON";
+      root["home_assistant"] = "ON";
     #else
-      json["home_assistant"] = "OFF";
+      root["home_assistant"] = "OFF";
     #endif
     #if defined(ENABLE_LEGACY_ANIMATIONS)
-      json["legacy_animations"] = "ON";
+      root["legacy_animations"] = "ON";
     #else
-      json["legacy_animations"] = "OFF";
+      root["legacy_animations"] = "OFF";
     #endif
     #if defined(ENABLE_TV)
-      json["tv_animation"] = "ON";
+      root["tv_animation"] = "ON";
     #else
-      json["tv_animation"] = "OFF";
+      root["tv_animation"] = "OFF";
     #endif
     #if defined(ENABLE_E131)
-      json["e131_animations"] = "ON";
+      root["e131_animations"] = "ON";
     #else
-      json["e131_animations"] = "OFF";
+      root["e131_animations"] = "OFF";
     #endif
     #if defined(ENABLE_OTA)
       #if ENABLE_OTA == 0
-        json["ota"] = "ARDUINO";
+        root["ota"] = "ARDUINO";
       #endif
       #if ENABLE_OTA == 1
-        json["ota"] = "HTTP";
+        root["ota"] = "HTTP";
       #endif
     #else
-      json["ota"] = "OFF";
+      root["ota"] = "OFF";
     #endif
     #if defined(ENABLE_STATE_SAVE)
       #if ENABLE_STATE_SAVE == 1
-        json["state_save"] = "SPIFFS";
+        root["state_save"] = "SPIFFS";
       #endif
       #if ENABLE_STATE_SAVE == 0
-        json["state_save"] = "EEPROM";
+        root["state_save"] = "EEPROM";
       #endif
     #else
-      json["state_save"] = "OFF";
+      root["state_save"] = "OFF";
     #endif
-    
-    String json_str;
-    serializeJson(json, json_str);
+    uint16_t msg_len = measureJson(root) + 1;
+    char * buffer = (char *) malloc(msg_len);
+    serializeJson(root, buffer, msg_len);
     jsonBuffer.clear();
     server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", json_str);
+    server.send(200, "application/json", buffer);
+    free (buffer);
   });
   
   server.on("/restart", []() {
@@ -291,7 +292,7 @@
     
 #if !defined(USE_WS2812FX_DMA)    
     if(server.hasArg("wspin")){
-      if (checkPin(server.arg("wspin").toInt()) {
+      if (checkPin(server.arg("wspin").toInt())) {
         updateStrip = true;
         DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
       } else {
