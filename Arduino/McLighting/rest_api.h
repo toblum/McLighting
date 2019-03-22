@@ -1,4 +1,4 @@
-// ***************************************************************************
+  // ***************************************************************************
   // Setup: Webserver handler
   // ***************************************************************************
   //list directory
@@ -193,8 +193,8 @@
   });
 
   server.on("/set_brightness", []() {
-    getArgs();
-    mode = SET_BRIGHTNESS;    
+    mode = SET_BRIGHTNESS;
+    getArgs();   
     getStatusJSON();
   });
 
@@ -207,8 +207,8 @@
   });
 
   server.on("/set_speed", []() {
-    getArgs();
     mode = SET_SPEED;
+    getArgs();
     getStatusJSON();
   });
 
@@ -347,7 +347,6 @@
     updateStrip = false;
     updateConf = false;
     getConfigJSON();
-    delay(500);
   });
   
   server.on("/off", []() {
@@ -357,56 +356,57 @@
 
     server.on("/auto", []() {
     mode = AUTO;
+    getArgs();
     getStatusJSON();
   });
 
   server.on("/all", []() {
-    getArgs();
     ws2812fx_mode = FX_MODE_STATIC;
     mode = SET_ALL;
+    getArgs();
     getStatusJSON();
   });
 
   #if defined(ENABLE_LEGACY_ANIMATIONS)
     server.on("/wipe", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_COLOR_WIPE;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
   
     server.on("/rainbow", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_RAINBOW;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
   
     server.on("/rainbowcycle", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_RAINBOW_CYCLE;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
   
     server.on("/theaterchase", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_THEATER_CHASE;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
   
     server.on("/twinklerandom", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_TWINKLE_RANDOM;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
     
     server.on("/theaterchaserainbow", []() {
-      getArgs();
       ws2812fx_mode = FX_MODE_THEATER_CHASE_RAINBOW;
       mode = SET_ALL;
+      getArgs();
       getStatusJSON();
     });
   #endif
@@ -414,6 +414,7 @@
   #if defined(ENABLE_E131)
     server.on("/e131", []() {
       mode = E131;
+      getArgs();
       getStatusJSON();
     });
   #endif
@@ -421,6 +422,7 @@
   #if defined(ENABLE_TV)
     server.on("/tv", []() {
       mode = TV;
+      getArgs();
       getStatusJSON();
     });
   #endif
@@ -430,7 +432,7 @@
   });
 
   server.on("/set_mode", []() {
-    getArgs();
     mode = SET_MODE;
+    getArgs();
     getStatusJSON();
   });

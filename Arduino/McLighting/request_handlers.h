@@ -58,97 +58,102 @@ void convertColors() {
 }
 
 void getArgs() {
-  if (server.arg("rgb") != "") {
-    uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
-    main_color.white = ((rgb >> 24) & 0xFF);
-    main_color.red = ((rgb >> 16) & 0xFF);
-    main_color.green = ((rgb >> 8) & 0xFF);
-    main_color.blue = ((rgb >> 0) & 0xFF);
-  } else {
-    if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
-      main_color.red = server.arg("r").toInt();
+  
+  if (mode == SET_ALL || mode == SET_MODE || mode == SET_COLOR) {
+    if (server.arg("rgb") != "") {
+      uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
+      main_color.white = ((rgb >> 24) & 0xFF);
+      main_color.red = ((rgb >> 16) & 0xFF);
+      main_color.green = ((rgb >> 8) & 0xFF);
+      main_color.blue = ((rgb >> 0) & 0xFF);
+    } else {
+      if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
+        main_color.red = server.arg("r").toInt();
+      }
+      if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
+        main_color.green = server.arg("g").toInt();
+      }
+      if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
+        main_color.blue = server.arg("b").toInt();
+      }
+      if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
+        main_color.white = server.arg("w").toInt();
+      }
     }
-    if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
-      main_color.green = server.arg("g").toInt();
+    if (server.arg("rgb2") != "") {
+      uint32_t rgb2 = (uint32_t) strtoul(server.arg("rgb2").c_str(), NULL, 16);
+      back_color.white = ((rgb2 >> 24) & 0xFF);
+      back_color.red = ((rgb2 >> 16) & 0xFF);
+      back_color.green = ((rgb2 >> 8) & 0xFF);
+      back_color.blue = ((rgb2 >> 0) & 0xFF);
+    } else {
+      if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
+        back_color.red = server.arg("r2").toInt();
+      }
+      if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
+        back_color.green = server.arg("g2").toInt();
+      }
+      if ((server.arg("b2") != "") && (server.arg("b2").toInt() >= 0) && (server.arg("b2").toInt() <= 255)) {
+        back_color.blue = server.arg("b2").toInt();
+      }
+      if ((server.arg("w2") != "") && (server.arg("w2").toInt() >= 0) && (server.arg("w2").toInt() <= 255)){
+        back_color.white = server.arg("w2").toInt();
+      }
     }
-    if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
-      main_color.blue = server.arg("b").toInt();
+    if (server.arg("rgb3") != "") {
+      uint32_t rgb3 = (uint32_t) strtoul(server.arg("rgb3").c_str(), NULL, 16);
+      xtra_color.white = ((rgb3 >> 24) & 0xFF);
+      xtra_color.red = ((rgb3 >> 16) & 0xFF);
+      xtra_color.green = ((rgb3 >> 8) & 0xFF);
+      xtra_color.blue = ((rgb3 >> 0) & 0xFF);
+    } else {
+      if ((server.arg("r3") != "") && (server.arg("r3").toInt() >= 0) && (server.arg("r3").toInt() <= 255)) { 
+        xtra_color.red = server.arg("r3").toInt();
+      }
+      if ((server.arg("g3") != "") && (server.arg("g3").toInt() >= 0) && (server.arg("g3").toInt() <= 255)) {
+        xtra_color.green = server.arg("g3").toInt();
+      }
+      if ((server.arg("b3") != "") && (server.arg("b3").toInt() >= 0) && (server.arg("b3").toInt() <= 255)) {
+        xtra_color.blue = server.arg("b3").toInt();
+      }
+      if ((server.arg("w3") != "") && (server.arg("w3").toInt() >= 0) && (server.arg("w3").toInt() <= 255)){
+        xtra_color.white = server.arg("w3").toInt();
+      }
     }
-    if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
-      main_color.white = server.arg("w").toInt();
+    main_color.red = constrain(main_color.red, 0, 255);
+    main_color.green = constrain(main_color.green, 0, 255);
+    main_color.blue = constrain(main_color.blue, 0, 255);
+    main_color.white = constrain(main_color.white, 0, 255);
+    back_color.red = constrain(back_color.red, 0, 255);
+    back_color.green = constrain(back_color.green, 0, 255);
+    back_color.blue = constrain(back_color.blue, 0, 255);
+    back_color.white = constrain(back_color.white, 0, 255);
+    xtra_color.red = constrain(xtra_color.red, 0, 255);
+    xtra_color.green = constrain(xtra_color.green, 0, 255);
+    xtra_color.blue = constrain(xtra_color.blue, 0, 255);
+    xtra_color.white = constrain(xtra_color.white, 0, 255);
+    convertColors();
+  }
+  if (mode == SET_ALL || mode == SET_MODE || mode == SET_SPEED || mode == TV) {
+    if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
+    ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
     }
   }
-  if (server.arg("rgb2") != "") {
-    uint32_t rgb2 = (uint32_t) strtoul(server.arg("rgb2").c_str(), NULL, 16);
-    back_color.white = ((rgb2 >> 24) & 0xFF);
-    back_color.red = ((rgb2 >> 16) & 0xFF);
-    back_color.green = ((rgb2 >> 8) & 0xFF);
-    back_color.blue = ((rgb2 >> 0) & 0xFF);
-  } else {
-    if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
-      back_color.red = constrain(server.arg("r2").toInt(), 0, 255);
-    }
-    if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
-      back_color.green = server.arg("g2").toInt();
-    }
-    if ((server.arg("b2") != "") && (server.arg("b2").toInt() >= 0) && (server.arg("b2").toInt() <= 255)) {
-      back_color.blue = server.arg("b2").toInt();
-    }
-    if ((server.arg("w2") != "") && (server.arg("w2").toInt() >= 0) && (server.arg("w2").toInt() <= 255)){
-      back_color.white = server.arg("w2").toInt();
+  if (mode == SET_ALL || mode == SET_MODE) {
+    if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
+      ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     }
   }
-  if (server.arg("rgb3") != "") {
-    uint32_t rgb3 = (uint32_t) strtoul(server.arg("rgb3").c_str(), NULL, 16);
-    xtra_color.white = ((rgb3 >> 24) & 0xFF);
-    xtra_color.red = ((rgb3 >> 16) & 0xFF);
-    xtra_color.green = ((rgb3 >> 8) & 0xFF);
-    xtra_color.blue = ((rgb3 >> 0) & 0xFF);
-  } else {
-    if ((server.arg("r3") != "") && (server.arg("r3").toInt() >= 0) && (server.arg("r3").toInt() <= 255)) { 
-      xtra_color.red = server.arg("r3").toInt();
-    }
-    if ((server.arg("g3") != "") && (server.arg("g3").toInt() >= 0) && (server.arg("g3").toInt() <= 255)) {
-      xtra_color.green = server.arg("g3").toInt();
-    }
-    if ((server.arg("b3") != "") && (server.arg("b3").toInt() >= 0) && (server.arg("b3").toInt() <= 255)) {
-      xtra_color.blue = server.arg("b3").toInt();
-    }
-    if ((server.arg("w3") != "") && (server.arg("w3").toInt() >= 0) && (server.arg("w3").toInt() <= 255)){
-      xtra_color.white = server.arg("w3").toInt();
+  if (mode == SET_ALL || mode == SET_MODE || mode == SET_BRIGHTNESS || mode == AUTO || mode == TV || mode == E131) {
+    if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
+      brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
+    } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
+      brightness = constrain(server.arg("p").toInt(), 0, 255);
     }
   }
-  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
-  ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
-  }
-
-  if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
-    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
-  }
-
-  if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
-    brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
-  } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
-    brightness = constrain(server.arg("p").toInt(), 0, 255);
-  }
-
-  main_color.red = constrain(main_color.red, 0, 255);
-  main_color.green = constrain(main_color.green, 0, 255);
-  main_color.blue = constrain(main_color.blue, 0, 255);
-  main_color.white = constrain(main_color.white, 0, 255);
-  back_color.red = constrain(back_color.red, 0, 255);
-  back_color.green = constrain(back_color.green, 0, 255);
-  back_color.blue = constrain(back_color.blue, 0, 255);
-  back_color.white = constrain(back_color.white, 0, 255);
-  xtra_color.red = constrain(xtra_color.red, 0, 255);
-  xtra_color.green = constrain(xtra_color.green, 0, 255);
-  xtra_color.blue = constrain(xtra_color.blue, 0, 255);
-  xtra_color.white = constrain(xtra_color.white, 0, 255);
-  convertColors();
-  DBG_OUTPUT_PORT.print("Get Args: ");
-  DBG_OUTPUT_PORT.println(listStatusJSON());
+  
+  DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStatusJSON());
 }
-
 
 uint16_t convertSpeed(uint8_t mcl_speed) {
   //long ws2812_speed = mcl_speed * 256;
@@ -1254,24 +1259,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
   #endif
 
+  #if ENABLE_MQTT == 0
+  void onMqttMessage(char* topic, byte* payload_in, uint16_t length) {
+  #endif
+  
   #if ENABLE_MQTT == 1
-    void onMqttMessage(char* topic, char* payload_in, AsyncMqttClientMessageProperties properties, size_t length, size_t index, size_t total) {
-    DBG_OUTPUT_PORT.print("MQTT: Recieved ["); DBG_OUTPUT_PORT.print(topic);
-//    DBG_OUTPUT_PORT.print("]: "); DBG_OUTPUT_PORT.println(payload_in);
+  void onMqttMessage(char* topic, char* payload_in, AsyncMqttClientMessageProperties properties, size_t length, size_t index, size_t total) {
+  #endif
     uint8_t * payload = (uint8_t *) malloc(length + 1);
     memcpy(payload, payload_in, length);
     payload[length] = 0;
-    DBG_OUTPUT_PORT.printf("]: %s\r\n", payload);
-  #endif
-
-  #if ENABLE_MQTT == 0
-  void mqtt_callback(char* topic, byte* payload_in, uint16_t length) {
-    uint8_t * payload = (uint8_t *)malloc(length + 1);
-    memcpy(payload, payload_in, length);
-    payload[length] = 0;
-    DBG_OUTPUT_PORT.printf("MQTT: Message arrived [%s]\r\n", payload);
-  #endif
-  
+    DBG_OUTPUT_PORT.printf("MQTT: Recieved [%s]: %s\r\n", topic, payload);
+ 
     #if defined(ENABLE_HOMEASSISTANT)
       if (strcmp(topic, mqtt_ha_state_in) == 0) {
         if (!processJson((char*)payload)) {

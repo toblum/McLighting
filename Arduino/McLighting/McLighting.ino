@@ -372,7 +372,7 @@ void initMqtt() {
     #if ENABLE_MQTT == 0
       DBG_OUTPUT_PORT.printf("MQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
       mqtt_client->setServer(mqtt_host, mqtt_port);
-      mqtt_client->setCallback(mqtt_callback);
+      mqtt_client->setCallback(onMqttMessage);
     #endif
     #if ENABLE_MQTT == 1   
       DBG_OUTPUT_PORT.printf("AMQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
@@ -451,11 +451,12 @@ void setup() {
   //Strip Config
   #if ENABLE_STATE_SAVE == 1
     (readConfigFS()) ? DBG_OUTPUT_PORT.println("WiFiManager config FS read success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Read failure!");
-    delay(500);
+    delay(250);
     (readStateFS()) ? DBG_OUTPUT_PORT.println("Strip state config FS read Success!") : DBG_OUTPUT_PORT.println("Strip state config FS read failure!");
   #endif
   #if ENABLE_STATE_SAVE == 0
     (setConfByConfString(readEEPROM(0, 222)))? DBG_OUTPUT_PORT.println("WiFiManager config EEPROM read success!"): DBG_OUTPUT_PORT.println("WiFiManager config EEPROM Read failure!");
+    delay(250);
     (setModeByStateString(readEEPROM(256, 66)))? DBG_OUTPUT_PORT.println("Strip state config EEPROM read Success!") : DBG_OUTPUT_PORT.println("Strip state config EEPROM read failure!");
   #endif
   char tmp_strip_size[6], tmp_fxoptions[5], tmp_rgbOrder[5]; //needed tempararily for WiFiManager Settings
