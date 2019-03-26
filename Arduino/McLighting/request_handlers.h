@@ -284,11 +284,12 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
     colorval[8] = 0x00;
     uint8_t rangebegin = atoi(startled);
     uint8_t rangeend = atoi(endled);
-    DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s] \r\n", rangebegin, rangeend, colorval);
+    DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s]\r\n", rangebegin, rangeend, colorval);
 
     while ( rangebegin <= rangeend ) {
       char rangeData[11];
       snprintf(rangeData, sizeof(rangeData), "%02d%s", rangebegin, colorval);
+      rangeData[sizeof(rangeData) - 1] = 0x00;
       // Set one LED
       handleSetSingleLED((uint8_t*) rangeData, 0);
       rangebegin++;
@@ -668,10 +669,7 @@ void getModesJSON() {
 // HTTP request handlers
 // ***************************************************************************
 void handleMinimalUpload() {
-  char temp[1500];
-
-  snprintf ( temp, 1500,
-   "<!DOCTYPE html>\
+  char message[] = "<!DOCTYPE html>\
     <html>\
       <head>\
         <title>ESP8266 Upload</title>\
@@ -686,10 +684,9 @@ void handleMinimalUpload() {
           <button>Upload</button>\
          </form>\
       </body>\
-    </html>"
-  );
+    </html>";
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "text/html", temp );
+  server.send ( 200, "text/html", message );
 }
 
 void handleNotFound() {
@@ -877,8 +874,8 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     #if !defined(USE_WS2812FX_DMA)
       if (payload[2] == 'p') {
         char tmp_pin[3];
-        tmp_pin[2] = 0x00;
         snprintf(tmp_pin, sizeof(tmp_pin), "%s", &payload[3]);
+        tmp_pin[2] = 0x00;
         checkPin(atoi(tmp_pin));
         updateStrip = true;
         updateConf = true;
@@ -897,26 +894,31 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     }
     if (payload[1] == 'h') {
       snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &payload[2]);
+      HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
       updateConf = true;
     }
   #if defined(ENABLE_MQTT)
     if (payload[1] == 'm') {
       if (payload[2] == 'h') {
         snprintf(mqtt_host, sizeof(mqtt_host), "%s", &payload[3]);
+        mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
         updateConf = true;
       }
       if (payload[2] == 'p') {
         char tmp_port[6];
         snprintf(tmp_port, sizeof(tmp_port), "%s", &payload[3]);
+        tmp_port[sizeof(tmp_port) - 1] = 0x00;
         mqtt_port = constrain(atoi(tmp_port), 0, 65535);
         updateConf = true;
       }
       if (payload[2] == 'u') {
         snprintf(mqtt_user, sizeof(mqtt_user), "%s", &payload[3]);
+        mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
         updateConf = true;
       }
       if (payload[2] == 'w') {
         snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &payload[3]);
+        mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
         updateConf = true;
       }    
     }
@@ -1502,6 +1504,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     DBG_OUTPUT_PORT.printf("Short button press\r\n");
     if (mode == OFF) {
       setModeByStateString(BTN_MODE_SHORT);
+      prevmode = mode;
       mode = SET_ALL;
     } else {
       mode = OFF;
@@ -1512,6 +1515,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void mediumKeyPress() {
     DBG_OUTPUT_PORT.printf("Medium button press\r\n");
     setModeByStateString(BTN_MODE_MEDIUM);
+    prevmode = mode;
     mode = SET_ALL;
   }
 
@@ -1519,6 +1523,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void longKeyPress() {
     DBG_OUTPUT_PORT.printf("Long button press\r\n");
     setModeByStateString(BTN_MODE_LONG);
+    prevmode = mode;
     mode = SET_ALL;
   }
 
@@ -1556,8 +1561,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 #if defined(ENABLE_BUTTON_GY33)
   void shortKeyPress_gy33() {
     DBG_OUTPUT_PORT.printf("Short GY-33 button press\r\n");
-//    tcs.setConfig(MCU_LED_04, MCU_WHITE_OFF);
-//    delay(500);
     uint16_t red, green, blue, cl, ct, lux;
     tcs.getRawData(&red, &green, &blue, &cl, &lux, &ct);
     DBG_OUTPUT_PORT.printf("Raw Colors: R: [%d] G: [%d] B: [%d] Clear: [%d] Lux: [%d] Colortemp: [%d]\r\n", (int)red, (int)green, (int)blue, (int)cl, (int)lux, (int)ct);
@@ -1565,14 +1568,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
     main_color.red = (pow((r/255.0), 2.5)*255); main_color.green = (pow((g/255.0), 2.5)*255); main_color.blue = (pow((b/255.0), 2.5)*255);main_color.white = 0; 
-    ws2812fx_mode = 0;
+    ws2812fx_mode = FX_MODE_STATIC;
+    prevmode = HOLD;
     mode = SET_ALL;
-//    tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);
   }
 
   // called when button is kept pressed for less than 2 seconds
   void mediumKeyPress_gy33() {   
-      tcs.setConfig(MCU_LED_06, MCU_WHITE_OFF);
+      tcs.setConfig(MCU_LED_03, MCU_WHITE_OFF);
   }
 
   // called when button is kept pressed for 2 seconds or more

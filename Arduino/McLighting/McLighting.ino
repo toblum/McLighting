@@ -360,13 +360,20 @@ void initMqtt() {
   #else
     snprintf(mqtt_clientid, sizeof(mqtt_clientid), "%s", HOSTNAME);
   #endif
+  mqtt_clientid[sizeof(mqtt_clientid) - 1] = 0x00;
   snprintf(mqtt_will_topic, sizeof(mqtt_will_topic), "%s/config", HOSTNAME);
+  mqtt_will_topic[sizeof(mqtt_will_topic) - 1] = 0x00;
   snprintf(mqtt_intopic,  sizeof(mqtt_intopic),  "%s/in",  HOSTNAME);
+  mqtt_intopic[sizeof(mqtt_intopic) - 1] = 0x00;
   snprintf(mqtt_outtopic, sizeof(mqtt_outtopic), "%s/out", HOSTNAME);
+  mqtt_outtopic[sizeof(mqtt_outtopic) - 1] = 0x00;
   #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
     snprintf(mqtt_ha_config, sizeof(mqtt_ha_config), "homeassistant/light/%s/config", HOSTNAME);
+    mqtt_ha_config[sizeof(mqtt_ha_config) - 1] = 0x00;
     snprintf(mqtt_ha_state_in,  sizeof(mqtt_ha_state_in),   "home/%s_ha/state/in",  HOSTNAME);
+    mqtt_ha_state_in[sizeof(mqtt_ha_state_in) - 1] = 0x00;
     snprintf(mqtt_ha_state_out, sizeof(mqtt_ha_state_out),  "home/%s_ha/state/out", HOSTNAME);
+    mqtt_ha_state_out[sizeof(mqtt_ha_state_out) - 1] = 0x00;
   #endif
   if ((strlen(mqtt_host) != 0) && (mqtt_port != 0)) {
     #if ENABLE_MQTT == 0
@@ -563,7 +570,7 @@ void setup() {
         #else
           snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
         #endif
-        last_conf[sizeof(last_conf)]=0;
+        last_conf[sizeof(last_conf)] = 0x00;
         writeEEPROM(0, 222, last_conf);
         EEPROM.commit();
         shouldSaveConfig = false;
@@ -678,6 +685,7 @@ void setup() {
   #if defined(ENABLE_REMOTE)
     irrecv.enableIRIn();  // Start the receiver
     snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
+    last_state[sizeof(last_state)]= 0x00;
   #endif
   DBG_OUTPUT_PORT.println("finished Main Setup!");
 
@@ -866,6 +874,7 @@ void loop() {
         if(!settings_save_state.active()) settings_save_state.once(3, tickerSaveState);
       #endif
       snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", prevmode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
+      last_state[sizeof(last_state) - 1] = 0x00;
     }
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
@@ -902,7 +911,7 @@ void loop() {
       #else
         snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
       #endif
-      last_conf[sizeof(last_conf)-1]= 0x00;
+      last_conf[sizeof(last_conf) - 1] = 0x00;
       writeEEPROM(0, 222, last_conf);
       EEPROM.commit();
       shouldSaveConfig = false;

@@ -201,6 +201,7 @@
   server.on("/get_brightness", []() {
     char str_brightness[4];
     snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (brightness / 2.55));
+    str_brightness[sizeof(str_brightness) - 1] = 0x00;
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_brightness );
     DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (brightness / 2.55));
@@ -215,6 +216,7 @@
   server.on("/get_speed", []() {
     char str_speed[4];
     snprintf(str_speed, sizeof(str_speed), "%i", ws2812fx_speed);
+    str_speed[sizeof(str_speed) - 1] = 0x00;
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_speed );
     DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", ws2812fx_speed);
@@ -229,6 +231,7 @@
   server.on("/get_color", []() {
     char rgbcolor[10];
     snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color: ");
@@ -238,6 +241,7 @@
   server.on("/get_color2", []() {
     char rgbcolor[10];
     snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", back_color.white, back_color.red, back_color.green, back_color.blue);
+    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color2: ");
@@ -247,6 +251,7 @@
   server.on("/get_color3", []() {
     char rgbcolor[10];
     snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", xtra_color.white, xtra_color.red, xtra_color.green, xtra_color.blue);
+    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", rgbcolor );
     DBG_OUTPUT_PORT.print("/get_color3: ");
@@ -285,6 +290,7 @@
     if(server.hasArg("ws_rgbo")){
       char tmp_rgbOrder[5];
       snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", server.arg("ws_rgbo").c_str());
+      tmp_rgbOrder[sizeof(tmp_rgbOrder) - 1] = 0x00;
       checkRGBOrder(tmp_rgbOrder);
       updateStrip = true;
       updateConf = true;
@@ -312,12 +318,14 @@
     
     if(server.hasArg("hostname")){
       snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", server.arg("hostname").c_str());
+      HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
       updateConf = true;
     }
     
 #if defined(ENABLE_MQTT)   
     if(server.hasArg("mqtt_host")){
       snprintf(mqtt_host, sizeof(mqtt_host), "%s", server.arg("mqtt_host").c_str());
+      mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
       updateConf = true;
     }
     if(server.hasArg("mqtt_port")){
@@ -328,10 +336,12 @@
     }
     if(server.hasArg("mqtt_user")){
       snprintf(mqtt_user, sizeof(mqtt_user), "%s", server.arg("mqtt_user").c_str());
+      mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
       updateConf = true;
     }
     if(server.hasArg("mqtt_pass")){
       snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
+      mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
       updateConf = true;
     }
     if (updateConf) {

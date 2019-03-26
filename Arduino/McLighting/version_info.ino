@@ -146,4 +146,7 @@
  * added pointer for MQTT again
  * Removed some String datatype and replaced with char array
  * better responsiveness in ui for sliders
- */
+ *
+ * 26 Mar 2019
+ * Bugfixes
+  */
