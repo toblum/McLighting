@@ -297,8 +297,8 @@
     }
     
 #if !defined(USE_WS2812FX_DMA)    
-    if(server.hasArg("wspin")){
-      if (checkPin(server.arg("wspin").toInt())) {
+    if(server.hasArg("ws_pin")){
+      if (checkPin(server.arg("ws_pin").toInt())) {
         updateStrip = true;
         DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
       } else {
