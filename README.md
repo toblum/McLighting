@@ -68,10 +68,10 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Additional clients
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
-- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [x] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [x] MQTT support
 - [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
