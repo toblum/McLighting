@@ -54,8 +54,8 @@
 #endif
 
 #if defined(ARDUINOJSON_VERSION)
-  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 9)
-    #error "Install ArduinoJson v6.9.x"
+  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR == 10)
+    #error "Install ArduinoJson v6.10.x"
   #endif
 #endif
 

@@ -1132,7 +1132,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
              if (mode == E131){
                root["effect"] = "E131";
              } else {
-               root["effect"] = strip->getModeName(strip->getMode());
+               if (mode == CUSTOM){
+                 root["effect"] = "CUSTOM WS"; 
+               } else {
+                 root["effect"] = strip->getModeName(strip->getMode());
+               }
              }
            }
          }
@@ -1248,6 +1252,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             mode = E131;
           }
          #endif
+          if(effectString == "CUSTOM WS"){
+            mode = CUSTOM;
+          }
         for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           if(String(strip->getModeName(i)) == effectString) {
             mode = SET_MODE;
@@ -1346,6 +1353,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             #if defined(ENABLE_E131)
                effect_list.add("E131");
             #endif
+            effect_list.add("CUSTOM WS");
             for (uint8_t i = 0; i < strip->getModeCount(); i++) {
               effect_list.add(strip->getModeName(i));
             }
@@ -1458,6 +1466,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #if defined(ENABLE_E131)
              effect_list.add("E131");
           #endif
+          effect_list.add("CUSTOM WS");
           for (uint8_t i = 0; i < strip->getModeCount(); i++) {
             effect_list.add(strip->getModeName(i));
           }
