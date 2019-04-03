@@ -1455,7 +1455,7 @@ bool readStateFS() {
 #endif
 
 //Strip Config
-char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
+// char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
 
 struct
 {

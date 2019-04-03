@@ -438,16 +438,6 @@ void setup() {
     strcpy(mqtt_user, custom_mqtt_user.getValue());
     strcpy(mqtt_pass, custom_mqtt_pass.getValue());
 
-    strcpy(strip_size, custom_strip_size.getValue());
-    strcpy(led_pin, custom_led_pin.getValue());
-
-    if(atoi(strip_size) != WS2812FXStripSettings.stripSize)
-      WS2812FXStripSettings.stripSize = atoi(strip_size); 
-    uint8_t pin = atoi(led_pin);
-    if ((pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) and (pin != WS2812FXStripSettings.pin) )
-      WS2812FXStripSettings.pin = pin;    
-    initStrip();
-
     //save the custom parameters to FS
     #if defined(ENABLE_STATE_SAVE_SPIFFS) and (defined(ENABLE_MQTT) or defined(ENABLE_AMQTT))
       (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
@@ -469,6 +459,16 @@ void setup() {
     wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
     wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
   #endif
+
+  strcpy(strip_size, custom_strip_size.getValue());
+  strcpy(led_pin, custom_led_pin.getValue());
+
+  if(atoi(strip_size) != WS2812FXStripSettings.stripSize)
+    WS2812FXStripSettings.stripSize = atoi(strip_size); 
+  uint8_t pin = atoi(led_pin);
+  if ((pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) and (pin != WS2812FXStripSettings.pin) )
+    WS2812FXStripSettings.pin = pin;    
+  initStrip();
 
   //if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
@@ -1060,6 +1060,7 @@ void setup() {
     #ifdef ENABLE_E131
     server.on("/e131", []() {
       exit_func = true;
+      if(strip->isRunning()) strip->stop();
       mode = E131;
       getStatusJSON();
       #ifdef ENABLE_MQTT
