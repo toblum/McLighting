@@ -1199,63 +1199,65 @@ void loop() {
   // Simple statemachine that handles the different modes
   if (mode == SET_MODE) {
     DBG_OUTPUT_PORT.printf("SET_MODE: %d %d\n", ws2812fx_mode, mode);
-    strip->setMode(ws2812fx_mode);
-    strip->trigger();
+    if(strip) strip->setMode(ws2812fx_mode);
+    if(strip) strip->trigger();
     prevmode = SET_MODE;
     mode = SETCOLOR;
   }
   if (mode == OFF) {
-    if(strip->isRunning()) strip->stop(); //should clear memory
-    // mode = HOLD;
+    if(strip){
+      if(strip->isRunning()) strip->stop(); //should clear memory
+      // mode = HOLD;
+    }
   }
   if (mode == SETCOLOR) {
-    strip->setColor(main_color.red, main_color.green, main_color.blue);
-    strip->trigger();
+    if(strip) strip->setColor(main_color.red, main_color.green, main_color.blue);
+    if(strip) strip->trigger();
     mode = (prevmode == SET_MODE) ? SETSPEED : HOLD;
   }
   if (mode == SETSPEED) {
-    strip->setSpeed(convertSpeed(ws2812fx_speed));
-    strip->trigger();
+    if(strip) strip->setSpeed(convertSpeed(ws2812fx_speed));
+    if(strip) strip->trigger();
     mode = (prevmode == SET_MODE) ? BRIGHTNESS : HOLD;
   }
   if (mode == BRIGHTNESS) {
-    strip->setBrightness(brightness);
-    strip->trigger();
+    if(strip) strip->setBrightness(brightness);
+    if(strip) strip->trigger();
     if (prevmode == SET_MODE) prevmode = HOLD;
     mode = HOLD;
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == WIPE) {
-      strip->setColor(main_color.red, main_color.green, main_color.blue);
-      strip->setMode(FX_MODE_COLOR_WIPE);
-      strip->trigger();
+      if(strip) strip->setColor(main_color.red, main_color.green, main_color.blue);
+      if(strip) strip->setMode(FX_MODE_COLOR_WIPE);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     if (mode == RAINBOW) {
-      strip->setMode(FX_MODE_RAINBOW);
-      strip->trigger();
+      if(strip) strip->setMode(FX_MODE_RAINBOW);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     if (mode == RAINBOWCYCLE) {
-      strip->setMode(FX_MODE_RAINBOW_CYCLE);
-      strip->trigger();
+      if(strip) strip->setMode(FX_MODE_RAINBOW_CYCLE);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASE) {
-      strip->setColor(main_color.red, main_color.green, main_color.blue);
-      strip->setMode(FX_MODE_THEATER_CHASE);
-      strip->trigger();
+      if(strip) strip->setColor(main_color.red, main_color.green, main_color.blue);
+      if(strip) strip->setMode(FX_MODE_THEATER_CHASE);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     if (mode == TWINKLERANDOM) {
-      strip->setColor(main_color.red, main_color.green, main_color.blue);
-      strip->setMode(FX_MODE_TWINKLE_RANDOM);
-      strip->trigger();
+      if(strip) strip->setColor(main_color.red, main_color.green, main_color.blue);
+      if(strip) strip->setMode(FX_MODE_TWINKLE_RANDOM);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     if (mode == THEATERCHASERAINBOW) {
-      strip->setMode(FX_MODE_THEATER_CHASE_RAINBOW);
-      strip->trigger();
+      if(strip) strip->setMode(FX_MODE_THEATER_CHASE_RAINBOW);
+      if(strip) strip->trigger();
       mode = HOLD;
     }
     #ifdef ENABLE_E131
@@ -1265,7 +1267,10 @@ void loop() {
     #endif
   #endif
   if (mode == HOLD || mode == CUSTOM) {
-    if(!strip->isRunning()) strip->start();
+    if(strip)
+    {
+      if(!strip->isRunning()) strip->start();
+    }
     #ifdef ENABLE_LEGACY_ANIMATIONS
       if (exit_func) {
         exit_func = false;
@@ -1275,7 +1280,10 @@ void loop() {
   }
   #ifdef ENABLE_LEGACY_ANIMATIONS
     if (mode == TV) {
-      if(!strip->isRunning()) strip->start();
+      if(strip)
+      {
+        if(!strip->isRunning()) strip->start();
+      }
       tv();
     }
   #endif
@@ -1286,7 +1294,7 @@ void loop() {
   #else
   if (mode != CUSTOM) {
   #endif
-    strip->service();
+    if(strip) strip->service();
   }
 
   #ifdef ENABLE_STATE_SAVE_SPIFFS
