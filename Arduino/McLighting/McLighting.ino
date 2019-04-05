@@ -378,11 +378,11 @@ void setup() {
     WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32, " maxlength=31 type='password'");
   #endif
 
-  // sprintf(strip_size, "%d", WS2812FXStripSettings.stripSize);
-  // sprintf(led_pin, "%d", WS2812FXStripSettings.pin);
+  sprintf(strip_size, "%d", WS2812FXStripSettings.stripSize);
+  sprintf(led_pin, "%d", WS2812FXStripSettings.pin);
 
-  // WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", strip_size, 3);
-  // WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", led_pin, 2);
+  WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", strip_size, 3);
+  WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", led_pin, 2);
 
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
@@ -392,10 +392,10 @@ void setup() {
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback(configModeCallback);
 
-  #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
-    //set config save notify callback
-    wifiManager.setSaveConfigCallback(saveConfigCallback);
+  //set config save notify callback
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
 
+  #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //add all your parameters here
     wifiManager.addParameter(&custom_mqtt_host);
     wifiManager.addParameter(&custom_mqtt_port);
@@ -403,8 +403,8 @@ void setup() {
     wifiManager.addParameter(&custom_mqtt_pass);
   #endif
 
-  // wifiManager.addParameter(&custom_strip_size);
-  // wifiManager.addParameter(&custom_led_pin);
+  wifiManager.addParameter(&custom_strip_size);
+  wifiManager.addParameter(&custom_led_pin);
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   
@@ -460,15 +460,15 @@ void setup() {
     wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
   #endif
 
-  // strcpy(strip_size, custom_strip_size.getValue());
-  // strcpy(led_pin, custom_led_pin.getValue());
+  strcpy(strip_size, custom_strip_size.getValue());
+  strcpy(led_pin, custom_led_pin.getValue());
 
-  // if(atoi(strip_size) != WS2812FXStripSettings.stripSize)
-  //   WS2812FXStripSettings.stripSize = atoi(strip_size); 
-  // uint8_t pin = atoi(led_pin);
-  // if ((pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) and (pin != WS2812FXStripSettings.pin) )
-  //   WS2812FXStripSettings.pin = pin;    
-  // initStrip();
+  if(atoi(strip_size) != WS2812FXStripSettings.stripSize)
+    WS2812FXStripSettings.stripSize = atoi(strip_size);
+  uint8_t pin = atoi(led_pin);
+  if ((pin == 16 or pin == 5 or pin == 4 or pin == 0 or pin == 2 or pin == 14 or pin == 12 or pin == 13 or pin == 15 or pin == 3 or pin == 1) and (pin != WS2812FXStripSettings.pin) )
+    WS2812FXStripSettings.pin = pin;
+  initStrip();
 
   //if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
