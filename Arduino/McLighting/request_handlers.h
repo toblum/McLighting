@@ -1455,7 +1455,7 @@ bool readStateFS() {
 #endif
 
 //Strip Config
-// char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
+char strip_size[4], led_pin[3]; //needed for WiFiManager Settings
 
 struct
 {
@@ -1497,7 +1497,7 @@ bool readStripConfigFS(void) {
         DBG_OUTPUT_PORT.println(" Parsed!");
         JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
-        WS2812FXStripSettings.stripSize = json["pixel_pount"];
+        WS2812FXStripSettings.stripSize = (json["pixel_count"]) ? json["pixel_count"] : NUMLEDS;
         WS2812FXStripSettings.RGBOrder = json["rgb_order"];
         WS2812FXStripSettings.pin = json["pin"];
         updateFS = false;
@@ -1523,7 +1523,7 @@ void writeStripConfigFS(void){
   DBG_OUTPUT_PORT.print("Saving Strip cfg: ");
   DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
   JsonObject json = jsonBuffer.to<JsonObject>();
-  json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+  json["pixel_count"] = WS2812FXStripSettings.stripSize;
   json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
   json["pin"] = WS2812FXStripSettings.pin;
 
