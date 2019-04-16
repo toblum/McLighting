@@ -1415,13 +1415,13 @@ bool readStateFS() {
       if (!error) {
         JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
-        mode = static_cast<MODE>((int) json["mode"]);
-        ws2812fx_mode = json["strip_mode"];
-        brightness = json["brightness"];
-        ws2812fx_speed = json["speed"];
-        main_color.red = json["red"];
-        main_color.green = json["green"];
-        main_color.blue = json["blue"];
+        mode = static_cast<MODE>(json["mode"].as<int>());
+        ws2812fx_mode = json["strip_mode"].as<int>();
+        brightness = json["brightness"].as<int>();
+        ws2812fx_speed = json["speed"].as<int>();
+        main_color.red = json["red"].as<int>();
+        main_color.green = json["green"].as<int>();
+        main_color.blue = json["blue"].as<int>();
 
         #ifdef ENABLE_HOMEASSISTANT
           if(mode != OFF) stateOn = true;
@@ -1455,7 +1455,7 @@ bool readStateFS() {
 #endif
 
 //Strip Config
-char strip_size[3], led_pin[2]; //needed for WiFiManager Settings
+char strip_size[4], led_pin[3]; //needed for WiFiManager Settings
 
 struct
 {
@@ -1497,9 +1497,9 @@ bool readStripConfigFS(void) {
         DBG_OUTPUT_PORT.println(" Parsed!");
         JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
-        WS2812FXStripSettings.stripSize = json["pixel_pount"];
-        WS2812FXStripSettings.RGBOrder = json["rgb_order"];
-        WS2812FXStripSettings.pin = json["pin"];
+        WS2812FXStripSettings.stripSize = (json["pixel_count"].as<int>()) ? json["pixel_count"].as<int>() : NUMLEDS;
+        WS2812FXStripSettings.RGBOrder = json["rgb_order"].as<int>();
+        WS2812FXStripSettings.pin = json["pin"].as<int>();
         updateFS = false;
         return true;
       } else {
@@ -1523,7 +1523,7 @@ void writeStripConfigFS(void){
   DBG_OUTPUT_PORT.print("Saving Strip cfg: ");
   DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
   JsonObject json = jsonBuffer.to<JsonObject>();
-  json["pixel_pount"] = WS2812FXStripSettings.stripSize;
+  json["pixel_count"] = WS2812FXStripSettings.stripSize;
   json["rgb_order"] = WS2812FXStripSettings.RGBOrder;
   json["pin"] = WS2812FXStripSettings.pin;
 
