@@ -88,4 +88,9 @@
  * - UART 1 and 0 were mixed up
  * - LWT revisit
  * - Custom mode needs index
+ * 
+ * 16 Apr 2019
+ * - fix all issues with 2.2.3 (REST API)
+ * - #368 WDT fix
+ # - #371 E1.31 fix
  */
