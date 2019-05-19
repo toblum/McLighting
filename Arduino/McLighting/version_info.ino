@@ -149,4 +149,7 @@
  *
  * 26 Mar 2019
  * Bugfixes
-  */
+ * 
+ * 19 May 2010
+ * Bugfixes regarding MQTT Hostname
+ */
