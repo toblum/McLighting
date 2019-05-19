@@ -361,18 +361,18 @@ void initMqtt() {
     snprintf(mqtt_clientid, sizeof(mqtt_clientid), "%s", HOSTNAME);
   #endif
   mqtt_clientid[sizeof(mqtt_clientid) - 1] = 0x00;
-  snprintf(mqtt_will_topic, sizeof(mqtt_will_topic), "%s/config", HOSTNAME);
+  snprintf(mqtt_will_topic, sizeof(mqtt_will_topic), "%s/config", mqtt_clientid);
   mqtt_will_topic[sizeof(mqtt_will_topic) - 1] = 0x00;
-  snprintf(mqtt_intopic,  sizeof(mqtt_intopic),  "%s/in",  HOSTNAME);
+  snprintf(mqtt_intopic,  sizeof(mqtt_intopic),  "%s/in",  mqtt_clientid);
   mqtt_intopic[sizeof(mqtt_intopic) - 1] = 0x00;
-  snprintf(mqtt_outtopic, sizeof(mqtt_outtopic), "%s/out", HOSTNAME);
+  snprintf(mqtt_outtopic, sizeof(mqtt_outtopic), "%s/out", mqtt_clientid);
   mqtt_outtopic[sizeof(mqtt_outtopic) - 1] = 0x00;
   #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-    snprintf(mqtt_ha_config, sizeof(mqtt_ha_config), "homeassistant/light/%s/config", HOSTNAME);
+    snprintf(mqtt_ha_config, sizeof(mqtt_ha_config), "homeassistant/light/%s/config", mqtt_clientid);
     mqtt_ha_config[sizeof(mqtt_ha_config) - 1] = 0x00;
-    snprintf(mqtt_ha_state_in,  sizeof(mqtt_ha_state_in),   "home/%s_ha/state/in",  HOSTNAME);
+    snprintf(mqtt_ha_state_in,  sizeof(mqtt_ha_state_in),   "home/%s_ha/state/in",  mqtt_clientid);
     mqtt_ha_state_in[sizeof(mqtt_ha_state_in) - 1] = 0x00;
-    snprintf(mqtt_ha_state_out, sizeof(mqtt_ha_state_out),  "home/%s_ha/state/out", HOSTNAME);
+    snprintf(mqtt_ha_state_out, sizeof(mqtt_ha_state_out),  "home/%s_ha/state/out", mqtt_clientid);
     mqtt_ha_state_out[sizeof(mqtt_ha_state_out) - 1] = 0x00;
   #endif
   if ((strlen(mqtt_host) != 0) && (mqtt_port != 0)) {

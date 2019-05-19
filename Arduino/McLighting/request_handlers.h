@@ -1325,7 +1325,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);
             JsonObject root = jsonBuffer.to<JsonObject>();
-            root["name"] = HOSTNAME;
+            root["name"] = mqtt_clientid;
             #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
             root["schema"] = "json";
             #else
@@ -1438,7 +1438,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
           DynamicJsonDocument jsonBuffer(bufferSize);
           JsonObject root = jsonBuffer.to<JsonObject>();
-          root["name"] = HOSTNAME;
+          root["name"] = mqtt_clientid;
           #if defined(MQTT_HOME_ASSISTANT_0_87_SUPPORT)
           root["schema"] = "json";
           #else
@@ -1576,7 +1576,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     uint8_t r, g, b, col, conf;
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
-    main_color.red = (pow((r/255.0), 2.5)*255); main_color.green = (pow((g/255.0), 2.5)*255); main_color.blue = (pow((b/255.0), 2.5)*255);main_color.white = 0; 
+    main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0; 
     ws2812fx_mode = FX_MODE_STATIC;
     prevmode = HOLD;
     mode = SET_ALL;
@@ -1718,7 +1718,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             checkRGBOrder(tmp_rgbOrder);
             uint8_t temp_pin;
             checkPin((uint8_t) root["ws_pin"]);
-            WS2812FXStripSettings.fxoptions = ((constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) >> 1) << 1);
+            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) && 0xFE;
             jsonBuffer.clear();
             return true;
           } else {
