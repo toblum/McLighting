@@ -256,6 +256,26 @@ void saveConfigCallback () {
   #include "custom_ws2812fx_animations.h" // Add animations in this file
 #endif
 
+#ifdef OFFSET
+void OffsetShow(void) {
+  static uint8_t tmpPixels[NUMLEDS * 4]; // allocate space for a copy of the ADafruit pixel data
+  uint8_t bytesPerPixel = strip->getNumBytes() / strip->getLength(); // 3=RGB, 4=RGBW
+
+  // copy the Adafruit pixel array
+  memcpy(tmpPixels, strip->getPixels(), strip->getNumBytes());
+
+  // offset the data in the Adafruit pixel array
+  memcpy(strip->getPixels() + OFFSET * bytesPerPixel, tmpPixels, (NUMLEDS - OFFSET) * bytesPerPixel);
+  memcpy(strip->getPixels(), tmpPixels + (NUMLEDS - OFFSET) * bytesPerPixel, OFFSET * bytesPerPixel);
+
+  // run the standard Adafruit show() function
+  strip->Adafruit_NeoPixel::show();
+
+  // copy the original pixel data back to the Adafruit pixel array
+  memcpy(strip->getPixels(), tmpPixels, strip->getNumBytes());
+}
+#endif
+
 // function to Initialize the strip
 void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelType RGBOrder = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin){
   if (strip) {
@@ -283,6 +303,10 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   // on a live circuit...if you must, connect GND first.
   
   strip->init();
+  #ifdef OFFSET
+  strip->setCustomShow(OffsetShow);
+  #endif
+	
   #if defined(USE_WS2812FX_DMA) or defined(USE_WS2812FX_UART1) or defined(USE_WS2812FX_UART2)
     initDMA(stripSize);
     strip->setCustomShow(DMA_Show);
