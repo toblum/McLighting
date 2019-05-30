@@ -5,6 +5,8 @@
 // Neopixel
 #define LED_PIN 14       // LED_PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24       // Number of leds in the strip
+//
+//#define OFFSET         // If defined, first led of starting effect like dual scan,scan etc, is traslated of OFFSET number of leds
 //#define LED_TYPE_WS2811  // Uncomment if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
