@@ -1,6 +1,7 @@
 # McLighting v2 - The ESP8266 based multi-client lighting gadget
 
 This version, add ability to translate starting led of effect by OFFSET number of leds, respect of elettric wire of led strip.
+Thanks to @moose4lord
 
 [![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.4-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
 
