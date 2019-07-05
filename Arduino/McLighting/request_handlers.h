@@ -1492,12 +1492,12 @@ bool readStripConfigFS(void) {
       configFile.readBytes(buf.get(), size);
       DynamicJsonDocument jsonBuffer(JSON_OBJECT_SIZE(4)+300);
       DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-      DBG_OUTPUT_PORT.print("Config: ");
+      DBG_OUTPUT_PORT.print("neoconfig.json: ");
       if (!error) {
-        DBG_OUTPUT_PORT.println(" Parsed!");
+        DBG_OUTPUT_PORT.println("Parsed!");
         JsonObject json = jsonBuffer.as<JsonObject>();
         serializeJson(json, DBG_OUTPUT_PORT);
-        WS2812FXStripSettings.stripSize = (json["pixel_count"].as<int>()) ? json["pixel_count"].as<int>() : NUMLEDS;
+        WS2812FXStripSettings.stripSize = (json["pixel_count"].as<uint16_t>()) ? json["pixel_count"].as<uint16_t>() : NUMLEDS;
         WS2812FXStripSettings.RGBOrder = json["rgb_order"].as<int>();
         WS2812FXStripSettings.pin = json["pin"].as<int>();
         updateFS = false;
@@ -1510,7 +1510,7 @@ bool readStripConfigFS(void) {
       DBG_OUTPUT_PORT.println("Failed to open /config.json");
     }
   } else {
-    DBG_OUTPUT_PORT.println("Coudnt find config.json");
+    DBG_OUTPUT_PORT.println("Couldn't find config.json");
   }
   //end read
   updateFS = false;

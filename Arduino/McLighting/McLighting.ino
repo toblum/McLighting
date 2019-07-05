@@ -381,7 +381,7 @@ void setup() {
   sprintf(strip_size, "%d", WS2812FXStripSettings.stripSize);
   sprintf(led_pin, "%d", WS2812FXStripSettings.pin);
 
-  WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", strip_size, 3);
+  WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", strip_size, 5);
   WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", led_pin, 2);
 
   //Local intialization. Once its business is done, there is no need to keep it around
