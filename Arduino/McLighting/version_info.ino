@@ -95,7 +95,6 @@
  * - #371 E1.31 fix
  * 
  * 05 Jul 2019 v2.2.5 (Hotfix)
- * - fix all issues with 2.2.3 (REST API)
  * - #415 wrong WS2812FXStripSettings.stripSize
  * - #424 PROGMEM edit is broken
  */
