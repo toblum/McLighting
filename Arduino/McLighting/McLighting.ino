@@ -584,10 +584,6 @@ void setup() {
   // ***************************************************************************
   //list directory
   server.on("/list", HTTP_GET, handleFileList);
-  //load editor
-  server.on("/edit", HTTP_GET, []() {
-    if (!handleFileRead("/edit.htm")) server.send(404, "text/plain", "FileNotFound");
-  });
   //create file
   server.on("/edit", HTTP_PUT, handleFileCreate);
   //delete file
