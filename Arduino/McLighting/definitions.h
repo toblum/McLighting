@@ -9,7 +9,7 @@
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
-#define HOSTNAME "McLighting01"   // Friedly hostname
+#define HOSTNAME "McLighting01"   // Friedly hostname. Hostname should not contain spaces as this will break Home Assistant discovery if used
 
 #define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
 //#define ENABLE_OTA         // If defined, enable Arduino OTA code.
