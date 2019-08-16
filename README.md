@@ -6,6 +6,15 @@ McLighting (the multi-client lighting gadget) is a very cheap internet-controlla
 
 Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
+---
+
+> **Hello, folks,  
+> the McLighting project is currently paused. Unfortunately, for personal reasons, I don't have enough time to support it in the usual way. However, the project is still available and I will help if I can find the time. Meanwhile there is also a large community of users who are happy to help you with any problems, thanks for your effort at this point.  
+> But there won't be any major enhancements at the moment. If you're looking for more features, please have a look at the great fork https://github.com/FabLab-Luenen/McLighting which offers support for RGBW LEDs and an extended UI.  
+> If there is anyone of you who would like to help continue the project. Just get in touch with me.**
+
+---
+
 [![Demo video WebClient](https://j.gifs.com/kRPrzN.gif)](https://youtu.be/rc6QVHKAXBs)
 
 [![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
