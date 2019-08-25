@@ -9,7 +9,7 @@
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
-#define HOSTNAME "McLighting01"   // Friedly hostname
+#define HOSTNAME "McLighting01"   // Friendly hostname
 
 #define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
 //#define ENABLE_OTA         // If defined, enable Arduino OTA code.
@@ -18,7 +18,7 @@
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
 #define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
 //#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
-#define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
+#define ENABLE_LEGACY_ANIMATIONS // Dont disable this for now
 #define ENABLE_E131              // E1.31 implementation
 #define USE_HTML_MIN_GZ             //comment for using index.htm & edit.htm from SPIFFs instead of PROGMEM
 //#define CUSTOM_WS2812FX_ANIMATIONS  //uncomment and put animations in "custom_ws2812fx_animations.h" 
