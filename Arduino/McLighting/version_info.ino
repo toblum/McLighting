@@ -150,6 +150,12 @@
  * 26 Mar 2019
  * Bugfixes
  * 
- * 19 May 2010
+ * 19 May 2019
  * Bugfixes regarding MQTT Hostname
+ *
+ * 08 September 2019
+ * Version Bump to 2.2.5 rgbw 3colors
+ * adressed issue: #27 
+ * adressed issue: #28 (see new REST-API documentation)
+ *
  */

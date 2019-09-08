@@ -1,4 +1,5 @@
 #define USE_WS2812FX_DMA 0      // 0 = Used PIN is ignored & set to RX/GPIO3; 1 = Used PIN is ignored & set to D4/GPIO2; 2 = Uses PIN is ignored & set to TX/GPIO1;  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+                                // or comment it out
 #if defined(USE_WS2812FX_DMA)
   #define MAXLEDS 384           // due to memory limit of esp8266 at the moment only 384 leds are supported in DMA Mode. More can crash if mqtt is used.
 #else

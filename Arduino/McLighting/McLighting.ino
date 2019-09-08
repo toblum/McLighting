@@ -167,7 +167,7 @@ WS2812FX * strip = NULL;
   void DMA_Show(void) {
     if(dma->IsReadyToUpdate()) {
       memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
-      dma->Update();
+      dma->Update(false);
     }
   }
 #endif

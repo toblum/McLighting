@@ -59,7 +59,7 @@ void convertColors() {
 
 void getArgs() {
   
-  if (mode == SET_ALL || mode == SET_MODE || mode == SET_COLOR) {
+  if (mode == SET_ALL || mode == SET_COLOR) {
     if (server.arg("rgb") != "") {
       uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
       main_color.white = ((rgb >> 24) & 0xFF);
@@ -134,7 +134,7 @@ void getArgs() {
     xtra_color.white = constrain(xtra_color.white, 0, 255);
     convertColors();
   }
-  if (mode == SET_ALL || mode == SET_MODE || mode == SET_SPEED || mode == TV) {
+  if (mode == SET_ALL || mode == SET_SPEED || mode == TV) {
     if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
     ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
     }
@@ -144,7 +144,7 @@ void getArgs() {
       ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     }
   }
-  if (mode == SET_ALL || mode == SET_MODE || mode == SET_BRIGHTNESS || mode == AUTO || mode == TV || mode == E131) {
+  if (mode == SET_ALL || mode == SET_BRIGHTNESS || mode == AUTO || mode == TV || mode == E131) {
     if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
       brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
     } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
