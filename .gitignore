@@ -10,3 +10,6 @@ lib/readme.txt
 .gcc-flags.json
 
 .vscode/*
+.pio/*
+
+*.bin
