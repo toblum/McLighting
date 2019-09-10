@@ -1,4 +1,4 @@
-#define USE_WS2812FX_DMA 0      // 0 = Used PIN is ignored & set to RX/GPIO3; 1 = Used PIN is ignored & set to D4/GPIO2; 2 = Uses PIN is ignored & set to TX/GPIO1;  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
+#define USE_WS2812FX_DMA 0      // 0 = Used PIN is ignored & set to RX/GPIO3; 1 = Used PIN is ignored & set to TX/GPIO1; 2 = Uses PIN is ignored & set to D4/GPIO2;  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
                                 // or comment it out
 #if defined(USE_WS2812FX_DMA)
   #define MAXLEDS 384           // due to memory limit of esp8266 at the moment only 384 leds are supported in DMA Mode. More can crash if mqtt is used.
@@ -62,7 +62,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
   #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87 
 #endif
 
-#if defined(USE_WS2812FX_DMA) and USE_WS2812FX_DMA < 0 and USE_WS2812FX_DMA > 2
+#if defined(USE_WS2812FX_DMA) && (USE_WS2812FX_DMA < 0 || USE_WS2812FX_DMA > 2)
 #error "Definition of USE_WS2812FX_DMA is wrong!"
 #endif
 
@@ -160,7 +160,7 @@ LEDState main_color = { 255, 0, 0, 0 };  // Store the "main color" of the strip 
 LEDState back_color = {   0, 0, 0, 0 };  // Store the "2nd color" of the strip used in single color modes
 LEDState xtra_color = {   0, 0, 0, 0 };  // Store the "3rd color" of the strip used in single color modes
 
-bool shouldSaveConfig = false;  // For WiFiManger custom config and config
+bool updateConfig = false;  // For WiFiManger custom config and config
 char last_state[67];            // Keeps the state representation before auto or off mode 
 bool updateState = false;
 

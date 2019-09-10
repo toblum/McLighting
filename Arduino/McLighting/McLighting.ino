@@ -149,16 +149,16 @@ WS2812FX * strip = NULL;
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
     dma->Initialize();
@@ -240,7 +240,7 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 //callback notifying us of the need to save config
 void saveConfigCallback () {
   DBG_OUTPUT_PORT.println("Should save config");
-  shouldSaveConfig = true;
+  updateConfig = true;
 }
 
 // ***************************************************************************
@@ -558,11 +558,11 @@ void setup() {
     strcpy(tmp_rgbOrder, custom_rgbOrder.getValue());
     checkRGBOrder(tmp_rgbOrder);
     WS2812FXStripSettings.fxoptions = atoi(custom_fxoptions.getValue());
-    #if ENABLE_STATE_SAVE == 1
-      (writeConfigFS(shouldSaveConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
-    #endif
-    #if ENABLE_STATE_SAVE == 0
-      if (shouldSaveConfig) {
+    if (updateConfig) {
+      #if ENABLE_STATE_SAVE == 1
+        (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
+      #endif
+      #if ENABLE_STATE_SAVE == 0
         char last_conf[223];
         DBG_OUTPUT_PORT.println("Saving WiFiManager config");
         #if defined(ENABLE_MQTT)
@@ -573,9 +573,9 @@ void setup() {
         last_conf[sizeof(last_conf)] = 0x00;
         writeEEPROM(0, 222, last_conf);
         EEPROM.commit();
-        shouldSaveConfig = false;
-      }
-    #endif
+        updateConfig = false;
+      #endif
+    }
   #endif
  
   //if you get here you have connected to the WiFi
@@ -869,7 +869,7 @@ void loop() {
   }
  
   if (prevmode != mode) {  
-    if (prevmode != AUTO) {  // do not save if AUTO Mode was set
+    if ((prevmode != AUTO) && (prevmode != INIT_STRIP)) {  // do not save if AUTO Mode was set
       #if defined(ENABLE_STATE_SAVE)
         if(!settings_save_state.active()) settings_save_state.once(3, tickerSaveState);
       #endif
@@ -891,7 +891,7 @@ void loop() {
   #if defined(ENABLE_STATE_SAVE)
     if (updateState){
     #if ENABLE_STATE_SAVE == 1
-      (writeStateFS(true)) ? DBG_OUTPUT_PORT.println(" Success!") : DBG_OUTPUT_PORT.println(" Failure!");
+      (writeStateFS(updateState)) ? DBG_OUTPUT_PORT.println(" State FS Save Success!") : DBG_OUTPUT_PORT.println("State FS Save failure!");
     #endif
     #if ENABLE_STATE_SAVE == 0
       writeEEPROM(384, 66, last_state);  // 384 --> last_state (reserved 66 bytes)
@@ -900,9 +900,9 @@ void loop() {
       settings_save_state.detach();
     #endif
     }
-    if (shouldSaveConfig) {
+    if (updateConfig) {
     #if ENABLE_STATE_SAVE == 1  
-      (writeConfigFS(true)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
+      (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
     #endif
     #if ENABLE_STATE_SAVE == 0 
       char last_conf[223];
@@ -914,7 +914,7 @@ void loop() {
       last_conf[sizeof(last_conf) - 1] = 0x00;
       writeEEPROM(0, 222, last_conf);
       EEPROM.commit();
-      shouldSaveConfig = false;
+      updateConfig = false;
       settings_save_conf.detach();
     #endif
     }
