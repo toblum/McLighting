@@ -284,7 +284,7 @@
       uint16_t pixelCt = server.arg("ws_cnt").toInt();
       if (pixelCt > 0) {
         WS2812FXStripSettings.stripSize = constrain(pixelCt, 1, MAXLEDS);
-        updateStrip = true;
+        updateStrip = true;   
       }
     }
     if(server.hasArg("ws_rgbo")){
@@ -293,13 +293,13 @@
       tmp_rgbOrder[sizeof(tmp_rgbOrder) - 1] = 0x00;
       checkRGBOrder(tmp_rgbOrder);
       updateStrip = true;
-      updateConf = true;
     }
     
 #if !defined(USE_WS2812FX_DMA)    
     if(server.hasArg("ws_pin")){
       if (checkPin(server.arg("ws_pin").toInt())) {
         updateStrip = true;
+        DBG_OUTPUT_PORT.print("Pin was set to: ");
         DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
@@ -371,6 +371,7 @@
   });
 
   server.on("/all", []() {
+    prevmode = HOLD;
     ws2812fx_mode = FX_MODE_STATIC;
     mode = SET_ALL;
     getArgs();

@@ -301,15 +301,17 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 }
 
 bool checkPin(uint8_t pin) { 
+  #if defined(USE_WS2812FX_DMA)
     #if USE_WS2812FX_DMA == 0
       pin = 3;
     #endif
     #if USE_WS2812FX_DMA == 1
-      pin = 2;
-    #endif
-    #if USE_WS2812FX_DMA == 2
       pin = 1;
     #endif
+    #if USE_WS2812FX_DMA == 2
+      pin = 2;
+    #endif
+  #endif
   if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != WS2812FXStripSettings.pin)) {
     WS2812FXStripSettings.pin = pin;
     return true;
@@ -878,7 +880,6 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
         tmp_pin[2] = 0x00;
         checkPin(atoi(tmp_pin));
         updateStrip = true;
-        updateConf = true;
       }
     #endif
       if (payload[2] == 'o') {
@@ -942,9 +943,10 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, buffer);
-    }
+    } 
 #if defined(ENABLE_STATE_SAVE)
     if (updateStrip || updateConf) {
+      DBG_OUTPUT_PORT.println("Saving config.json!");
       if(!settings_save_conf.active()) settings_save_conf.once(3, tickerSaveConfig);
     }
 #endif
@@ -1629,7 +1631,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 
   void tickerSaveConfig(){
-    shouldSaveConfig = true;
+    updateConfig = true;
   }
   
   #if ENABLE_STATE_SAVE == 0 
@@ -1666,11 +1668,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         //FS save
         DBG_OUTPUT_PORT.println("Saving config: ");    
         File configFile = SPIFFS.open("/config.json", "w");
-        if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
+        if (!configFile) {
+          DBG_OUTPUT_PORT.println("Failed!");
+          settings_save_conf.detach();
+          updateConfig = false;
+          return false;
+        }
         DBG_OUTPUT_PORT.println(listConfigJSON());
         configFile.print(listConfigJSON());
         configFile.close();
-        shouldSaveConfig = false;
+        settings_save_conf.detach();
+        updateConfig = false;
         return true;
         //end save
       } else {
@@ -1740,7 +1748,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     bool writeStateFS(bool saveConfig){
       if (saveConfig) {
         //save the strip state to FS JSON
-        DBG_OUTPUT_PORT.print("Saving cfg: ");
+        DBG_OUTPUT_PORT.print("Saving state: ");
         //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
         File configFile = SPIFFS.open("/stripstate.json", "w");
         if (!configFile) {

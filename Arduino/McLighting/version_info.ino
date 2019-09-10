@@ -158,4 +158,11 @@
  * adressed issue: #27 
  * adressed issue: #28 (see new REST-API documentation)
  *
+ * 10 September 2019
+ * Version Bump to 2.2.6 rgbw 3colors 
+ * adressed issue: #28 (see new REST-API documentation) again
+ * adressed issue: #26
+ * adressed issue: #31
+ * adressed issue: #32 
+ * 
  */
