@@ -1506,7 +1506,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   #endif
 #endif
 
-
 // ***************************************************************************
 // Button management
 // ***************************************************************************
@@ -1726,7 +1725,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             checkRGBOrder(tmp_rgbOrder);
             uint8_t temp_pin;
             checkPin((uint8_t) root["ws_pin"]);
-            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) && 0xFE;
+            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
             jsonBuffer.clear();
             return true;
           } else {
