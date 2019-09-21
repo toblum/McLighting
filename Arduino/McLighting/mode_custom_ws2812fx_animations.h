@@ -86,7 +86,26 @@ void Fire2012() {
   }
 }
 
+void Gradient() {
+  for( uint16_t j = 0; j < WS2812FXStripSettings.stripSize; j++) {
+    uint16_t pixelnumber;
+    uint32_t color;
+    if( gReverseDirection ) {
+      pixelnumber = (WS2812FXStripSettings.stripSize - 1) - j;
+    } else {
+      pixelnumber = j;
+    }
+    color = fade(hex_colors_actual[1], hex_colors_actual[0], (j*255)/(WS2812FXStripSettings.stripSize - 1));
+    strip->setPixelColor(pixelnumber, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
+  }
+}
+
 uint16_t myCustomEffect0() {
   Fire2012();
+  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+}
+
+uint16_t myCustomEffect1() {
+  Gradient();
   return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
 }

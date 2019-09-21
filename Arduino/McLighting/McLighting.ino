@@ -114,60 +114,57 @@ WS2812FX * strip = NULL;
 
   #if USE_WS2812FX_DMA == 0 // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Dma800KbpsMethod * dma = NULL ; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod> * dma = NULL ; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Dma400KbpsMethod * dma = NULL;  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma400KbpsMethod> * dma = NULL;  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Uart0800KbpsMethod * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0800KbpsMethod> * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Uart0400KbpsMethod * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0400KbpsMethod> * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      NeoEsp8266Uart1800KbpsMethod * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1800KbpsMethod> * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      NeoEsp8266Uart1400KbpsMethod * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1400KbpsMethod> * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   
   void initDMA(uint16_t stripSize = NUMLEDS){
     if (dma != NULL) { delete(dma); }
-    uint8_t ledcolors = 3;
-    if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-      ledcolors = 4;
-    }
   #if USE_WS2812FX_DMA == 0 // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811)  
-      dma = new NeoEsp8266Dma800KbpsMethod(stripSize, ledcolors);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod>(stripSize);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Dma400KbpsMethod(stripSize, ledcolors);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma400KbpsMethod>(stripSize);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart0800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0800KbpsMethod>(stripSize); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart0400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0400KbpsMethod>(stripSize); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
     #if !defined(LED_TYPE_WS2811) 
-      dma = new NeoEsp8266Uart1800KbpsMethod(stripSize, ledcolors); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1800KbpsMethod>(stripSize); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
-      dma = new NeoEsp8266Uart1400KbpsMethod(stripSize, ledcolors); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+      dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1400KbpsMethod>(stripSize); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
-    dma->Initialize();
+    dma->Begin();
   }
 
   void DMA_Show(void) {
-    if(dma->IsReadyToUpdate()) {
-      memcpy(dma->getPixels(), strip->getPixels(), dma->getPixelsSize());
-      dma->Update(false);
+    if(dma->CanShow()) {
+      memcpy(dma->Pixels(), strip->getPixels(), dma->PixelsSize());
+      dma->Dirty();
+      dma->Show();
     }
   }
 #endif
@@ -312,12 +309,11 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
     initDMA(stripSize);
     strip->setCustomShow(DMA_Show);
   #endif
-  strip->setBrightness(brightness);
 //parameters: index, start, stop, mode, color, speed, options
   strip->setSegment(0,  0,  stripSize - 1, ws2812fx_mode, hex_colors, convertSpeed(ws2812fx_speed), fxoptions);
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   strip->setCustomMode(0, F("Fire 2012"), myCustomEffect0);
-//strip->setCustomMode(1, F("CustEffect"), myCustomEffect1);
+  strip->setCustomMode(1, F("Gradient"),  myCustomEffect1);
   gReverseDirection = (WS2812FXStripSettings.fxoptions & 128);
 #endif
 #if defined(ENABLE_E131)
@@ -674,8 +670,6 @@ void setup() {
   if (mdns_result) {
     MDNS.addService("http", "tcp", 80);
   }
-
-  prevmode = mode;
   
   #if defined(ENABLE_BUTTON_GY33)
     tcs.setConfig(MCU_LED_06, MCU_WHITE_ON);
@@ -684,9 +678,9 @@ void setup() {
   #endif
   #if defined(ENABLE_REMOTE)
     irrecv.enableIRIn();  // Start the receiver
-    snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
-    last_state[sizeof(last_state)]= 0x00;
   #endif
+  snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
+  last_state[sizeof(last_state)]= 0x00;
   DBG_OUTPUT_PORT.println("finished Main Setup!");
 
   initStrip();
@@ -751,35 +745,43 @@ void loop() {
     if(!strip->isRunning()) strip->start();
   } 
 
-  if ((mode == OFF) || (mode == TV) || (mode == E131)) {
+  if (((mode == OFF) && (brightness_actual == 0)) || (mode == TV) || (mode == E131)) {
     if(strip->isRunning()) {
-      strip->strip_off();         // Workaround: to be shure,
+      strip->strip_off();        // Workaround: to be shure,
       delay(10);                 // that strip is really off. Sometimes strip->stop isn't enought
-      strip->stop();              // should clear memory
+      strip->stop();             // should clear memory
     } else {
       if (prevmode != mode) {    // Start temporarily to clear strip
         strip->start();
-        strip->strip_off();       // Workaround: to be shure,
+        strip->strip_off();      // Workaround: to be shure,
         delay(10);               // that strip is really off. Sometimes strip->stop isn't enought
-        strip->stop();            // should clear memory
+        strip->stop();           // should clear memory
       }
     }
   }
     
-  if (( mode == AUTO) || (mode == HOLD)) { // strip->service() is only needed for modes with WS2812FX functionality
-    strip->service();
+  if (( mode == AUTO) || (mode == HOLD) || ((mode == OFF) && (brightness !=0))) { 
+    strip->service();            // strip->service() is only needed for modes with WS2812FX functionality
   }
   
-  if ((prevmode == AUTO) && (mode != AUTO)) { handleAutoStop(); } // stop auto mode
+  if ((prevmode == AUTO) && (mode != AUTO)) {
+    handleAutoStop();            // stop auto mode
+  }
   
   if (mode == OFF) {
-    #if defined(ENABLE_MQTT)
-      if (prevmode != mode) { snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", ""); }
-    #endif
+    if (prevmode != mode) {
+      #if defined(ENABLE_MQTT)
+         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", "");
+      #endif
+      if (fadeEffect) { 
+        brightness_fade   = 0;
+      } 
+    }
   }
   
   if (mode == AUTO) {
     if (prevmode != mode) {
+      brightness_fade = brightness;
       handleAutoStart();
       #if defined(ENABLE_MQTT)
         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =auto", "");
@@ -789,19 +791,25 @@ void loop() {
     
   #if defined(ENABLE_TV)
     if (mode == TV) {
-      handleTV();
+      if (prevmode != mode) {
+        brightness_fade = brightness;
       #if defined(ENABLE_MQTT)
-        if (prevmode != mode) { snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =tv", ""); }
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =tv", ""); 
       #endif
+      }
+      handleTV();
     }
   #endif
   
   #if defined(ENABLE_E131)
     if (mode == E131) {
-      handleE131();
+      if (prevmode != mode) {
+        brightness_fade = brightness;
       #if defined(ENABLE_MQTT)
-        if (prevmode != mode) { snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =e131", ""); }
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =e131", "");
       #endif
+      }
+      handleE131();
     }
   #endif
  
@@ -816,16 +824,18 @@ void loop() {
   }
   
   if (mode == SET_ALL) {
-    mode = HOLD;
-    if ((prevmode == OFF) || (prevmode == AUTO) || (prevmode == TV) || (prevmode == E131)) { setModeByStateString(last_state); }
+    mode = prevmode;
+    if ((prevmode == OFF) || (prevmode == AUTO) || (prevmode == TV) || (prevmode == E131)) {
+      setModeByStateString(last_state);
+    }
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
     #endif
     strip->setMode(ws2812fx_mode);
+    if (fade_cnt==0) { fade_cnt=1;   }
+    if (!fadeEffect) { fade_cnt=255; }
+    brightness_fade = brightness;
     convertColors();
-    strip->setColors(0, hex_colors);
-    strip->setSpeed(convertSpeed(ws2812fx_speed));
-    strip->setBrightness(brightness);
     prevmode = SET_ALL;
     strip->trigger();
   }  
@@ -836,40 +846,95 @@ void loop() {
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
     #endif
     strip->setMode(ws2812fx_mode);
+    brightness_fade = brightness;
     prevmode = SET_MODE;
     strip->trigger();
   }
     
   if (mode == SET_COLOR) {
+    if (fade_cnt==0) { fade_cnt=1; }
+    if (!fadeEffect) { fade_cnt=255; }
     convertColors();
-    strip->setColors(0, hex_colors);
     mode = prevmode;
     prevmode = SET_COLOR;
-    //DBG_OUTPUT_PORT.printf("mode: %d\r\n", mode);
-    if (mode == HOLD) strip->trigger();
   }
+  // Async color transition
+  if ((fade_cnt > 0) && (fade_cnt < 254)) {
+    if ((fadeEffect) && (colorFadeDelay <= millis())) {
+      hex_colors_actual[0] = fade(hex_colors[0], hex_colors_mem[0], fade_cnt);
+      hex_colors_actual[1] = fade(hex_colors[1], hex_colors_mem[1], fade_cnt);
+      hex_colors_actual[2] = fade(hex_colors[2], hex_colors_mem[2], fade_cnt);
+      fade_cnt++;
+      colorFadeDelay = millis() + FADE_COLOR_DELAY;
+      strip->setColors(0, hex_colors_actual);
+      if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
+    }
+  }
+  if (fade_cnt >= 254) {
+    strip->setColors(0, hex_colors);
+    if (mode == HOLD) strip->trigger();
+    fade_cnt = 0;
+  }
+  
   if (mode == SET_SPEED) {
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", ws2812fx_speed);
     #endif
-    strip->setSpeed(convertSpeed(ws2812fx_speed));
     mode = prevmode;
     prevmode = SET_SPEED;
-    if (mode == HOLD) strip->trigger();
   }
+  // Async speed transition
+  if (ws2812fx_speed_actual != ws2812fx_speed) {
+    if (fadeEffect) {
+      if (speedFadeDelay <= millis()) {
+        if (ws2812fx_speed_actual < ws2812fx_speed) {
+          ws2812fx_speed_actual++;     
+        }
+        if (ws2812fx_speed_actual > ws2812fx_speed) {
+          ws2812fx_speed_actual--;     
+        }
+        speedFadeDelay = millis() + FADE_DELAY;
+        strip->setSpeed(convertSpeed(ws2812fx_speed_actual));
+        if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
+      }
+    } else {
+       ws2812fx_speed_actual = ws2812fx_speed;
+       strip->setSpeed(ws2812fx_speed);
+       if (mode == HOLD) strip->trigger();
+    }
+  }
+  
   if (mode == SET_BRIGHTNESS) {
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", brightness);
     #endif
-    strip->setBrightness(brightness);
+    brightness_fade = brightness;
     mode = prevmode;
     prevmode = SET_BRIGHTNESS;
-    //DBG_OUTPUT_PORT.printf("mode: %d\r\n", mode);
-    if (mode == HOLD) strip->trigger();
   }
- 
-  if (prevmode != mode) {  
-    if ((prevmode != AUTO) && (prevmode != INIT_STRIP)) {  // do not save if AUTO Mode was set
+  // Async brightness transition
+  if (brightness_actual != brightness_fade) {
+    if (fadeEffect) {
+      if(brightnessFadeDelay <= millis()) {
+        if (brightness_actual < brightness_fade) {
+          brightness_actual++;     
+        }
+        if (brightness_actual > brightness_fade) {
+          brightness_actual--;     
+        }
+        brightnessFadeDelay = millis() + FADE_DELAY;
+        strip->setBrightness(brightness_actual);
+        if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
+      }
+    } else {
+       brightness_actual = brightness;
+       strip->setBrightness(brightness_actual);
+       if (mode == HOLD) strip->trigger();
+    }
+  }
+
+  if (prevmode != mode) {
+    if (prevmode != INIT_STRIP) {  // do not save if INIT_STRIP mode was set
       #if defined(ENABLE_STATE_SAVE)
         if(!settings_save_state.active()) settings_save_state.once(3, tickerSaveState);
       #endif

@@ -21,7 +21,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-//#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
 #endif
@@ -34,6 +34,15 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_E131                   // E1.31 implementation You have to uncomment #define USE_WS2812FX_DMA and set it to 0
 #define ENABLE_TV                     // Enable TV Animation 
 #define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
+
+#define FADE_COLOR_DELAY 5            // Delay for color transition
+#define FADE_DELAY 10                 // Delay for brightness and speed transition
+
+bool fadeEffect  = true;              // Experimental: Enable transitions of color, brightness and speed. It does not work properly for all effects.
+uint8_t fade_cnt = 0;
+unsigned long colorFadeDelay = 0;
+unsigned long brightnessFadeDelay = 0;
+unsigned long speedFadeDelay = 0;
 
 #if defined(ENABLE_E131)
   #define MULTICAST false
@@ -82,7 +91,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #endif
 
 // parameters for automatically cycling favorite patterns
-uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mode, duration (seconds)
+uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mode, duration (milliseconds)
   {0x00ff0000, 0x0000ff00, 0x00000000, 200,  1,  5000}, // blink red/geen for 5 seconds
   {0x0000ff00, 0x000000ff, 0x00000000, 200,  3, 10000}, // wipe green/blue for 10 seconds
   {0x000000ff, 0x00ff0000, 0x00000000,  60, 14, 10000}, // dual scan blue on red for 10 seconds
@@ -133,20 +142,21 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-#if defined(ENABLE_LEGACY_ANIMATIONS)
-  enum MODE {OFF, AUTO, TV, E131, CUSTOM, HOLD, SET_ALL, SET_MODE, SET_COLOR, SET_SPEED, SET_BRIGHTNESS, INIT_STRIP, WIPE, RAINBOW, RAINBOWCYCLE, THEATERCHASE, TWINKLERANDOM, THEATERCHASERAINBOW};
-#else
-  enum MODE {OFF, AUTO, TV, E131, CUSTOM, HOLD, SET_ALL, SET_MODE, SET_COLOR, SET_SPEED, SET_BRIGHTNESS, INIT_STRIP};
-#endif
+enum MODE {OFF, AUTO, TV, E131, CUSTOM, HOLD, SET_ALL, SET_MODE, SET_COLOR, SET_SPEED, SET_BRIGHTNESS, INIT_STRIP};
 MODE mode = SET_ALL;        // Standard mode that is active when software starts
-MODE prevmode = mode;
+MODE prevmode = INIT_STRIP;
 
-uint8_t ws2812fx_speed = 196;  // Global variable for storing the delay between color changes --> smaller == faster
-uint8_t brightness = 196;      // Global variable for storing the brightness (255 == 100%)
-uint8_t ws2812fx_mode = 0;     // Global variable for storing the WS2812FX modes
+uint8_t ws2812fx_speed        = 196;  // Global variable for storing the speed for effects --> smaller == slower
+uint8_t ws2812fx_speed_actual = 196;  // Global variable for storing the speed for effects while fading --> smaller == slower
+uint8_t brightness            = 196;  // Global variable for storing the brightness (255 == 100%)
+uint8_t brightness_actual     = 0;    // Global variable for storing the brightness while fadeing (255 == 100%)
+uint8_t brightness_fade       = 0;    // Global variable for storing the brightness before change
+uint8_t ws2812fx_mode         = 0;    // Global variable for storing the WS2812FX modes
 
-uint32_t hex_colors[3] = {};   // Color array for setting WS2812FX
-struct ledstate                // Data structure to store a state of a single led
+uint32_t hex_colors[3]        = {};   // Color array for setting colors of WS2812FX
+uint32_t hex_colors_actual[3] = {};   // Color array for actual colors of WS2812FX while fading
+uint32_t hex_colors_mem[3]    = {};   // Color array of colors of WS2812FX before fading 
+struct ledstate                       // Data structure to store a state of a single led
 {
   uint8_t red;
   uint8_t green;
@@ -162,7 +172,7 @@ LEDState xtra_color = {   0, 0, 0, 0 };  // Store the "3rd color" of the strip u
 
 bool updateConfig = false;  // For WiFiManger custom config and config
 char last_state[67];            // Keeps the state representation before auto or off mode 
-bool updateState = false;
+bool updateState  = false;
 
 // Button handling
 

@@ -165,4 +165,11 @@
  * adressed issue: #31
  * adressed issue: #32 
  * 
+ * 15 September 2019
+ * Version Bump to 2.2.7.BETA1.rgbw.3colors
+ * adressed issue: #25 (added Custom Animation 'Gradient')
+ * adressed issue: #30 (Status 'AUTO' is saved now)
+ * adressed issue: https://github.com/toblum/McLighting/issues/403 (Experimental Support of transitions: set fadeEffect = true in definitions.h)
+ * corrected use of DMA for Neopixelbus by Makuna (Tests for other strips than SK6812 GRBW were not made)
+ * 
  */

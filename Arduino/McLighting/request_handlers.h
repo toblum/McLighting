@@ -52,13 +52,20 @@ void handleE131(){
 
 // Call convertColors whenever main_color, back_color or xtra_color changes.
 void convertColors() {
+  if ((fadeEffect) && (fade_cnt > 1) && (fade_cnt < 254)) {
+    memcpy(hex_colors_mem, hex_colors_actual, sizeof(hex_colors_actual));
+    DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
+    fade_cnt = 1;
+  } else {
+    memcpy(hex_colors_mem, hex_colors, sizeof(hex_colors));
+  }
   hex_colors[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
   hex_colors[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
   hex_colors[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
+  memcpy(hex_colors_actual, hex_colors, sizeof(hex_colors));  
 }
 
 void getArgs() {
-  
   if (mode == SET_ALL || mode == SET_COLOR) {
     if (server.arg("rgb") != "") {
       uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
@@ -132,7 +139,6 @@ void getArgs() {
     xtra_color.green = constrain(xtra_color.green, 0, 255);
     xtra_color.blue = constrain(xtra_color.blue, 0, 255);
     xtra_color.white = constrain(xtra_color.white, 0, 255);
-    convertColors();
   }
   if (mode == SET_ALL || mode == SET_SPEED || mode == TV) {
     if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
@@ -461,12 +467,13 @@ bool setModeByStateString(String saved_state_string) {
     xtra_color.blue = str_blue.toInt();
     str_white = getValue(saved_state_string, '|', 16);
     xtra_color.white = str_white.toInt();
-    convertColors();
     DBG_OUTPUT_PORT.print("Set to state: ");
     DBG_OUTPUT_PORT.println(listStatusJSON());
+    //prevmode=mode;
+    //mode = SET_ALL;
     return true;
   } else {
-    DBG_OUTPUT_PORT.println("Saved conf not found!");
+    DBG_OUTPUT_PORT.println("Saved state not found!");
     return false;    
   }
   return false;
@@ -717,9 +724,10 @@ void autoTick() {
   strip->setColors(0, setcolors);
   strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][3]));
   strip->setMode((uint8_t)autoParams[autoCount][4]);
+  strip->trigger();
   autoTicker.once_ms((uint32_t)autoParams[autoCount][5], autoTick);
   DBG_OUTPUT_PORT.print("autoTick ");
-    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%06x, %d, %d, %d}\r\n", autoCount, autoParams[autoCount][0], (uint8_t)autoParams[autoCount][1], (uint8_t)autoParams[autoCount][2], (uint32_t)autoParams[autoCount][3], (uint32_t)autoParams[autoCount][4], (uint32_t)autoParams[autoCount][5]);
+    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", autoCount, autoParams[autoCount][0], autoParams[autoCount][1], autoParams[autoCount][2], autoParams[autoCount][3], autoParams[autoCount][4], autoParams[autoCount][5]);
 
   autoCount++;
   if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
@@ -1506,7 +1514,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   #endif
 #endif
 
-
 // ***************************************************************************
 // Button management
 // ***************************************************************************
@@ -1515,7 +1522,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     DBG_OUTPUT_PORT.printf("Short button press\r\n");
     if (mode == OFF) {
       setModeByStateString(BTN_MODE_SHORT);
-      prevmode = mode;
       mode = SET_ALL;
     } else {
       mode = OFF;
@@ -1526,7 +1532,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void mediumKeyPress() {
     DBG_OUTPUT_PORT.printf("Medium button press\r\n");
     setModeByStateString(BTN_MODE_MEDIUM);
-    prevmode = mode;
     mode = SET_ALL;
   }
 
@@ -1534,7 +1539,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void longKeyPress() {
     DBG_OUTPUT_PORT.printf("Long button press\r\n");
     setModeByStateString(BTN_MODE_LONG);
-    prevmode = mode;
     mode = SET_ALL;
   }
 
@@ -1579,9 +1583,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
     main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0; 
-    ws2812fx_mode = FX_MODE_STATIC;
-    prevmode = HOLD;
-    mode = SET_ALL;
+    mode = SET_COLOR;
   }
 
   // called when button is kept pressed for less than 2 seconds
@@ -1726,7 +1728,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             checkRGBOrder(tmp_rgbOrder);
             uint8_t temp_pin;
             checkPin((uint8_t) root["ws_pin"]);
-            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) && 0xFE;
+            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
             jsonBuffer.clear();
             return true;
           } else {
@@ -2122,3 +2124,17 @@ void handleRemote() {
     }
   }
 #endif
+
+uint32_t scale_wrgb(uint32_t wrgb, uint8_t level) {
+    uint8_t w = ((wrgb >> 24) & 0xFF) * level / 255;
+    uint8_t r = ((wrgb >> 16) & 0xFF) * level / 255;
+    uint8_t g = ((wrgb >>  8) & 0xFF) * level / 255;
+    uint8_t b = ((wrgb) & 0xFF)       * level / 255;
+    return (w << 24) | (r << 16) | (g << 8) | b;
+}
+
+uint32_t fade(uint32_t newcolor, uint32_t oldcolor, uint8_t level) {
+  newcolor = scale_wrgb(newcolor, level);
+  oldcolor = scale_wrgb(oldcolor, 255-level);
+  return newcolor + oldcolor;
+}
