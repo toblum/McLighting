@@ -59,7 +59,7 @@
   #endif
 #endif
 
-#if defined(ENABLE_E131)
+#if defined(CUSTOM_WS2812FX_ANIMATIONS)
 // ***************************************************************************
 // Load libraries for E131 support
 // ***************************************************************************
@@ -106,7 +106,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // ***************************************************************************
 // Load and instanciate WS2812FX library
 // ***************************************************************************
-#include <WS2812FX.h>              // https://github.com/kitesurfer1404/WS2812FX
+#include "WS2812FX.h"              // https://github.com/kitesurfer1404/WS2812FX
 WS2812FX * strip = NULL;
 
 #if defined(USE_WS2812FX_DMA)
@@ -250,19 +250,10 @@ void saveConfigCallback () {
 // ***************************************************************************
 #include "request_handlers.h"
 
-#if defined(ENABLE_TV)
-// ***************************************************************************
-// Include: TV mode
-// ***************************************************************************
-  #include "mode_tv.h"
-#endif
-
-#if defined(CUSTOM_WS2812FX_ANIMATIONS)
 // ***************************************************************************
 // Include: Custom animations
 // ***************************************************************************
-  #include "mode_custom_ws2812fx_animations.h" // Add animations in this file
-#endif
+#include "mode_custom_ws2812fx_animations.h" // Add animations in this file
 
 // function to Initialize the strip
 void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrder[5] = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin, uint8_t fxoptions = WS2812FXStripSettings.fxoptions ){
@@ -279,9 +270,7 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
     WS2812FXStripSettings.pin = pin;
     WS2812FXStripSettings.fxoptions = fxoptions;
   }
-#if defined(ENABLE_E131)
-
-#endif  
+ 
   if (ledstates != NULL) {
     delete(ledstates);
   } 
@@ -310,13 +299,16 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrd
     strip->setCustomShow(DMA_Show);
   #endif
 //parameters: index, start, stop, mode, color, speed, options
-  strip->setSegment(0,  0,  stripSize - 1, ws2812fx_mode, hex_colors, convertSpeed(ws2812fx_speed), fxoptions);
+  strip->setSegment(selected_segment,  0,  stripSize - 1, ws2812fx_mode, hex_colors_trans, convertSpeed(ws2812fx_speed), fxoptions);
+  strip->setCustomMode(0, F("Autoplay"), myCustomEffect0);
+  strip->setCustomMode(1, F("Custom WS"), myCustomEffect1);
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
-  strip->setCustomMode(0, F("Fire 2012"), myCustomEffect0);
-  strip->setCustomMode(1, F("Gradient"),  myCustomEffect1);
+  strip->setCustomMode(2, F("TV"), myCustomEffect2);
+  strip->setCustomMode(3, F("E1.31"),  myCustomEffect3);
+  strip->setCustomMode(4, F("Fire 2012"), myCustomEffect4);
+  strip->setCustomMode(5, F("Gradient"),  myCustomEffect5);
   gReverseDirection = (WS2812FXStripSettings.fxoptions & 128);
-#endif
-#if defined(ENABLE_E131)
+
   if (e131 != NULL) { delete(e131); }
   e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
   float universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
@@ -559,15 +551,15 @@ void setup() {
         (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
       #endif
       #if ENABLE_STATE_SAVE == 0
-        char last_conf[223];
+        char last_conf[225];
         DBG_OUTPUT_PORT.println("Saving WiFiManager config");
         #if defined(ENABLE_MQTT)
-          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d|%1d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions, transEffect);
         #else
-          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+          snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d|%1d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions, transEffect);
         #endif
         last_conf[sizeof(last_conf)] = 0x00;
-        writeEEPROM(0, 222, last_conf);
+        writeEEPROM(0, 224, last_conf);
         EEPROM.commit();
         updateConfig = false;
       #endif
@@ -681,9 +673,12 @@ void setup() {
   #endif
   snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
   last_state[sizeof(last_state)]= 0x00;
-  DBG_OUTPUT_PORT.println("finished Main Setup!");
-
+  ws2812fx_speed_actual = ws2812fx_speed;
+  brightness_trans = brightness;
+  memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
   initStrip();
+  strip->setBrightness(0);
+  DBG_OUTPUT_PORT.println("finished Main Setup!");
 }
 
 // ***************************************************************************
@@ -741,81 +736,38 @@ void loop() {
   // ***************************************************************************
   // Simple statemachine that handles the different modes
   // *************************************************************************** 
-  if ((mode != OFF) && (mode != TV) && (mode != E131)) { // strip->start() is only needed for modes with WS2812FX functionality
-    if(!strip->isRunning()) strip->start();
-  } 
-
-  if (((mode == OFF) && (brightness_actual == 0)) || (mode == TV) || (mode == E131)) {
+  if ((mode == OFF) && ((strip->getBrightness() == 0) || !transEffect)) {
     if(strip->isRunning()) {
       strip->strip_off();        // Workaround: to be shure,
       delay(10);                 // that strip is really off. Sometimes strip->stop isn't enought
       strip->stop();             // should clear memory
+      autoCount = 0;
+      autoDelay = 0;
     } else {
       if (prevmode != mode) {    // Start temporarily to clear strip
         strip->start();
         strip->strip_off();      // Workaround: to be shure,
         delay(10);               // that strip is really off. Sometimes strip->stop isn't enought
         strip->stop();           // should clear memory
+        autoCount = 0;
+        autoDelay = 0;
       }
     }
   }
-    
-  if (( mode == AUTO) || (mode == HOLD) || ((mode == OFF) && (brightness !=0))) { 
-    strip->service();            // strip->service() is only needed for modes with WS2812FX functionality
-  }
-  
-  if ((prevmode == AUTO) && (mode != AUTO)) {
-    handleAutoStop();            // stop auto mode
-  }
-  
+        
   if (mode == OFF) {
     if (prevmode != mode) {
       #if defined(ENABLE_MQTT)
          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", "");
       #endif
-      if (fadeEffect) { 
-        brightness_fade   = 0;
+      if (transEffect) { 
+        brightness_trans   = 0;
       } 
     }
   }
-  
-  if (mode == AUTO) {
-    if (prevmode != mode) {
-      brightness_fade = brightness;
-      handleAutoStart();
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =auto", "");
-      #endif
-    }
-  }
-    
-  #if defined(ENABLE_TV)
-    if (mode == TV) {
-      if (prevmode != mode) {
-        brightness_fade = brightness;
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =tv", ""); 
-      #endif
-      }
-      handleTV();
-    }
-  #endif
-  
-  #if defined(ENABLE_E131)
-    if (mode == E131) {
-      if (prevmode != mode) {
-        brightness_fade = brightness;
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =e131", "");
-      #endif
-      }
-      handleE131();
-    }
-  #endif
- 
+   
   if (mode == INIT_STRIP) {
      mode = prevmode;
-     //ws2812fx_mode = strip->getMode();
      strip->strip_off();
      delay(10);
      if(strip->isRunning()) strip->stop();
@@ -823,58 +775,34 @@ void loop() {
      prevmode = INIT_STRIP;
   }
   
-  if (mode == SET_ALL) {
-    mode = prevmode;
-    if ((prevmode == OFF) || (prevmode == AUTO) || (prevmode == TV) || (prevmode == E131)) {
-      setModeByStateString(last_state);
-    }
+  if (mode == SET) {
+    mode = HOLD;
+    if (ws2812fx_mode !=  strip->getMode(selected_segment)) {  // SET_MODE
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
     #endif
-    strip->setMode(ws2812fx_mode);
-    if (fade_cnt==0) { fade_cnt=1;   }
-    if (!fadeEffect) { fade_cnt=255; }
-    brightness_fade = brightness;
-    convertColors();
-    prevmode = SET_ALL;
+      strip->strip_off();
+      autoCount = 0;
+      autoDelay = 0;
+      strip->setMode(selected_segment, ws2812fx_mode);
+    }
+    if (strip->getBrightness() != brightness) {
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", brightness);
+      #endif
+      brightness_trans = brightness;
+    }
+    prevmode = SET;
     strip->trigger();
   }  
-  
-  if (mode == SET_MODE) {
+     
+  /*if (mode == SET) {
     mode = HOLD;
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
-    #endif
-    strip->setMode(ws2812fx_mode);
-    brightness_fade = brightness;
-    prevmode = SET_MODE;
-    strip->trigger();
-  }
-    
-  if (mode == SET_COLOR) {
-    if (fade_cnt==0) { fade_cnt=1; }
-    if (!fadeEffect) { fade_cnt=255; }
-    convertColors();
-    mode = prevmode;
-    prevmode = SET_COLOR;
-  }
-  // Async color transition
-  if ((fade_cnt > 0) && (fade_cnt < 254)) {
-    if ((fadeEffect) && (colorFadeDelay <= millis())) {
-      hex_colors_actual[0] = fade(hex_colors[0], hex_colors_mem[0], fade_cnt);
-      hex_colors_actual[1] = fade(hex_colors[1], hex_colors_mem[1], fade_cnt);
-      hex_colors_actual[2] = fade(hex_colors[2], hex_colors_mem[2], fade_cnt);
-      fade_cnt++;
-      colorFadeDelay = millis() + FADE_COLOR_DELAY;
-      strip->setColors(0, hex_colors_actual);
-      if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
-    }
-  }
-  if (fade_cnt >= 254) {
-    strip->setColors(0, hex_colors);
-    if (mode == HOLD) strip->trigger();
-    fade_cnt = 0;
-  }
+    if (trans_cnt==0) { trans_cnt=1;   }
+    if (!transEffect) { trans_cnt=255; }
+    convertColorsFade();
+    prevmode = SET;
+  }*/
   
   if (mode == SET_SPEED) {
     #if defined(ENABLE_MQTT)
@@ -883,57 +811,17 @@ void loop() {
     mode = prevmode;
     prevmode = SET_SPEED;
   }
-  // Async speed transition
-  if (ws2812fx_speed_actual != ws2812fx_speed) {
-    if (fadeEffect) {
-      if (speedFadeDelay <= millis()) {
-        if (ws2812fx_speed_actual < ws2812fx_speed) {
-          ws2812fx_speed_actual++;     
-        }
-        if (ws2812fx_speed_actual > ws2812fx_speed) {
-          ws2812fx_speed_actual--;     
-        }
-        speedFadeDelay = millis() + FADE_DELAY;
-        strip->setSpeed(convertSpeed(ws2812fx_speed_actual));
-        if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
-      }
-    } else {
-       ws2812fx_speed_actual = ws2812fx_speed;
-       strip->setSpeed(ws2812fx_speed);
-       if (mode == HOLD) strip->trigger();
-    }
-  }
-  
-  if (mode == SET_BRIGHTNESS) {
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", brightness);
-    #endif
-    brightness_fade = brightness;
-    mode = prevmode;
-    prevmode = SET_BRIGHTNESS;
-  }
-  // Async brightness transition
-  if (brightness_actual != brightness_fade) {
-    if (fadeEffect) {
-      if(brightnessFadeDelay <= millis()) {
-        if (brightness_actual < brightness_fade) {
-          brightness_actual++;     
-        }
-        if (brightness_actual > brightness_fade) {
-          brightness_actual--;     
-        }
-        brightnessFadeDelay = millis() + FADE_DELAY;
-        strip->setBrightness(brightness_actual);
-        if ((mode == HOLD) && ((ws2812fx_mode != 1) && (ws2812fx_mode != 2) && (ws2812fx_mode != 8) && (ws2812fx_mode != 9) &&(ws2812fx_mode != 10) && (ws2812fx_mode != 15))) strip->trigger();
-      }
-    } else {
-       brightness_actual = brightness;
-       strip->setBrightness(brightness_actual);
-       if (mode == HOLD) strip->trigger();
-    }
-  }
-
+ 
   if (prevmode != mode) {
+    convertColors();
+    if (memcmp(hex_colors_trans, strip->getColors(selected_segment), sizeof(hex_colors_trans)) != 0) {
+      DBG_OUTPUT_PORT.println("Colors not equal!");
+      if (trans_cnt==0) { trans_cnt=1;   }
+      if (!transEffect) { trans_cnt=255; }
+      convertColorsFade();
+    }
+    strip->setSpeed(selected_segment, convertSpeed(ws2812fx_speed_actual));
+    //strip->setBrightness(brightness_actual);       
     if (prevmode != INIT_STRIP) {  // do not save if INIT_STRIP mode was set
       #if defined(ENABLE_STATE_SAVE)
         if(!settings_save_state.active()) settings_save_state.once(3, tickerSaveState);
@@ -970,21 +858,95 @@ void loop() {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
     #endif
     #if ENABLE_STATE_SAVE == 0 
-      char last_conf[223];
+      char last_conf[225];
       #if defined(ENABLE_MQTT)
-        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d|%1d", HOSTNAME, mqtt_host, mqtt_port, mqtt_user, mqtt_pass, WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions, transEffect);
       #else
-        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions);
+        snprintf(last_conf, sizeof(last_conf), "CNF|%64s|%64s|%5d|%32s|%32s|%4d|%2d|%4s|%3d|%1d", HOSTNAME, "", "", "", "", WS2812FXStripSettings.stripSize, WS2812FXStripSettings.pin, WS2812FXStripSettings.RGBOrder, WS2812FXStripSettings.fxoptions, transEffect);
       #endif
       last_conf[sizeof(last_conf) - 1] = 0x00;
-      writeEEPROM(0, 222, last_conf);
+      writeEEPROM(0, 224, last_conf);
       EEPROM.commit();
       updateConfig = false;
       settings_save_conf.detach();
     #endif
     }
   #endif
+
+  if ((mode == HOLD) || ((mode == OFF) && ((strip->getBrightness() == 0) || !transEffect))) { 
+    if (ws2812fx_mode == FX_MODE_CUSTOM_0) {
+      handleAutoPlay();
+    }
+    if(!strip->isRunning()) strip->start();
+    strip->service();
+  }
   
+  // Async color transition
+  if ((trans_cnt > 0) && (trans_cnt < 255)) {
+    uint32_t hex_colors_actual[3] = {};
+    if ((transEffect) && (colorFadeDelay <= millis())) {
+      hex_colors_actual[0] = trans(hex_colors_trans[0], hex_colors[0], trans_cnt);
+      hex_colors_actual[1] = trans(hex_colors_trans[1], hex_colors[1], trans_cnt);
+      hex_colors_actual[2] = trans(hex_colors_trans[2], hex_colors[2], trans_cnt);
+      strip->setColors(selected_segment, hex_colors_actual);
+      trans_cnt++;
+      colorFadeDelay = millis() + TRANS_COLOR_DELAY;
+      if (mode == HOLD) strip->trigger();
+    }
+  }
+  if (trans_cnt > 254) {
+    memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
+    strip->setColors(selected_segment, hex_colors);
+    if (mode == HOLD) strip->trigger();
+    trans_cnt = 0;
+    DBG_OUTPUT_PORT.println("Color transition finished!");
+  }
+  
+  // Async speed transition
+  if (ws2812fx_speed_actual != ws2812fx_speed) {
+    if (transEffect) {
+      if (speedFadeDelay <= millis()) {
+        DBG_OUTPUT_PORT.println("Speed actual: ");
+        DBG_OUTPUT_PORT.println(ws2812fx_speed_actual);
+        DBG_OUTPUT_PORT.println(convertSpeed(ws2812fx_speed_actual));
+        DBG_OUTPUT_PORT.println(unconvertSpeed(convertSpeed(ws2812fx_speed_actual)));
+        if (ws2812fx_speed_actual < ws2812fx_speed) {
+          ws2812fx_speed_actual++;     
+        }
+        if (ws2812fx_speed_actual > ws2812fx_speed) {
+          ws2812fx_speed_actual--;     
+        }
+        speedFadeDelay = millis() + TRANS_DELAY;
+        strip->setSpeed(selected_segment, convertSpeed(ws2812fx_speed_actual));
+        if (mode == HOLD) strip->trigger();
+      }
+    } else {
+       ws2812fx_speed_actual = ws2812fx_speed;
+       strip->setSpeed(selected_segment, convertSpeed(ws2812fx_speed_actual));
+       if (mode == HOLD) strip->trigger();
+    }
+  }
+  
+  // Async brightness transition
+  if (strip->getBrightness() != brightness_trans) {
+    if (transEffect) {
+      if(brightnessFadeDelay <= millis()) {
+        if (strip->getBrightness() < brightness_trans) {
+          strip->increaseBrightness(1);    
+        }
+        if (strip->getBrightness() > brightness_trans) {
+          strip->decreaseBrightness(1); 
+        }
+        brightnessFadeDelay = millis() + TRANS_DELAY;
+        //if (mode == HOLD) strip->trigger();
+        strip->trigger();
+      }
+    } else {
+       strip->setBrightness(brightness);
+       if (mode == HOLD) strip->trigger();
+    }
+  }
+   
   prevmode = mode;
   
   #if defined(ENABLE_REMOTE)

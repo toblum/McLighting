@@ -3,70 +3,52 @@
 // ***************************************************************************
 
 // Prototypes
-void   handleAutoStart();
 char * listStatusJSON();
 #if defined(ENABLE_STATE_SAVE)
   bool   writeConfigFS(bool);
   void   tickerSaveConfig();
 #endif
 
-#if defined(ENABLE_E131)
-void handleE131(){
-  if (!e131->isEmpty())
-  {
-    e131_packet_t packet;
-    e131->pull(&packet); // Pull packet from ring buffer
-
-    uint16_t universe = htons(packet.universe);
-    uint8_t *data = packet.property_values + 1;
-
-    if (universe < START_UNIVERSE || universe > END_UNIVERSE) return; //async will take care about filling the buffer
-
-    // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
-    //               htons(packet.universe),                 // The Universe for this packet
-    //               htons(packet.property_value_count) - 1, // Start code is ignored, we're interested in dimmer data
-    //               e131.stats.num_packets,                 // Packet counter
-    //               e131.stats.packet_errors,               // Packet error counter
-    //               packet.property_values[1]);             // Dimmer data for Channel 1
-/*  #if defined(RGBW)
-    uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
-    if (NUMLEDS <= multipacketOffset) return;
-    uint16_t len = (128 + multipacketOffset > WS2812FXStripSettings.stripSize) ? (WS2812FXStripSettings.stripSize - multipacketOffset) : 128;
-  #else*/
-    uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-    if (WS2812FXStripSettings.stripSize <= multipacketOffset) return;
-    uint16_t len = (170 + multipacketOffset > WS2812FXStripSettings.stripSize) ? (WS2812FXStripSettings.stripSize - multipacketOffset) : 170;
-/*  #endif */
-    for (uint16_t i = 0; i < len; i++){
-      uint16_t j = i * 3;
-/*  #if defined(RGBW)
-      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
-  #else */
-      strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
-/*  #endif */
-    }
-    strip->show();
-  }
-}
-#endif
-
 // Call convertColors whenever main_color, back_color or xtra_color changes.
+
 void convertColors() {
-  if ((fadeEffect) && (fade_cnt > 1) && (fade_cnt < 254)) {
-    memcpy(hex_colors_mem, hex_colors_actual, sizeof(hex_colors_actual));
-    DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
-    fade_cnt = 1;
-  } else {
-    memcpy(hex_colors_mem, hex_colors, sizeof(hex_colors));
-  }
-  hex_colors[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
-  hex_colors[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
-  hex_colors[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
-  memcpy(hex_colors_actual, hex_colors, sizeof(hex_colors));  
+  hex_colors_trans[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
+  hex_colors_trans[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
+  hex_colors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
 }
+
+void convertColorsFade() {
+  if ((transEffect) && (trans_cnt > 1) && (trans_cnt < 254)) {
+    memcpy(hex_colors, strip->getColors(selected_segment), sizeof(strip->getColors(selected_segment)));
+    DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
+    trans_cnt = 1;
+  } else {
+    //memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
+  }
+}
+
+uint8_t calculateColorTransitionSteps () {
+  //compare all colors and calculate steps
+  int     trans_cnt_max = 0;
+  int     calculate_max[4] = {};
+  for (uint8_t i=0; i<3; i++){
+    DBG_OUTPUT_PORT.printf("i: %i\r\n", i);
+    for (uint8_t j=0; j<4; j++) {
+      DBG_OUTPUT_PORT.printf("j: %i\r\n", j);
+      calculate_max[j] = ((hex_colors[i] >> ((3-j)*8)) & 0xFF) - ((hex_colors_trans[i] >> ((3-j)*8)) & 0xFF);
+      calculate_max[j] = abs(calculate_max[j]);
+      trans_cnt_max = max(trans_cnt_max, calculate_max[j]);
+     DBG_OUTPUT_PORT.printf("calcmax: %i %i\r\n", j, calculate_max[j]);
+    }
+  }
+  DBG_OUTPUT_PORT.printf("max: %i\r\n", trans_cnt_max);
+  return trans_cnt_max;
+}
+
+
 
 void getArgs() {
-  if (mode == SET_ALL || mode == SET_COLOR) {
+  if (mode == SET) {
     if (server.arg("rgb") != "") {
       uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
       main_color.white = ((rgb >> 24) & 0xFF);
@@ -140,17 +122,15 @@ void getArgs() {
     xtra_color.blue = constrain(xtra_color.blue, 0, 255);
     xtra_color.white = constrain(xtra_color.white, 0, 255);
   }
-  if (mode == SET_ALL || mode == SET_SPEED || mode == TV) {
+  if (mode == SET || mode == SET_SPEED) {
     if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
     ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
     }
   }
-  if (mode == SET_ALL || mode == SET_MODE) {
+  if (mode == SET) {
     if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
       ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     }
-  }
-  if (mode == SET_ALL || mode == SET_BRIGHTNESS || mode == AUTO || mode == TV || mode == E131) {
     if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
       brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
     } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
@@ -162,16 +142,20 @@ void getArgs() {
 }
 
 uint16_t convertSpeed(uint8_t mcl_speed) {
-  //long ws2812_speed = mcl_speed * 256;
   uint16_t ws2812_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
   ws2812_speed = SPEED_MAX - ws2812_speed;
-  if (ws2812_speed < SPEED_MIN) {
-    ws2812_speed = SPEED_MIN;
-  }
-  if (ws2812_speed > SPEED_MAX) {
-    ws2812_speed = SPEED_MAX;
-  }
+  ws2812_speed = constrain(ws2812_speed, SPEED_MIN, SPEED_MAX);
   return ws2812_speed;
+}
+
+uint8_t unconvertSpeed(uint16_t ws2812_speed) {
+  //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 * mcl_speed) - (-0.03181 * mcl_speed);
+   //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 + 0.03181) * mcl_speed;
+  uint16_t  mcl_speed = (log((SPEED_MAX - ws2812_speed)/61760))/ (0.0002336 + 0.03181);
+  //uint16_t mcl_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
+  mcl_speed = 255 - mcl_speed;
+  mcl_speed = constrain(mcl_speed, 0, 255);
+  return mcl_speed;
 }
 
 // ***************************************************************************
@@ -184,7 +168,7 @@ void handleSetMainColor(uint8_t * mypayload) {
   main_color.red = ((rgb >> 16) & 0xFF);
   main_color.green = ((rgb >> 8) & 0xFF);
   main_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET_COLOR;
+  mode = SET;
 }
 
 void handleSetBackColor(uint8_t * mypayload) {
@@ -194,7 +178,7 @@ void handleSetBackColor(uint8_t * mypayload) {
   back_color.red = ((rgb >> 16) & 0xFF);
   back_color.green = ((rgb >> 8) & 0xFF);
   back_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET_COLOR;
+  mode = SET;
 }
 void handleSetXtraColor(uint8_t * mypayload) {
   // decode rgb data
@@ -203,7 +187,7 @@ void handleSetXtraColor(uint8_t * mypayload) {
   xtra_color.red = ((rgb >> 16) & 0xFF);
   xtra_color.green = ((rgb >> 8) & 0xFF);
   xtra_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET_COLOR;
+  mode = SET;
 }
 
 void handleSetAllMode(uint8_t * mypayload) {
@@ -215,7 +199,7 @@ void handleSetAllMode(uint8_t * mypayload) {
   main_color.blue = ((rgb >> 0) & 0xFF);
   DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
   ws2812fx_mode = FX_MODE_STATIC;
-  mode = SET_ALL;
+  mode = SET;
 }
 
 void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
@@ -260,7 +244,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strip->setPixelColor(led, color.red, color.green, color.blue, color.white);
     strip->show();
   }
-  mode = CUSTOM;
+  mode = HOLD;
+  ws2812fx_mode= FX_MODE_CUSTOM_1;
 }
 
 void handleSetDifferentColors(uint8_t * mypayload) {
@@ -422,6 +407,7 @@ bool setConfByConfString(String saved_conf_string) {
     getValue(saved_conf_string, '|', 8).toCharArray(tmp_rgbOrder, 4);
     checkRGBOrder(tmp_rgbOrder);
     WS2812FXStripSettings.fxoptions = constrain(((getValue(saved_conf_string, '|', 9).toInt()>>1)<<1), 0, 255);
+    transEffect = getValue(saved_conf_string, '|', 10).toInt();
     return true;
   } else {
     DBG_OUTPUT_PORT.println("Saved conf not found!");
@@ -429,8 +415,6 @@ bool setConfByConfString(String saved_conf_string) {
   }
   return false;
 }
-
-
 
 bool setModeByStateString(String saved_state_string) {
   if (getValue(saved_state_string, '|', 0) == "STA") {
@@ -470,7 +454,7 @@ bool setModeByStateString(String saved_state_string) {
     DBG_OUTPUT_PORT.print("Set to state: ");
     DBG_OUTPUT_PORT.println(listStatusJSON());
     //prevmode=mode;
-    //mode = SET_ALL;
+    //mode = SET;
     return true;
   } else {
     DBG_OUTPUT_PORT.println("Saved state not found!");
@@ -479,91 +463,19 @@ bool setModeByStateString(String saved_state_string) {
   return false;
 }
 
-#if defined(ENABLE_LEGACY_ANIMATIONS)
-void handleSetNamedMode(uint8_t * mypayload) {
-    if (strcmp((char *) &mypayload[1], "off") == 0) {
-      mode = OFF;
-    }
-    
-  #if defined(ENABLE_TV)
-    if (strcmp((char *) &mypayload[1], "tv") == 0) {
-      mode = TV;
-    }
-  #endif
-
-  #if defined(ENABLE_E131)
-    if (strcmp((char *) &mypayload[1], "e131") == 0) {
-      mode = E131;
-    }
-  #endif
-  
-    if (strcmp((char *) &mypayload[1], "auto") == 0) {
-      mode = AUTO;
-    }
-    if (strcmp((char *) &mypayload[1], "all") == 0) {
-      ws2812fx_mode = FX_MODE_STATIC;
-      mode = SET_ALL;
-    }
-    if (strcmp((char *) &mypayload[1], "wipe") == 0) {
-      ws2812fx_mode = FX_MODE_COLOR_WIPE;
-      mode = SET_MODE;
-    }
-    if (strcmp((char *) &mypayload[1], "rainbow") == 0) {
-      ws2812fx_mode = FX_MODE_RAINBOW;
-      mode = SET_MODE;
-    }
-    if (strcmp((char *) &mypayload[1], "rainbowCycle") == 0) {
-      ws2812fx_mode = FX_MODE_RAINBOW_CYCLE;
-      mode = SET_MODE;
-    }
-    if (strcmp((char *) &mypayload[1], "theaterchase") == 0) {
-      ws2812fx_mode = FX_MODE_THEATER_CHASE;
-      mode = SET_MODE;
-    }
-    if (strcmp((char *) &mypayload[1], "twinkleRandom") == 0) {
-      ws2812fx_mode = FX_MODE_TWINKLE_RANDOM;
-      mode = SET_MODE;
-    }
-    if (strcmp((char *) &mypayload[1], "theaterchaseRainbow") == 0) {
-      ws2812fx_mode = FX_MODE_THEATER_CHASE_RAINBOW;
-      mode = SET_MODE;
-    }
-#endif
-}
-
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   if (isDigit(mypayload[1])) {
     ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
     ws2812fx_mode = constrain(ws2812fx_mode, 0, strip->getModeCount() - 1);
-    mode = SET_MODE;
+    mode = SET;
   } else  {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
       mode = OFF;
     }
-    
-    if (strcmp((char *) &mypayload[1], "auto") == 0) {
-      mode = AUTO;
-    }
-    
-    #if defined(ENABLE_TV)
-      if (strcmp((char *) &mypayload[1], "tv") == 0) {
-        mode = TV;
-      }
-    #endif
-
-    #if defined(ENABLE_E131)
-      if (strcmp((char *) &mypayload[1], "e131") == 0) {
-        mode = E131;
-      }
-    #endif
-      if (strcmp((char *) &mypayload[1], "custom") == 0) {
-        mode = CUSTOM;
-      }
   }    
 }
 
 char * listStatusJSON() {
-  //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
   const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
@@ -602,7 +514,6 @@ void getStatusJSON() {
 }
 
 char * listConfigJSON() {
-  //uint8_t tmp_mode = (mode == SET_MODE) ? (uint8_t) ws2812fx_mode : strip->getMode(); 
   #if defined(ENABLE_MQTT)
     const size_t bufferSize = JSON_OBJECT_SIZE(9) + 500;
   #else
@@ -621,6 +532,7 @@ char * listConfigJSON() {
   root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
   root["ws_pin"]    = WS2812FXStripSettings.pin;
   root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
+  root["transEffect"] = transEffect;
   uint16_t msg_len = measureJson(root) + 1;
   char * buffer = (char *) malloc(msg_len);
   serializeJson(root, buffer, msg_len);
@@ -642,19 +554,6 @@ char * listModesJSON() {
   JsonObject objectoff = root.createNestedObject();
   objectoff["mode"] = "off";
   objectoff["name"] = "OFF";
-  #if defined(ENABLE_TV)
-  JsonObject objecttv = root.createNestedObject();
-  objecttv["mode"] = "tv";
-  objecttv["name"] = "TV";
-  #endif
-  #if defined(ENABLE_E131)
-  JsonObject objecte131 = root.createNestedObject();
-  objecte131["mode"] = "e131";
-  objecte131["name"] = "E131";
-  #endif
-  JsonObject objectcustom = root.createNestedObject();
-  objectcustom["mode"] = "custom";
-  objectcustom["name"] = "CUSTOM WS";
   for (uint8_t i = 0; i < strip->getModeCount(); i++) {
     JsonObject object = root.createNestedObject();
     object["mode"] = i;
@@ -714,37 +613,6 @@ void handleNotFound() {
 }
 
 // ***************************************************************************
-// Functions and variables for automatic cycling
-// ***************************************************************************
-Ticker autoTicker;
-uint8_t autoCount = 0;
-
-void autoTick() {
-  uint32_t setcolors[] = {autoParams[autoCount][0],autoParams[autoCount][1],autoParams[autoCount][2]};
-  strip->setColors(0, setcolors);
-  strip->setSpeed(convertSpeed((uint8_t)autoParams[autoCount][3]));
-  strip->setMode((uint8_t)autoParams[autoCount][4]);
-  strip->trigger();
-  autoTicker.once_ms((uint32_t)autoParams[autoCount][5], autoTick);
-  DBG_OUTPUT_PORT.print("autoTick ");
-    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", autoCount, autoParams[autoCount][0], autoParams[autoCount][1], autoParams[autoCount][2], autoParams[autoCount][3], autoParams[autoCount][4], autoParams[autoCount][5]);
-
-  autoCount++;
-  if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
-}
-
-void handleAutoStart() {
-  DBG_OUTPUT_PORT.println("Starting AUTO mode."); 
-  autoCount = 0;
-  autoTick();
-}
-
-void handleAutoStop() {
-    DBG_OUTPUT_PORT.println("Stopping AUTO mode."); 
-    autoTicker.detach();
-}
-
-// ***************************************************************************
 // Functions and variables 
 // ***************************************************************************
 void Dbg_Prefix(bool mqtt, uint8_t num) {
@@ -787,7 +655,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '%') {
     uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     brightness = constrain(b, 0, 255);
-    mode = SET_BRIGHTNESS;
+    mode = SET;
     Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", brightness);
   }
@@ -828,16 +696,6 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
     #endif
   }
-
-  #if defined(ENABLE_LEGACY_ANIMATIONS)
-    // = ==> Activate named mode
-    if (payload[0] == '=') {
-      // we get mode data
-      handleSetNamedMode(payload);
-      Dbg_Prefix(mqtt, num);
-      DBG_OUTPUT_PORT.printf("Activated mode [%u]!\r\n", mode);
-    }
-  #endif
 
   // $ ==> Get status Info.
   if (payload[0] == '$') {
@@ -896,7 +754,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
          tmp_fxoptions[3] = 0x00;
          WS2812FXStripSettings.fxoptions = ((constrain(atoi(tmp_fxoptions), 0, 255)>>1)<<1);
          updateStrip = true;
-      }        
+      }       
     }
     if (updateStrip){
       mode = INIT_STRIP;   
@@ -935,7 +793,14 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       initMqtt();
     }    
   #endif   
-
+    if (payload[1] == 'e') {
+      char tmp_transEffect[2];
+      snprintf(tmp_transEffect, sizeof(tmp_transEffect), "%s", &payload[2]);
+      tmp_transEffect[sizeof(tmp_transEffect) - 1] = 0x00;
+      transEffect = atoi(tmp_transEffect);
+      updateConf = true;
+    }
+    
     char * buffer = listConfigJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
@@ -1020,18 +885,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       DBG_OUTPUT_PORT.printf("WS: [%u] get Text: %s\r\n", num, payload);
 
       checkpayload(payload, false, num);
-
-      // start auto cycling
-      if (strcmp((char *)payload, "start") == 0 ) {
-        mode = AUTO;
-        webSocket.sendTXT(num, "OK");
-      }
-
-      // stop auto cycling
-      if (strcmp((char *)payload, "stop") == 0 ) {
-        mode = SET_ALL;
-        webSocket.sendTXT(num, "OK");
-      }
       break;
   }
 }
@@ -1133,23 +986,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        if (mode == OFF){
          root["effect"] = "OFF";
        } else {
-         if (mode == AUTO){
-           root["effect"] = "AUTO";
-         } else {
-           if (mode == TV){
-             root["effect"] = "TV";
-           } else {
-             if (mode == E131){
-               root["effect"] = "E131";
-             } else {
-               if (mode == CUSTOM){
-                 root["effect"] = "CUSTOM WS"; 
-               } else {
-                 root["effect"] = strip->getModeName(strip->getMode());
-               }
-             }
-           }
-         }
+         root["effect"] = strip->getModeName(strip->getMode());
        }
        #endif
       char buffer[measureJson(root) + 1];
@@ -1184,7 +1021,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (root.containsKey("state")) {
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0) {
-          mode = SET_ALL;
+          mode = SET;
         }
         else if (strcmp(state_in, off_cmd) == 0) {
           mode = OFF;
@@ -1207,14 +1044,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         xtra_color.green = (uint8_t) color["g3"];
         xtra_color.blue = (uint8_t) color["b3"];
         xtra_color.white = (uint8_t) color["w3"];
-        mode = SET_COLOR;
+        mode = SET;
       }
       
       if (root.containsKey("white_value")) {
         uint8_t json_white_value = constrain((uint8_t) root["white_value"], 0, 255);
         if (json_white_value != main_color.white) {
           main_color.white = json_white_value;
-          mode = SET_COLOR;
+          mode = SET;
         }
       }
       
@@ -1231,14 +1068,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         color_temp = (uint16_t) root["color_temp"];
         uint16_t kelvin  = 1000000 / color_temp;
         main_color = temp2rgb(kelvin);
-        mode = SET_COLOR;
+        mode = SET;
       }
 
       if (root.containsKey("brightness")) {
         uint8_t json_brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
         if (json_brightness != brightness) {
           brightness = json_brightness;
-          mode = SET_BRIGHTNESS;
+          mode = SET;
         }
       }
 
@@ -1248,26 +1085,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           if(effectString == "OFF"){
             mode = OFF;
           }
-          if(effectString == "AUTO"){
-            mode = AUTO;
-          }
         #endif
-        #if defined(ENABLE_TV) and defined(ENABLE_HOMEASSISTANT)
-          if(effectString == "TV"){
-            mode = TV;
-          }
-        #endif
-        #if defined(ENABLE_E131) and defined(ENABLE_HOMEASSISTANT)
-          if(effectString == "E131"){
-            mode = E131;
-          }
-         #endif
-          if(effectString == "CUSTOM WS"){
-            mode = CUSTOM;
-          }
         for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           if(String(strip->getModeName(i)) == effectString) {
-            mode = SET_MODE;
+            mode = SET;
             ws2812fx_mode = i;
             break;
           }
@@ -1356,14 +1177,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             root["effect"] = "true";
             JsonArray effect_list = root.createNestedArray("effect_list");
             effect_list.add("OFF");
-            effect_list.add("AUTO");
-            #if defined(ENABLE_TV)
-              effect_list.add("TV");
-            #endif
-            #if defined(ENABLE_E131)
-               effect_list.add("E131");
-            #endif
-            effect_list.add("CUSTOM WS");
             for (uint8_t i = 0; i < strip->getModeCount(); i++) {
               effect_list.add(strip->getModeName(i));
             }
@@ -1469,14 +1282,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           root["effect"] = "true";
           JsonArray effect_list = root.createNestedArray("effect_list");
           effect_list.add("OFF");
-          effect_list.add("AUTO");
-          #if defined(ENABLE_TV)
-            effect_list.add("TV");
-          #endif
-          #if defined(ENABLE_E131)
-             effect_list.add("E131");
-          #endif
-          effect_list.add("CUSTOM WS");
           for (uint8_t i = 0; i < strip->getModeCount(); i++) {
             effect_list.add(strip->getModeName(i));
           }
@@ -1522,7 +1327,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     DBG_OUTPUT_PORT.printf("Short button press\r\n");
     if (mode == OFF) {
       setModeByStateString(BTN_MODE_SHORT);
-      mode = SET_ALL;
+      prevmode = mode;
+      mode = SET;
     } else {
       mode = OFF;
     }
@@ -1532,14 +1338,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void mediumKeyPress() {
     DBG_OUTPUT_PORT.printf("Medium button press\r\n");
     setModeByStateString(BTN_MODE_MEDIUM);
-    mode = SET_ALL;
+    prevmode = mode;
+    mode = SET;
   }
 
   // called when button is kept pressed for 2 seconds or more
   void longKeyPress() {
     DBG_OUTPUT_PORT.printf("Long button press\r\n");
     setModeByStateString(BTN_MODE_LONG);
-    mode = SET_ALL;
+    prevmode = mode;
+    mode = SET;
   }
 
   void button() {
@@ -1583,7 +1391,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
     main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0; 
-    mode = SET_COLOR;
+    mode = SET;
   }
 
   // called when button is kept pressed for less than 2 seconds
@@ -1729,6 +1537,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             uint8_t temp_pin;
             checkPin((uint8_t) root["ws_pin"]);
             WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
+            transEffect = root["transEffect"].as<bool>();
             jsonBuffer.clear();
             return true;
           } else {
@@ -1849,7 +1658,7 @@ void handleRemote() {
       if (results.value == rmt_commands[ON_OFF]) {   // ON/OFF TOGGLE
         last_remote_cmd = 0;
         if (mode == OFF) {
-          mode = SET_ALL;
+          mode = SET;
         } else {
           mode = OFF;
         }
@@ -1859,18 +1668,18 @@ void handleRemote() {
           last_remote_cmd = results.value;
           if (brightness + chng <= 255) {
             brightness = brightness + chng;
-            mode = SET_BRIGHTNESS;
+            mode = SET;
           }
         }
         if (results.value == rmt_commands[BRIGHTNESS_DOWN]) { //Brightness down
           last_remote_cmd = results.value;
           if (brightness - chng >= 0) {
             brightness = brightness - chng;
-            mode = SET_BRIGHTNESS;
+            mode = SET;
           }
         }
       }
-      if ((mode !=AUTO) && (mode != E131) && (mode != OFF)) {
+      if ((mode !=AUTO) && (mode != OFF)) {
         if (results.value == rmt_commands[SPEED_UP]) { //Speed Up
           last_remote_cmd = results.value;
           if (ws2812fx_speed + chng <= 255) {
@@ -1892,19 +1701,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.red + chng <= 255) {
               main_color.red = main_color.red + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 2) {
             if (back_color.red + chng <= 255) {
               back_color.red = back_color.red + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.red + chng <= 255) {
               xtra_color.red = xtra_color.red + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -1913,19 +1722,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.red - chng >= 0) {
               main_color.red = main_color.red - chng;
-              mode = SET_COLOR; 
+              mode = SET; 
             }
           }
           if (selected_color == 2) {
             if (back_color.red - chng >= 0) {
               back_color.red = back_color.red - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.red - chng >= 0) {
               xtra_color.red = xtra_color.red - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -1934,19 +1743,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.green + chng <= 255) {
               main_color.green = main_color.green + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 2) {
             if (back_color.green + chng <= 255) {
               back_color.green = back_color.green + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.green + chng <= 255) {
               xtra_color.green = xtra_color.green + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -1955,19 +1764,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.green - chng >= 0) {
               main_color.green = main_color.green - chng;;
-              mode = SET_COLOR; 
+              mode = SET; 
             }
           }
           if (selected_color == 2) {
             if (back_color.green - chng >= 0) {
               back_color.green = back_color.green - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.green - chng >= 0) {
               xtra_color.green = xtra_color.green - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -1976,19 +1785,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.blue + chng <= 255) {
               main_color.blue = main_color.blue + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 2) {
             if (back_color.blue + chng <= 255) {
               back_color.blue = back_color.blue + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.blue + chng <= 255) {
               xtra_color.blue = xtra_color.blue + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -1997,19 +1806,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.blue - chng >= 0) {
               main_color.blue = main_color.blue - chng;
-              mode = SET_COLOR; 
+              mode = SET; 
             }
           }
           if (selected_color == 2) {
             if (back_color.blue - chng >= 0) {
               back_color.blue = back_color.blue - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.blue - chng >= 0) {
               xtra_color.blue = xtra_color.blue - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -2018,19 +1827,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.white + chng <= 255) {
               main_color.white = main_color.white + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 2) {
             if (back_color.white + chng <= 255) {
               back_color.white = back_color.white + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.white + chng <= 255) {
               xtra_color.white = xtra_color.white + chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -2039,19 +1848,19 @@ void handleRemote() {
           if (selected_color == 1) {
             if (main_color.white - chng >= 0) {
               main_color.white = main_color.white - chng;
-              mode = SET_COLOR; 
+              mode = SET; 
             }
           }
           if (selected_color == 2) {
             if (back_color.white - chng >= 0) {
               back_color.white = back_color.white - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
           if (selected_color == 3) {
             if (xtra_color.white - chng >= 0) {
               xtra_color.white = xtra_color.white - chng;
-              mode = SET_COLOR;
+              mode = SET;
             }
           }
         }
@@ -2073,52 +1882,46 @@ void handleRemote() {
         if ((ws2812fx_mode < strip->getModeCount()-1) && (mode == HOLD)) {
           ws2812fx_mode = ws2812fx_mode + 1;
         }
-        mode = SET_MODE;
+        mode = SET;
       }
       if (results.value == rmt_commands[MODE_DOWN]) { //Mode down
         last_remote_cmd = results.value;
         if ((ws2812fx_mode > 0) && (mode == HOLD)) {
           ws2812fx_mode = ws2812fx_mode - 1;
         }
-        mode = SET_MODE;
+        mode = SET;
       }
       if (results.value == rmt_commands[AUTOMODE]) { // Toggle Automode
         last_remote_cmd = 0;
-        if (mode != AUTO) {
-          mode = AUTO;
-        } else {
-          mode = SET_ALL;
-        }
+        ws2812fx_mode = 56;
+        mode = SET;
       }
-    #if defined(ENABLE_TV)
+    #if defined(CUSTOM_WS2812FX_ANIMATIONS)
       if (results.value == rmt_commands[CUST_1]) { // Select TV Mode
         last_remote_cmd = 0;
-        if (mode == TV) {
-          mode = SET_ALL;
-        } else {
-          mode = TV;
-        }  
+        ws2812fx_mode = 57;
+        mode = SET;
       }
     #endif 
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
         ws2812fx_mode = 12;
-        mode = SET_MODE;
+        mode = SET;
       } 
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
         ws2812fx_mode = 48;
-        mode = SET_MODE;
+        mode = SET;
       } 
       if (results.value == rmt_commands[CUST_4]) { // Select Custom Mode 4
         last_remote_cmd = 0;
         ws2812fx_mode = 21;
-        mode = SET_MODE; 
+        mode = SET; 
       }
       if (results.value == rmt_commands[CUST_5]) { // Select Custom Mode 5
         last_remote_cmd = 0;
         ws2812fx_mode = 46;
-        mode = SET_MODE;
+        mode = SET;
       } 
       irrecv.resume();  // Receive the next value
     }
@@ -2133,7 +1936,7 @@ uint32_t scale_wrgb(uint32_t wrgb, uint8_t level) {
     return (w << 24) | (r << 16) | (g << 8) | b;
 }
 
-uint32_t fade(uint32_t newcolor, uint32_t oldcolor, uint8_t level) {
+uint32_t trans(uint32_t newcolor, uint32_t oldcolor, uint8_t level) {
   newcolor = scale_wrgb(newcolor, level);
   oldcolor = scale_wrgb(oldcolor, 255-level);
   return newcolor + oldcolor;

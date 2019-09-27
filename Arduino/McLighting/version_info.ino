@@ -167,9 +167,21 @@
  * 
  * 15 September 2019
  * Version Bump to 2.2.7.BETA1.rgbw.3colors
- * adressed issue: #25 (added Custom Animation 'Gradient')
+ * adressed issue: #25 (added Custom Animation 'Gradient' with number 57)
  * adressed issue: #30 (Status 'AUTO' is saved now)
- * adressed issue: https://github.com/toblum/McLighting/issues/403 (Experimental Support of transitions: set fadeEffect = true in definitions.h)
+ * adressed issue: https://github.com/toblum/McLighting/issues/403 (Experimental Support of transitions: set transEffect = true in definitions.h)
  * corrected use of DMA for Neopixelbus by Makuna (Tests for other strips than SK6812 GRBW were not made)
  * 
+  * 27 September 2019
+ * Version Bump to 3.0.0.ALPHA1
+ * removed LEGACY_ANIMATIONS
+ * removed old Custom Animations from beginning of list.
+ * added Custom Animation 'AutoPlay' with number 56
+ * added Custom Animation 'Custom WS' with number 57
+ * added Custom Animation 'TV' with number 58
+ * added Custom Animation 'E1.31' with number 59
+ * moved Custom Animation 'Fire2012' to number 60
+ * moved Custom Animation 'Gradients' to number 61
+ * REST-API changes (will be documented soon)
+ *
  */

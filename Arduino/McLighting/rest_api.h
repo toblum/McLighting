@@ -118,21 +118,6 @@
     #else
       root["home_assistant"] = "OFF";
     #endif
-    #if defined(ENABLE_LEGACY_ANIMATIONS)
-      root["legacy_animations"] = "ON";
-    #else
-      root["legacy_animations"] = "OFF";
-    #endif
-    #if defined(ENABLE_TV)
-      root["tv_animation"] = "ON";
-    #else
-      root["tv_animation"] = "OFF";
-    #endif
-    #if defined(ENABLE_E131)
-      root["e131_animations"] = "ON";
-    #else
-      root["e131_animations"] = "OFF";
-    #endif
     #if defined(ENABLE_OTA)
       #if ENABLE_OTA == 0
         root["ota"] = "ARDUINO";
@@ -192,12 +177,6 @@
     SPIFFS.format();
   });
 
-  server.on("/set_brightness", []() {
-    mode = SET_BRIGHTNESS;
-    getArgs();   
-    getStatusJSON();
-  });
-
   server.on("/get_brightness", []() {
     char str_brightness[4];
     snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (brightness / 2.55));
@@ -205,12 +184,6 @@
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", str_brightness );
     DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (brightness / 2.55));
-  });
-
-  server.on("/set_speed", []() {
-    mode = SET_SPEED;
-    getArgs();
-    getStatusJSON();
   });
 
   server.on("/get_speed", []() {
@@ -346,8 +319,13 @@
     }
     if (updateConf) {
       initMqtt();
-    }  
+    }
 #endif
+
+    if(server.hasArg("trans_effect")){
+      transEffect = server.arg("trans_effect").toInt();
+      updateConf = true;
+    }
 
 #if defined(ENABLE_STATE_SAVE)
     if (updateStrip || updateConf) {
@@ -364,86 +342,14 @@
     getStatusJSON();
   });
 
-    server.on("/auto", []() {
-    mode = AUTO;
-    getArgs();
-    getStatusJSON();
-  });
-
-  server.on("/all", []() {
+  server.on("/set", []() {
     prevmode = HOLD;
     ws2812fx_mode = FX_MODE_STATIC;
-    mode = SET_ALL;
+    mode = SET;
     getArgs();
     getStatusJSON();
   });
-
-  #if defined(ENABLE_LEGACY_ANIMATIONS)
-    server.on("/wipe", []() {
-      ws2812fx_mode = FX_MODE_COLOR_WIPE;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-  
-    server.on("/rainbow", []() {
-      ws2812fx_mode = FX_MODE_RAINBOW;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-  
-    server.on("/rainbowcycle", []() {
-      ws2812fx_mode = FX_MODE_RAINBOW_CYCLE;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-  
-    server.on("/theaterchase", []() {
-      ws2812fx_mode = FX_MODE_THEATER_CHASE;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-  
-    server.on("/twinklerandom", []() {
-      ws2812fx_mode = FX_MODE_TWINKLE_RANDOM;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-    
-    server.on("/theaterchaserainbow", []() {
-      ws2812fx_mode = FX_MODE_THEATER_CHASE_RAINBOW;
-      mode = SET_ALL;
-      getArgs();
-      getStatusJSON();
-    });
-  #endif
-  
-  #if defined(ENABLE_E131)
-    server.on("/e131", []() {
-      mode = E131;
-      getArgs();
-      getStatusJSON();
-    });
-  #endif
-  
-  #if defined(ENABLE_TV)
-    server.on("/tv", []() {
-      mode = TV;
-      getArgs();
-      getStatusJSON();
-    });
-  #endif
 
   server.on("/get_modes", []() {
     getModesJSON();
-  });
-
-  server.on("/set_mode", []() {
-    mode = SET_MODE;
-    getArgs();
-    getStatusJSON();
   });

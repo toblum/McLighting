@@ -29,28 +29,26 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 
 #define ENABLE_STATE_SAVE 1           // If defined, load saved state on reboot and save state. If set to 0 from EEPROM, if set to 1 from SPIFFS
 
-#define ENABLE_LEGACY_ANIMATIONS      // Enable Legacy Animations
 #define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h" 
-#define ENABLE_E131                   // E1.31 implementation You have to uncomment #define USE_WS2812FX_DMA and set it to 0
-#define ENABLE_TV                     // Enable TV Animation 
 #define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
 
-#define FADE_COLOR_DELAY 5            // Delay for color transition
-#define FADE_DELAY 10                 // Delay for brightness and speed transition
+#define TRANS_COLOR_DELAY 5            // Delay for color transition
+#define TRANS_DELAY 10                 // Delay for brightness and speed transition
 
-bool fadeEffect  = true;              // Experimental: Enable transitions of color, brightness and speed. It does not work properly for all effects.
-uint8_t fade_cnt = 0;
+bool          transEffect  = false;    // Experimental: Enable transitions of color, brightness and speed. It does not work properly for all effects.
+bool          transEffectOverride = false;
+uint8_t       trans_cnt = 0;
 unsigned long colorFadeDelay = 0;
 unsigned long brightnessFadeDelay = 0;
 unsigned long speedFadeDelay = 0;
 
-#if defined(ENABLE_E131)
+#if defined(CUSTOM_WS2812FX_ANIMATIONS)
   #define MULTICAST false
   #define START_UNIVERSE 1            // First DMX Universe to listen for
       uint8_t END_UNIVERSE = START_UNIVERSE; // Total number of Universes to listen for, starting at UNIVERSE
 
 #endif
-
+uint8_t selected_segment = 0;
 #if defined(ENABLE_REMOTE)
   uint8_t  selected_color = 1;
   uint64_t last_remote_cmd;
@@ -142,20 +140,20 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE {OFF, AUTO, TV, E131, CUSTOM, HOLD, SET_ALL, SET_MODE, SET_COLOR, SET_SPEED, SET_BRIGHTNESS, INIT_STRIP};
-MODE mode = SET_ALL;        // Standard mode that is active when software starts
-MODE prevmode = INIT_STRIP;
+enum MODE {OFF, HOLD, SET, SET_SPEED, INIT_STRIP};
+MODE mode = SET;           // Standard mode that is active when software starts
+MODE prevmode = HOLD;          // Do not change
 
+uint8_t autoCount             = 0;    // Global variable for storing the counter for automated playback
+long    autoDelay             = 0;    // Global variable for storing the time to next auto effect
 uint8_t ws2812fx_speed        = 196;  // Global variable for storing the speed for effects --> smaller == slower
 uint8_t ws2812fx_speed_actual = 196;  // Global variable for storing the speed for effects while fading --> smaller == slower
 uint8_t brightness            = 196;  // Global variable for storing the brightness (255 == 100%)
-uint8_t brightness_actual     = 0;    // Global variable for storing the brightness while fadeing (255 == 100%)
-uint8_t brightness_fade       = 0;    // Global variable for storing the brightness before change
-uint8_t ws2812fx_mode         = 0;    // Global variable for storing the WS2812FX modes
+uint8_t brightness_trans      = 0;    // Global variable for storing the brightness before change
+uint8_t ws2812fx_mode         = 0;    // Global variable for storing the WS2812FX mode to set
 
 uint32_t hex_colors[3]        = {};   // Color array for setting colors of WS2812FX
-uint32_t hex_colors_actual[3] = {};   // Color array for actual colors of WS2812FX while fading
-uint32_t hex_colors_mem[3]    = {};   // Color array of colors of WS2812FX before fading 
+uint32_t hex_colors_trans[3]  = {};   // Color array of colors of WS2812FX before fading 
 struct ledstate                       // Data structure to store a state of a single led
 {
   uint8_t red;
@@ -177,7 +175,7 @@ bool updateState  = false;
 // Button handling
 
 #if defined(ENABLE_BUTTON)
-//#define BTN_MODE_SHORT  "STA|mo|fxm|  h|  s| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
+//#define BTN_MODE_SHORT  "STA|mo|fxm|  b|  s| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
   #define BTN_MODE_SHORT  "STA| 5|  0|255|196|  0|  0|  0|255|  0|  0|  0|  0|  0|  0|  0|  0"   // Static white
   #define BTN_MODE_MEDIUM "STA| 5| 48|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fire flicker
   #define BTN_MODE_LONG   "STA| 5| 46|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fireworks random
