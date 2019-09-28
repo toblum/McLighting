@@ -44,6 +44,12 @@ This project uses libraries and code by different authors:
 - Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.7.0)
   _Only when you have activated MQTT in definitions.h._
   
+- Optional: [Brzo I2C](https://github.com/pasko-zh/brzo_i2c/) by pazko-zh (tested with 1.3.3)
+  _Only when you have activated GY33 in definitions.h._
+  
+- Optional: [FastLed](https://github.com/FastLED/FastLED/) by FastLED (tested with 1.3.3)
+  _Only when you have activated custom animations (Fire2012) in definitions.h._
+  
 The sketch also uses the following built-in library:
 - Ticker by [@igrr](https://github.com/igrr)
 
@@ -74,9 +80,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 - [ ] Support for up to ten segments
 - [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
-- [x] Save status: Added saving of status 'AUTO'. [Issue] (https://github.com/FabLab-Luenen/McLighting/issues/30)
+- [x] Save status: Added saving of status 'AUTO'. [Issue](https://github.com/FabLab-Luenen/McLighting/issues/30)
 - [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work proberly for all WS2812fx effects. Can be set via UI.
-- [x] Added Custom Animation 'Gradient': [Issue] (https://github.com/FabLab-Luenen/McLighting/issues/25)
+- [x] Added Custom Animation 'Gradient': [Issue](https://github.com/FabLab-Luenen/McLighting/issues/25)
 - [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
