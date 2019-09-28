@@ -74,14 +74,14 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
 - [ ] Support for up to ten segments
 - [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
-- [x] Save status: Added saving of status 'AUTO'. [Issue] https://github.com/FabLab-Luenen/McLighting/issues/30
+- [x] Save status: Added saving of status 'AUTO'. [Issue] (https://github.com/FabLab-Luenen/McLighting/issues/30)
 - [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work proberly for all WS2812fx effects. Can be set via UI.
-- [x] Added Custom Animation 'Gradient': [Issue] https://github.com/FabLab-Luenen/McLighting/issues/25
-- [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
+- [x] Added Custom Animation 'Gradient': [Issue] (https://github.com/FabLab-Luenen/McLighting/issues/25)
+- [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [x] MQTT support
-- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
+- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
 - [x] Fix issue with websockets connection problems
 - [x] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
