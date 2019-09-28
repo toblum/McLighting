@@ -1,4 +1,4 @@
-# McLighting v2 - The ESP8266 based multi-client lighting gadget
+# McLighting v3 - The ESP8266 based multi-client lighting gadget
 
 [![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.0.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
 
@@ -35,7 +35,7 @@ This project uses libraries and code by different authors:
 
 - [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.15.0)
 
-- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1
+- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1)
 
 - [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.1.4)
 
