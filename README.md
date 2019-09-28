@@ -1,6 +1,6 @@
 # McLighting v2 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.7-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.0.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
 
 McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
@@ -33,15 +33,15 @@ again in out wiki: [Software installation](../../wiki/Software-installation)
 
 This project uses libraries and code by different authors:
 
-- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.12.0)
+- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.15.0)
 
-- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version downloaded 2017-02-05)
+- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1
 
-- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.0.6)
+- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.1.4)
 
-- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.1.2)
+- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.2.5)
 
-- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.6.0)
+- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.7.0)
   _Only when you have activated MQTT in definitions.h._
   
 The sketch also uses the following built-in library:
@@ -75,7 +75,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Support for up to ten segments
 - [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
 - [x] Save status: Added saving of status 'AUTO'. [Issue] https://github.com/FabLab-Luenen/McLighting/issues/30
-- [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work proberly for all WS2812fx effects.
+- [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work proberly for all WS2812fx effects. Can be set via UI.
 - [x] Added Custom Animation 'Gradient': [Issue] https://github.com/FabLab-Luenen/McLighting/issues/25
 - [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
