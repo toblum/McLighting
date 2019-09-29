@@ -67,21 +67,21 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [ ] Redesign of Code and bump to V3
-- [ ] Removal of LEGACY_ANIMATIONS
-- [ ] Include ws28fx library to code due to modifications in library 
 - [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Remove old / wrong EEPROM settings completely [Issue]
+- [ ] Support for up to ten segments
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
+- [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Additional clients
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
-- [ ] Support for up to ten segments
+- [x] Removal of LEGACY_ANIMATIONS
+- [x] Include ws2812fx library to code due to modifications in library 
 - [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
 - [x] Save status: Added saving of status 'AUTO'. [Issue](https://github.com/FabLab-Luenen/McLighting/issues/30)
-- [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work proberly for all WS2812fx effects. Can be set via UI.
+- [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work properly for all WS2812fx effects. Can be set via UI or REST-API.
 - [x] Added Custom Animation 'Gradient': [Issue](https://github.com/FabLab-Luenen/McLighting/issues/25)
 - [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
