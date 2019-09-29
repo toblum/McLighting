@@ -22,12 +22,12 @@
 
                         "brightness": {
                                 "status": "http://<ESP_HOST>/get_brightness",
-                                "url": "http://<ESP_HOST>/set_brightness?c=%s"
+                                "url": "http://<ESP_HOST>/set?c=%s"
                         },
 
                         "color": {
                                 "status": "http://<ESP_HOST>/get_color",
-                                "url": "http://<ESP_HOST>/all?rgb=%s",
+                                "url": "http://<ESP_HOST>/set?m=0?rgb=%s",
                                 "brightness": true
                         }
                 }

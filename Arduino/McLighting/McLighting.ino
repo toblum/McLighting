@@ -671,8 +671,6 @@ void setup() {
   #if defined(ENABLE_REMOTE)
     irrecv.enableIRIn();  // Start the receiver
   #endif
-  snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", mode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue,xtra_color.white);
-  last_state[sizeof(last_state)]= 0x00;
   ws2812fx_speed_actual = ws2812fx_speed;
   brightness_trans = brightness;
   memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
@@ -777,48 +775,43 @@ void loop() {
   
   if (mode == SET) {
     mode = HOLD;
+    // Mode
     if (ws2812fx_mode !=  strip->getMode(selected_segment)) {  // SET_MODE
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
-    #endif
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", ws2812fx_mode);
+      #endif
       strip->strip_off();
       autoCount = 0;
       autoDelay = 0;
       strip->setMode(selected_segment, ws2812fx_mode);
     }
+    //Color
+    /*if (memcmp(hex_colors_trans, strip->getColors(selected_segment), sizeof(hex_colors_trans)) != 0) {
+     
+    }*/
+    // Brightness
     if (strip->getBrightness() != brightness) {
       #if defined(ENABLE_MQTT)
         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", brightness);
       #endif
       brightness_trans = brightness;
     }
+    // Speed
+    if (ws2812fx_speed_actual != ws2812fx_speed) {
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", ws2812fx_speed);
+      #endif
+    }
     prevmode = SET;
     strip->trigger();
   }  
-     
-  /*if (mode == SET) {
-    mode = HOLD;
-    if (trans_cnt==0) { trans_cnt=1;   }
-    if (!transEffect) { trans_cnt=255; }
-    convertColorsFade();
-    prevmode = SET;
-  }*/
-  
-  if (mode == SET_SPEED) {
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", ws2812fx_speed);
-    #endif
-    mode = prevmode;
-    prevmode = SET_SPEED;
-  }
  
   if (prevmode != mode) {
     convertColors();
     if (memcmp(hex_colors_trans, strip->getColors(selected_segment), sizeof(hex_colors_trans)) != 0) {
       DBG_OUTPUT_PORT.println("Colors not equal!");
-      if (trans_cnt==0) { trans_cnt=1;   }
-      if (!transEffect) { trans_cnt=255; }
       convertColorsFade();
+      trans_cnt = 1;
     }
     strip->setSpeed(selected_segment, convertSpeed(ws2812fx_speed_actual));
     //strip->setBrightness(brightness_actual);       
@@ -873,7 +866,7 @@ void loop() {
     }
   #endif
 
-  if ((mode == HOLD) || ((mode == OFF) && ((strip->getBrightness() == 0) || !transEffect))) { 
+  if ((mode == HOLD) || ((mode == OFF) && (strip->getBrightness() > 0) && transEffect)) { 
     if (ws2812fx_mode == FX_MODE_CUSTOM_0) {
       handleAutoPlay();
     }
@@ -882,26 +875,33 @@ void loop() {
   }
   
   // Async color transition
-  if ((trans_cnt > 0) && (trans_cnt < 255)) {
-    uint32_t hex_colors_actual[3] = {};
-    if ((transEffect) && (colorFadeDelay <= millis())) {
-      hex_colors_actual[0] = trans(hex_colors_trans[0], hex_colors[0], trans_cnt);
-      hex_colors_actual[1] = trans(hex_colors_trans[1], hex_colors[1], trans_cnt);
-      hex_colors_actual[2] = trans(hex_colors_trans[2], hex_colors[2], trans_cnt);
-      strip->setColors(selected_segment, hex_colors_actual);
-      trans_cnt++;
-      colorFadeDelay = millis() + TRANS_COLOR_DELAY;
+  if (memcmp(hex_colors_trans, strip->getColors(selected_segment), sizeof(hex_colors_trans)) != 0) {
+    if (transEffect) {
+      if ((trans_cnt > 0) && (trans_cnt < trans_cnt_max)) {
+        if (colorFadeDelay <= millis()) {
+          uint32_t hex_colors_actual[3] = {};
+          hex_colors_actual[0] = trans(hex_colors_trans[0], hex_colors[0], trans_cnt);
+          hex_colors_actual[1] = trans(hex_colors_trans[1], hex_colors[1], trans_cnt);
+          hex_colors_actual[2] = trans(hex_colors_trans[2], hex_colors[2], trans_cnt);
+          strip->setColors(selected_segment, hex_colors_actual);
+          trans_cnt++;
+          colorFadeDelay = millis() + TRANS_COLOR_DELAY;
+          if (mode == HOLD) strip->trigger();
+        }
+      } else if (trans_cnt >= trans_cnt_max) {
+        memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
+        strip->setColors(selected_segment, hex_colors);
+        if (mode == HOLD) strip->trigger();
+        trans_cnt = 0;
+        DBG_OUTPUT_PORT.println("Color transition finished!");
+      }
+    } else {
+      memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
+      strip->setColors(selected_segment, hex_colors);
       if (mode == HOLD) strip->trigger();
+      trans_cnt = 0;
     }
   }
-  if (trans_cnt > 254) {
-    memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
-    strip->setColors(selected_segment, hex_colors);
-    if (mode == HOLD) strip->trigger();
-    trans_cnt = 0;
-    DBG_OUTPUT_PORT.println("Color transition finished!");
-  }
-  
   // Async speed transition
   if (ws2812fx_speed_actual != ws2812fx_speed) {
     if (transEffect) {

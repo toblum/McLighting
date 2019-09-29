@@ -5,8 +5,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="mobile-web-app-capable" content="yes">
-        <link rel="shortcut icon" href="https://cdn.rawgit.com/toblum/McLightingUI/1346e334/material/McLightingLogo/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="https://cdn.rawgit.com/toblum/McLightingUI/1346e334/material/McLightingLogo/apple-touch-icon.png">
+        <link rel="shortcut icon" href="https://raw.githubusercontent.com/FabLab-Luenen/McLighting/master/Arduino/McLighting/data/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/FabLab-Luenen/McLighting/master/Arduino/McLighting/apple-touch-icon.png">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
         <style>
 * {
@@ -912,34 +912,25 @@ input[type=number], label{
                             <input type="number" id="speedNum">
                             <input value="255" type="range" min="0" max="255" id="speed">
                         </div>
-                        <div style="display:inline-flex; margin-top:12px;">
-                            <label class="switch">
-                                <input type="checkbox" id="autoplay" onclick="toggleAutoplay(this.checked);">
-                                <span id="autoplaybgcolor" class="slider round"></span>
-                            </label><div id="autoplayLbl" style="margin:auto 8px;font-size:18px;">autoplay</div>
+                        <div id="message" class="container hidden" style="text-align: left;">
+                            <div id="wsmessageLbl" style="text-align: left;"><p>wsMessage</p>
+                                <input type="text" id="wsmessage" style="border: 2px solid #aaaaaa; border-radius: 6px; width:100%;" />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="message" class="container hidden" style="text-align: left;">
-                <div class="layout row wrap">
-                    <div class="flex xs12" id="wsmessageLbl" style="text-align: left;"><p>wsMessage</p>
-                        <input type="text" id="wsmessage" style="border: 2px solid #aaaaaa; border-radius: 6px; width:100%;" />
-                    </div>
-                </div>
-            </div>
             <div class="container" style="text-align: center;"><div id="modes" class="layout row wrap"></div></div>
-            
             <div id="settings" class="container hidden" style="text-align: center;">
                 <div class="layout row wrap">
                     <div class="flex xs12 sm4"><p>selectLanguage</p>
                         <select id="language" class="custom-select"></select>
                     </div>
-                    <div class="flex xs12 sm4"><p>showAutoplay</p>
+                    <div class="flex xs12 sm4"><p>transitionEffects</p>
                         <div style="display:inline-flex;">
                             <label class="switch">
-                                <input type="checkbox" id="set-autoplay">
-                                <span id="setautoplaybgcolor" class="slider round"></span>
+                                <input type="checkbox" id="set-transitionEffects">
+                                <span id="settransitionEffectsbgcolor" class="slider round"></span>
                             </label>
                         </div>
                     </div>
@@ -1010,7 +1001,7 @@ input[type=number], label{
             </div>
             
             <footer id="footer" style="height: 32px;">
-                <div><a href="https://github.com/toblum/McLighting/" id="footer-link" target="_blank">Project home</a> - © 2018</div> <div class="spacer"></div>
+                <div><a href="https://github.com/FabLab-Luenen/McLighting" id="footer-link" target="_blank">Project home</a> - © 2019</div> <div class="spacer"></div>
                 <button id="settings-open" type="button" class="btn btn--bottom btn__content"><i aria-hidden="true" class="icon material-icons">settings</i></button>
             </footer>
         </div>
@@ -1031,7 +1022,7 @@ var language = {
     en: {
         lang_name: "English",
         title: "McLighting",
-        name: "Mc Lighting UI (RGBW)",
+        name: "McLightingUI V3(RGBW)",
         connected: "connected",
         disconnected: "disconnected",
         reconnect: "Reconnect",
@@ -1052,7 +1043,6 @@ var language = {
         white: "White",
         not_greater: "cannot enter numbers greater than 255",
         not_less: "cannot enter numbers less than 0",
-        autoplay: "Autoplay",
         wsMessage: "Websocket Message:",
         selectLanguage: "Select Language:",
         selectHostname: "Hostname:",
@@ -1077,7 +1067,7 @@ var language = {
         selectPicker: "Select color picker:",
         circle: "Circle",
         wheel: "Wheel",
-        showAutoplay: "Show Autoplay:",
+        transitionEffects: "Transition Effects:",
         disableRGBW: "activate RGBW",
         slaveNodes: "Additional McLighting Slave Nodes (\";\" seperated)",
         saveSettings: " Save Settings",
@@ -1088,7 +1078,7 @@ var language = {
     nl: {
         lang_name: "Nederlands",
         title: "McLighting",
-        name: "Mc Lighting UI (RGBW)",
+        name: "McLightingUI V3(RGBW)",
         connected: "verbonden",
         disconnected: "niet verbonden",
         reconnect: "Verbind opnieuw",
@@ -1109,7 +1099,6 @@ var language = {
         white: "Wit",
         not_greater: "Geen nummers hoger dan 255",
         not_less: "Geen nummers lager dan 0",
-        autoplay: "Autoplay",
         wsMessage: "Websocket message:",
         selectLanguage: "Selecteer Taal:",
         selectHostname: "Hostname:",
@@ -1134,7 +1123,7 @@ var language = {
         selectPicker: "Selecteer Kleur kiezer:",
         circle: "Cirkel",
         wheel: "Wiel",
-        showAutoplay: "Autoplay tonen:",
+        transitionEffects: "Overgangseffecten:",
         disableRGBW: "RGBW activeren",
         slaveNodes: "Additionele McLighting modules (\";\" gescheiden)",
         saveSettings: " Instellingen opslaan",
@@ -1145,7 +1134,7 @@ var language = {
     de: {
         lang_name: "Deutsch",
         title: "McLighting",
-        name: "Mc Lighting UI (RGBW)",
+        name: "McLightingUI V3(RGBW)",
         connected: "verbunden",
         disconnected: "getrennt",
         reconnect: "Wieder verbinden",
@@ -1166,7 +1155,6 @@ var language = {
         white: "Weiß",
         not_greater: "Akzeptiere keine Nummern größer 255",
         not_less: "Akzeptiere keine Nummern kleiner 0",
-        autoplay: "Autoplay",
         wsMessage: "Websocket Message:",
         selectLanguage: "Sprache auswählen:",
         selectHostname: "Hostname:",
@@ -1191,7 +1179,7 @@ var language = {
         selectPicker: "Farbwahltyp auswählen:",
         circle: "Kreis",
         wheel: "Rad",
-        showAutoplay: "Autoplay anzeigen:",
+        transitionEffects: "Übergangseffekte:",
         disableRGBW: "RGBW aktivieren",
         slaveNodes: "weitere McLighting Slave Nodes (\";\" getrennt)",
         saveSettings: " Einstellungen speichern",
@@ -1285,7 +1273,6 @@ var settings = {
     theme_btnsel: "#FF0000",
     visibility: [],
     picker_type: "wheel",
-    autoplay: true,
     slave_nodes: ""
 };
 var config = {
@@ -1299,6 +1286,7 @@ var config = {
     ws_pin: 0,
     ws_fxopt: 0,
     enable_rgbw: false,
+    transitionEffects: true
 };
 var data = {
     mode: 0,
@@ -1567,6 +1555,7 @@ function getConfig() {
                 }
                 if (typeof res.ws_pin    !== "undefined") config.ws_pin = res.ws_pin;
                 if (typeof res.ws_fxopt  !== "undefined") config.ws_fxopt = res.ws_fxopt;
+                if (typeof res.transEffect  !== "undefined") config.transitionEffects = res.transEffect;
             }
         } else {
             console.error(e);
@@ -1678,21 +1667,6 @@ function toggle(mode, el) {
     //console.log("Hidden items: " + settings.visibility);
 }
 
-function toggleAutoplay(status) {
-    var message = (status) ? "start" : "stop";
-    ws_send(message);
-    if (!status) {
-        document.getElementById("autoplay").checked = false;
-        document.getElementById("autoplaybgcolor").style.backgroundColor = "";
-        ws_send("$");
-    } else {
-        document.getElementById("autoplay").checked = true;
-        data.mode = 1;
-        document.getElementById("autoplaybgcolor").style.backgroundColor = settings.theme_btn;
-        select_active_button();
-    }
-};
-
 function onSelectColNum(colnum) {
     data.color_num = colnum;
     console.log("selected color:" + colnum);
@@ -1737,49 +1711,42 @@ function initSettings() {
     hostname.addEventListener('change', ()=>{
         config.hostname = hostname.value;
         ws_send("Ch" + config.hostname);
-        ws_send("C");
     });
     var mqtt_host = document.getElementById("mqtt_host");
     mqtt_host.value = config.mqtt_host;
     mqtt_host.addEventListener('change', ()=>{
         config.mqtt_host = mqtt_host.value;
         ws_send("Cmh" + config.mqtt_host);
-        ws_send("C");
     });
     var mqtt_port = document.getElementById("mqtt_port");
     mqtt_port.value = config.mqtt_port;
     mqtt_port.addEventListener('change', ()=>{
         config.mqtt_port = mqtt_port.value;
         ws_send("Cmp" + config.mqtt_port);
-        ws_send("C");
     });
     var mqtt_user = document.getElementById("mqtt_user");
     mqtt_user.value = config.mqtt_user;
     mqtt_user.addEventListener('change', ()=>{
         config.mqtt_user = mqtt_user.value;
         ws_send("Cmu" + config.mqtt_user);
-        ws_send("C");
     });
     var mqtt_pass = document.getElementById("mqtt_pass");
     mqtt_pass.value = config.mqtt_pass;
     mqtt_pass.addEventListener('change', ()=>{
         config.mqtt_pass = mqtt_pass.value;
         ws_send("Cmw" + config.mqtt_pass);
-        ws_send("C");
     });
     var count = document.getElementById("selectcount");
     count.value = config.ws_cnt;
     count.addEventListener('change', ()=>{
         config.ws_cnt = count.value;
         ws_send("Csc" + config.ws_cnt);
-        ws_send("C");
     });
     var pin = document.getElementById("selectpin");
     pin.value = config.ws_pin;
     pin.addEventListener('change', ()=>{
         config.ws_pin = pin.value;
         ws_send("Csp" + config.ws_pin);
-        ws_send("C");
     });
     var rgbo = document.getElementById("selectrgbo");
     for (var code in selectrgbo) {
@@ -1792,8 +1759,6 @@ function initSettings() {
     rgbo.addEventListener('change', ()=>{
         config.ws_rgbo = rgbo.value;
         ws_send("Csr" + config.ws_rgbo);
-        ws_send("C");
-		
     });
     var optrev = document.getElementById("selectoptrev");
     for (var code in selectoptrev) {
@@ -1806,7 +1771,6 @@ function initSettings() {
     optrev.addEventListener('change', ()=>{
         config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
         ws_send("Cso" + config.ws_fxopt);
-        ws_send("C");
     });
     var optfade = document.getElementById("selectoptfade");
     for (var code in selectoptfade) {
@@ -1819,7 +1783,6 @@ function initSettings() {
     optfade.addEventListener('change', ()=>{
         config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
         ws_send("Cso" + config.ws_fxopt);
-        ws_send("C");
     });
     var optgamma = document.getElementById("selectoptgamma");
     for (var code in selectoptgamma) {
@@ -1832,7 +1795,6 @@ function initSettings() {
     optgamma.addEventListener('change', ()=>{
         config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
         ws_send("Cso" + config.ws_fxopt);
-        ws_send("C");
     });
     var optsize = document.getElementById("selectoptsize");
     for (var code in selectoptsize) {
@@ -1845,7 +1807,6 @@ function initSettings() {
     optsize.addEventListener('change', ()=>{
         config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
         ws_send("Cso" + config.ws_fxopt);
-        ws_send("C");
     });
     slavenodes.value = settings.slave_nodes;
     lang.addEventListener('change', ()=>{
@@ -1858,18 +1819,16 @@ function initSettings() {
         settings.picker_type = (picker.checked) ? "circle" : "wheel";
         redrawColorPicker();
     });
-    var setautoplay = document.getElementById("set-autoplay");
-    setautoplay.checked = settings.autoplay;
-    if (!setautoplay.checked) autoplay.parentNode.parentNode.style.visibility = "hidden";
-    setautoplay.addEventListener('change', ()=>{
-        settings.autoplay = setautoplay.checked;
-        var play = document.getElementById("autoplay").parentNode.parentNode;
-        if (setautoplay.checked) {
-            play.style.visibility = "visible";
-            document.getElementById("setautoplaybgcolor").style.backgroundColor = settings.theme_btn;
+    var settransitionEffects = document.getElementById("set-transitionEffects");
+    settransitionEffects.checked = config.transitionEffects;
+    settransitionEffects.addEventListener('change', ()=>{
+        config.transitionEffects = settransitionEffects.checked;
+        if (settransitionEffects.checked) {
+            document.getElementById("settransitionEffectsbgcolor").style.backgroundColor = settings.theme_btn;
+            ws_send("Ce1");                                                                                         
         } else {
-            play.style.visibility = "hidden";
-            document.getElementById("setautoplaybgcolor").style.backgroundColor = "";
+            document.getElementById("settransitionEffectsbgcolor").style.backgroundColor = "";
+            ws_send("Ce0");                                                                         
         }
     });
     var colmain = document.getElementById("color-main");
@@ -1908,7 +1867,6 @@ function initSettings() {
         for (var i = 0; i < icons.length; i++) {
             icons[i].style.color = (yiq >= 125) ? '#222' : '#EEE';
         }
-        document.getElementById("autoplayLbl").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("wsmessageLbl").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("redNum").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("greenNum").style.color = (yiq >= 125) ? '#111' : '#EEE';
@@ -1924,8 +1882,7 @@ function initSettings() {
         settings.theme_btn = colbtn.value;
         document.getElementById("settings-save").style.backgroundColor = settings.theme_btn;
         document.getElementById("pickerbgcolor").style.backgroundColor = settings.theme_btn;
-        if (setautoplay.checked) document.getElementById("setautoplaybgcolor").style.backgroundColor = settings.theme_btn;
-        if (document.getElementById("autoplay").checked) document.getElementById("autoplaybgcolor").style.backgroundColor = settings.theme_btn;
+        if (settransitionEffects.checked) document.getElementById("settransitionEffectsbgcolor").style.backgroundColor = settings.theme_btn;
         select_active_button();
     });
     var colbtns = document.getElementById("color-btnsel");
@@ -2255,62 +2212,54 @@ function select_active_button() {
     for (i = 0; i < btns.length; i++) {
         btns[i].style.backgroundColor = settings.theme_btn;
     }
-    if (data.mode != 1) document.getElementById("autoplay").checked = false;
-    if (data.mode != 4) {
+    if (data.mode != 1 || (data.mode === 1 && data.ws2812fx_mode !== 57)) {  // CUSTOM WS MODE
         wsmess = document.getElementById("message");
         var arr = wsmess.className.split(" ");
         if (arr.indexOf("hidden") === -1) {
             wsmess.className += " hidden";
         }
     }
-    if (data.mode >= 5) {
+    if (data.mode >= 1) {
         document.getElementById(data.ws2812fx_mode).style.backgroundColor = settings.theme_btnsel;
-        disable_modebuttons(false);
-        disable_color_selection(false);
-        disable_bright_selection(false);
-        disable_speed_selection(false);
-    } else {
-        if (data.mode == 0) {
-            document.getElementById("off").style.backgroundColor = settings.theme_btnsel;
+        if (data.ws2812fx_mode === 56) { // AUTOPLAY
             disable_modebuttons(false);
             disable_color_selection(true);
-            disable_bright_selection(true);
+            disable_bright_selection(false);
             disable_speed_selection(true);
+        } else if (data.ws2812fx_mode === 57) { //CUSTOM_WS
+            wsmess = document.getElementById("message");
+            wsmess.className = wsmess.className.replace(/\b hidden\b/g, "");
+            disable_modebuttons(false);
+            disable_color_selection(true);
+            disable_bright_selection(false);
+            disable_speed_selection(true);
+        } else if (data.ws2812fx_mode === 58) { //TV
+            disable_modebuttons(false);
+            disable_color_selection(true);
+            disable_bright_selection(false);
+            disable_speed_selection(false);
+        } else if (data.ws2812fx_mode === 59) {  //E1.31
+            disable_modebuttons(false);
+            disable_color_selection(true);
+            disable_bright_selection(false);
+            disable_speed_selection(true);
+        } else if (data.ws2812fx_mode === 60) {  //Fire2012
+            disable_modebuttons(false);
+            disable_color_selection(true);
+            disable_bright_selection(false);
+            disable_speed_selection(false);
         } else {
-            if (data.mode == 1) { // AUTO
-                document.getElementById("autoplay").checked = true;
-                disable_modebuttons(true);
+            disable_modebuttons(false);
+            disable_color_selection(false);
+            disable_bright_selection(false);
+            disable_speed_selection(false);
+        }
+    } else if (data.mode === 0) {
+                document.getElementById("off").style.backgroundColor = settings.theme_btnsel;
+                disable_modebuttons(false);
                 disable_color_selection(true);
                 disable_bright_selection(true);
                 disable_speed_selection(true);
-            } else {
-                if (data.mode == 2) {
-                    document.getElementById("tv").style.backgroundColor = settings.theme_btnsel;
-                    disable_modebuttons(false);
-                    disable_color_selection(true);
-                    disable_bright_selection(false);
-                    disable_speed_selection(false);
-                } else {
-                    if (data.mode == 3) {
-                        document.getElementById("e131").style.backgroundColor = settings.theme_btnsel;
-                        disable_modebuttons(false);
-                        disable_color_selection(true);
-                        disable_bright_selection(false);
-                        disable_speed_selection(true);
-                    } else {
-                        if (data.mode == 4) {
-                            document.getElementById("custom").style.backgroundColor = settings.theme_btnsel;
-                            wsmess = document.getElementById("message");
-                            wsmess.className = wsmess.className.replace(/\b hidden\b/g, "");
-                            disable_modebuttons(false);
-                            disable_color_selection(true);
-                            disable_bright_selection(false);
-                            disable_speed_selection(true);
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -2332,23 +2281,13 @@ function disable_modebuttons(status) {
 }
 
 function set_mode(mode_id) {
-    if (document.getElementById("autoplay").checked == true) toggleAutoplay(false);
     if (Number.isInteger(mode_id)) {
-        data.mode = 5;
+        data.mode = 1;
         data.ws2812fx_mode = mode_id;
     } else {
         // For named modes
         if (mode_id == "off") {
           data.mode = 0;
-        }
-        if (mode_id == "tv") {
-          data.mode = 2;
-        }
-        if (mode_id == "e131") {
-          data.mode = 3;
-        }
-        if (mode_id == "custom") {
-          data.mode = 4;
         }
     }
     select_active_button();

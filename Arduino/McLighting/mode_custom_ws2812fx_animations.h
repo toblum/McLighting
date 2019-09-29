@@ -150,7 +150,6 @@ void handleE131(){
   }
 }
 
-
 #include <FastLED.h>  //https://github.com/FastLED/FastLED
 /*
  * paste in the Fire2012 code with a small edit at the end which uses the

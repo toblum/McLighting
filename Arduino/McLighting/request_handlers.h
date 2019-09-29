@@ -17,38 +17,33 @@ void convertColors() {
   hex_colors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
 }
 
-void convertColorsFade() {
-  if ((transEffect) && (trans_cnt > 1) && (trans_cnt < 254)) {
-    memcpy(hex_colors, strip->getColors(selected_segment), sizeof(strip->getColors(selected_segment)));
-    DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
-    trans_cnt = 1;
-  } else {
-    //memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
-  }
-}
-
-uint8_t calculateColorTransitionSteps () {
+void calculateColorTransitionSteps() {
   //compare all colors and calculate steps
-  int     trans_cnt_max = 0;
+  trans_cnt_max = 0;
   int     calculate_max[4] = {};
   for (uint8_t i=0; i<3; i++){
-    DBG_OUTPUT_PORT.printf("i: %i\r\n", i);
     for (uint8_t j=0; j<4; j++) {
-      DBG_OUTPUT_PORT.printf("j: %i\r\n", j);
       calculate_max[j] = ((hex_colors[i] >> ((3-j)*8)) & 0xFF) - ((hex_colors_trans[i] >> ((3-j)*8)) & 0xFF);
       calculate_max[j] = abs(calculate_max[j]);
       trans_cnt_max = max(trans_cnt_max, calculate_max[j]);
-     DBG_OUTPUT_PORT.printf("calcmax: %i %i\r\n", j, calculate_max[j]);
     }
   }
-  DBG_OUTPUT_PORT.printf("max: %i\r\n", trans_cnt_max);
-  return trans_cnt_max;
 }
 
-
+void convertColorsFade() {
+  if (transEffect) {
+      if (trans_cnt > 1) {
+        memcpy(hex_colors, strip->getColors(selected_segment), sizeof(hex_colors));
+        DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
+        trans_cnt = 1;
+      }
+    calculateColorTransitionSteps();
+  }
+}
 
 void getArgs() {
   if (mode == SET) {
+    //color wrgb
     if (server.arg("rgb") != "") {
       uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
       main_color.white = ((rgb >> 24) & 0xFF);
@@ -121,17 +116,16 @@ void getArgs() {
     xtra_color.green = constrain(xtra_color.green, 0, 255);
     xtra_color.blue = constrain(xtra_color.blue, 0, 255);
     xtra_color.white = constrain(xtra_color.white, 0, 255);
-  }
-  if (mode == SET || mode == SET_SPEED) {
+    // Speed
     if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
-    ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
+      ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
     }
-  }
-  if (mode == SET) {
+    //Mode
     if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
       ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     }
-    if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) {
+    // Brightness
+    if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) { 
       brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
     } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
       brightness = constrain(server.arg("p").toInt(), 0, 255);
@@ -204,9 +198,9 @@ void handleSetAllMode(uint8_t * mypayload) {
 
 void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   // decode led index
-  char templed[3];
-  strncpy (templed, (const char *) &mypayload[firstChar], 2 );
-  templed[2] = 0x00;
+  char templed[5];
+  strncpy (templed, (const char *) &mypayload[firstChar], 4 );
+  templed[4] = 0x00;
   uint8_t led = atoi(templed);
 
   DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, WS2812FXStripSettings.stripSize, mypayload );
@@ -215,10 +209,10 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     char greenhex[3];
     char bluehex[3];
     char whitehex[3];
-    strncpy (whitehex, (const char *) &mypayload[2 + firstChar], 2 );
-    strncpy (redhex, (const char *) &mypayload[4 + firstChar], 2 );
-    strncpy (greenhex, (const char *) &mypayload[6 + firstChar], 2 );
-    strncpy (bluehex, (const char *) &mypayload[8 + firstChar], 2 );
+    strncpy (whitehex, (const char *) &mypayload[4 + firstChar], 2 );
+    strncpy (redhex, (const char *) &mypayload[6 + firstChar], 2 );
+    strncpy (greenhex, (const char *) &mypayload[8 + firstChar], 2 );
+    strncpy (bluehex, (const char *) &mypayload[10 + firstChar], 2 );
     whitehex[2] = 0x00;
     redhex[2] = 0x00;
     greenhex[2] = 0x00;
@@ -260,26 +254,26 @@ void handleSetDifferentColors(uint8_t * mypayload) {
 void handleRangeDifferentColors(uint8_t * mypayload) {
   uint8_t* nextCommand = 0;
   nextCommand = (uint8_t*) strtok((char*) mypayload, "R");
-  // While there is a range to process R0110<00ff00>
+  // While there is a range to process R00010010<0000ff00> 
 
   while (nextCommand) {
     // Loop for each LED.
-    char startled[4];
-    char endled[4];
+    char startled[5];
+    char endled[5];
     char colorval[9];
-    strncpy ( startled, (const char *) &nextCommand[0], 2 );
-    startled[3] = 0x00;
-    strncpy ( endled, (const char *) &nextCommand[2], 2 );
-    endled[3] = 0x00;
-    strncpy ( colorval, (const char *) &nextCommand[4], 8 );
+    strncpy ( startled, (const char *) &nextCommand[0], 4 );
+    startled[4] = 0x00;
+    strncpy ( endled, (const char *) &nextCommand[4], 4 );
+    endled[4] = 0x00;
+    strncpy ( colorval, (const char *) &nextCommand[8], 8 );
     colorval[8] = 0x00;
     uint8_t rangebegin = atoi(startled);
     uint8_t rangeend = atoi(endled);
     DBG_OUTPUT_PORT.printf("Setting RANGE from [%i] to [%i] as color [%s]\r\n", rangebegin, rangeend, colorval);
 
     while ( rangebegin <= rangeend ) {
-      char rangeData[11];
-      snprintf(rangeData, sizeof(rangeData), "%02d%s", rangebegin, colorval);
+      char rangeData[18];
+      snprintf(rangeData, sizeof(rangeData), "%04d%s", rangebegin, colorval);
       rangeData[sizeof(rangeData) - 1] = 0x00;
       // Set one LED
       handleSetSingleLED((uint8_t*) rangeData, 0);
@@ -472,6 +466,9 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
       mode = OFF;
     }
+    if (strcmp((char *) &mypayload[1], "on") == 0) {
+      mode = HOLD;
+    }
   }    
 }
 
@@ -646,7 +643,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
   if (payload[0] == '?') {
     uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
     ws2812fx_speed = constrain(d, 0, 255);
-    mode = SET_SPEED;
+    mode = SET;
     Dbg_Prefix(mqtt, num);
     DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", ws2812fx_speed);
   }
@@ -1059,7 +1056,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (json_speed != ws2812fx_speed) {
           ws2812fx_speed = json_speed;
-          mode = SET_SPEED;
+          mode = SET;
         }
       }
 
@@ -1663,7 +1660,7 @@ void handleRemote() {
           mode = OFF;
         }
       }
-      if ((mode != AUTO) && (mode != OFF)) {
+      if (mode == HOLD) {
         if (results.value == rmt_commands[BRIGHTNESS_UP]) { //Brightness Up
           last_remote_cmd = results.value;
           if (brightness + chng <= 255) {
@@ -1678,203 +1675,203 @@ void handleRemote() {
             mode = SET;
           }
         }
-      }
-      if ((mode !=AUTO) && (mode != OFF)) {
-        if (results.value == rmt_commands[SPEED_UP]) { //Speed Up
-          last_remote_cmd = results.value;
-          if (ws2812fx_speed + chng <= 255) {
-            ws2812fx_speed = ws2812fx_speed + chng;
-            mode = SET_SPEED;
-          }
-        }
-        if (results.value == rmt_commands[SPEED_DOWN]) { //Speed down
-          last_remote_cmd = results.value;
-          if (ws2812fx_speed - chng >= 0) {
-            ws2812fx_speed = ws2812fx_speed - chng;
-            mode = SET_SPEED;
-          }
-        }
-      }
-      if (mode == HOLD) {
-        if (results.value == rmt_commands[RED_UP]) { //Red Up
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.red + chng <= 255) {
-              main_color.red = main_color.red + chng;
+        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 57)) {
+          if (results.value == rmt_commands[SPEED_UP]) { //Speed Up
+            last_remote_cmd = results.value;
+            if (ws2812fx_speed + chng <= 255) {
+              ws2812fx_speed = ws2812fx_speed + chng;
               mode = SET;
             }
           }
-          if (selected_color == 2) {
-            if (back_color.red + chng <= 255) {
-              back_color.red = back_color.red + chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 3) {
-            if (xtra_color.red + chng <= 255) {
-              xtra_color.red = xtra_color.red + chng;
+          if (results.value == rmt_commands[SPEED_DOWN]) { //Speed down
+            last_remote_cmd = results.value;
+            if (ws2812fx_speed - chng >= 0) {
+              ws2812fx_speed = ws2812fx_speed - chng;
               mode = SET;
             }
           }
         }
-        if (results.value == rmt_commands[RED_DOWN]) { //Red down
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.red - chng >= 0) {
-              main_color.red = main_color.red - chng;
-              mode = SET; 
+        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 60)) {        
+          if (results.value == rmt_commands[RED_UP]) { //Red Up
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.red + chng <= 255) {
+                main_color.red = main_color.red + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.red + chng <= 255) {
+                back_color.red = back_color.red + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.red + chng <= 255) {
+                xtra_color.red = xtra_color.red + chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 2) {
-            if (back_color.red - chng >= 0) {
-              back_color.red = back_color.red - chng;
-              mode = SET;
+          if (results.value == rmt_commands[RED_DOWN]) { //Red down
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.red - chng >= 0) {
+                main_color.red = main_color.red - chng;
+                mode = SET; 
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.red - chng >= 0) {
+                back_color.red = back_color.red - chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.red - chng >= 0) {
+                xtra_color.red = xtra_color.red - chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 3) {
-            if (xtra_color.red - chng >= 0) {
-              xtra_color.red = xtra_color.red - chng;
-              mode = SET;
+          if (results.value == rmt_commands[GREEN_UP]) { //Green Up
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.green + chng <= 255) {
+                main_color.green = main_color.green + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.green + chng <= 255) {
+                back_color.green = back_color.green + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.green + chng <= 255) {
+                xtra_color.green = xtra_color.green + chng;
+                mode = SET;
+              }
             }
           }
-        }
-        if (results.value == rmt_commands[GREEN_UP]) { //Green Up
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.green + chng <= 255) {
-              main_color.green = main_color.green + chng;
-              mode = SET;
+          if (results.value == rmt_commands[GREEN_DOWN]) { //Green down
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.green - chng >= 0) {
+                main_color.green = main_color.green - chng;;
+                mode = SET; 
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.green - chng >= 0) {
+                back_color.green = back_color.green - chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.green - chng >= 0) {
+                xtra_color.green = xtra_color.green - chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 2) {
-            if (back_color.green + chng <= 255) {
-              back_color.green = back_color.green + chng;
-              mode = SET;
+          if (results.value == rmt_commands[BLUE_UP]) { //Blue Up
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.blue + chng <= 255) {
+                main_color.blue = main_color.blue + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.blue + chng <= 255) {
+                back_color.blue = back_color.blue + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.blue + chng <= 255) {
+                xtra_color.blue = xtra_color.blue + chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 3) {
-            if (xtra_color.green + chng <= 255) {
-              xtra_color.green = xtra_color.green + chng;
-              mode = SET;
+          if (results.value == rmt_commands[BLUE_DOWN]) { //Blue down
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.blue - chng >= 0) {
+                main_color.blue = main_color.blue - chng;
+                mode = SET; 
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.blue - chng >= 0) {
+                back_color.blue = back_color.blue - chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.blue - chng >= 0) {
+                xtra_color.blue = xtra_color.blue - chng;
+                mode = SET;
+              }
             }
           }
-        }
-        if (results.value == rmt_commands[GREEN_DOWN]) { //green down
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.green - chng >= 0) {
-              main_color.green = main_color.green - chng;;
-              mode = SET; 
+          if (results.value == rmt_commands[WHITE_UP]) { //White Up
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.white + chng <= 255) {
+                main_color.white = main_color.white + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.white + chng <= 255) {
+                back_color.white = back_color.white + chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.white + chng <= 255) {
+                xtra_color.white = xtra_color.white + chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 2) {
-            if (back_color.green - chng >= 0) {
-              back_color.green = back_color.green - chng;
-              mode = SET;
+          if (results.value == rmt_commands[WHITE_DOWN]) { //White down
+            last_remote_cmd = results.value;
+            if (selected_color == 1) {
+              if (main_color.white - chng >= 0) {
+                main_color.white = main_color.white - chng;
+                mode = SET; 
+              }
+            }
+            if (selected_color == 2) {
+              if (back_color.white - chng >= 0) {
+                back_color.white = back_color.white - chng;
+                mode = SET;
+              }
+            }
+            if (selected_color == 3) {
+              if (xtra_color.white - chng >= 0) {
+                xtra_color.white = xtra_color.white - chng;
+                mode = SET;
+              }
             }
           }
-          if (selected_color == 3) {
-            if (xtra_color.green - chng >= 0) {
-              xtra_color.green = xtra_color.green - chng;
-              mode = SET;
-            }
+          if (results.value == rmt_commands[COL_M]) { // Select Main Color
+            last_remote_cmd = 0;
+            selected_color = 1;
+          } 
+          if (results.value == rmt_commands[COL_B]) { // Select Back Color
+            last_remote_cmd = 0;
+            selected_color = 2;
+          } 
+          if (results.value == rmt_commands[COL_X]) { // Select Extra Color
+            last_remote_cmd = 0;
+            selected_color = 3;
           }
-        }
-        if (results.value == rmt_commands[BLUE_UP]) { //Blue Up
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.blue + chng <= 255) {
-              main_color.blue = main_color.blue + chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 2) {
-            if (back_color.blue + chng <= 255) {
-              back_color.blue = back_color.blue + chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 3) {
-            if (xtra_color.blue + chng <= 255) {
-              xtra_color.blue = xtra_color.blue + chng;
-              mode = SET;
-            }
-          }
-        }
-        if (results.value == rmt_commands[BLUE_DOWN]) { //BLUE down
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.blue - chng >= 0) {
-              main_color.blue = main_color.blue - chng;
-              mode = SET; 
-            }
-          }
-          if (selected_color == 2) {
-            if (back_color.blue - chng >= 0) {
-              back_color.blue = back_color.blue - chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 3) {
-            if (xtra_color.blue - chng >= 0) {
-              xtra_color.blue = xtra_color.blue - chng;
-              mode = SET;
-            }
-          }
-        }
-        if (results.value == rmt_commands[WHITE_UP]) { //White Up
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.white + chng <= 255) {
-              main_color.white = main_color.white + chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 2) {
-            if (back_color.white + chng <= 255) {
-              back_color.white = back_color.white + chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 3) {
-            if (xtra_color.white + chng <= 255) {
-              xtra_color.white = xtra_color.white + chng;
-              mode = SET;
-            }
-          }
-        }
-        if (results.value == rmt_commands[WHITE_DOWN]) { //White down
-          last_remote_cmd = results.value;
-          if (selected_color == 1) {
-            if (main_color.white - chng >= 0) {
-              main_color.white = main_color.white - chng;
-              mode = SET; 
-            }
-          }
-          if (selected_color == 2) {
-            if (back_color.white - chng >= 0) {
-              back_color.white = back_color.white - chng;
-              mode = SET;
-            }
-          }
-          if (selected_color == 3) {
-            if (xtra_color.white - chng >= 0) {
-              xtra_color.white = xtra_color.white - chng;
-              mode = SET;
-            }
-          }
-        }
-        if (results.value == rmt_commands[COL_M]) { // Select Main Color
-          last_remote_cmd = 0;
-          selected_color = 1;
-        } 
-        if (results.value == rmt_commands[COL_B]) { // Select Back Color
-          last_remote_cmd = 0;
-          selected_color = 2;
-        } 
-        if (results.value == rmt_commands[COL_X]) { // Select Extra Color
-          last_remote_cmd = 0;
-          selected_color = 3;
         }
       } // end of if HOLD
       if (results.value == rmt_commands[MODE_UP]) { //Mode Up
@@ -1937,6 +1934,7 @@ uint32_t scale_wrgb(uint32_t wrgb, uint8_t level) {
 }
 
 uint32_t trans(uint32_t newcolor, uint32_t oldcolor, uint8_t level) {
+  level = (level * (255/trans_cnt_max));
   newcolor = scale_wrgb(newcolor, level);
   oldcolor = scale_wrgb(oldcolor, 255-level);
   return newcolor + oldcolor;

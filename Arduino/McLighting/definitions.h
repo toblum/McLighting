@@ -21,11 +21,11 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
-#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
+//#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
 #endif
-//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
+#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
 
 #define ENABLE_STATE_SAVE 1           // If defined, load saved state on reboot and save state. If set to 0 from EEPROM, if set to 1 from SPIFFS
 
@@ -35,12 +35,13 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define TRANS_COLOR_DELAY 5            // Delay for color transition
 #define TRANS_DELAY 10                 // Delay for brightness and speed transition
 
-bool          transEffect  = false;    // Experimental: Enable transitions of color, brightness and speed. It does not work properly for all effects.
+bool          transEffect         = false;    // Experimental: Enable transitions of color, brightness and speed. It does not work properly for all effects.
 bool          transEffectOverride = false;
-uint8_t       trans_cnt = 0;
-unsigned long colorFadeDelay = 0;
+uint8_t       trans_cnt           = 0;
+int           trans_cnt_max       = 0;
+unsigned long colorFadeDelay      = 0;
 unsigned long brightnessFadeDelay = 0;
-unsigned long speedFadeDelay = 0;
+unsigned long speedFadeDelay      = 0;
 
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   #define MULTICAST false
@@ -140,7 +141,7 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE {OFF, HOLD, SET, SET_SPEED, INIT_STRIP};
+enum MODE {OFF, HOLD, SET, INIT_STRIP};
 MODE mode = SET;           // Standard mode that is active when software starts
 MODE prevmode = HOLD;          // Do not change
 

@@ -172,7 +172,7 @@
  * adressed issue: https://github.com/toblum/McLighting/issues/403 (Experimental Support of transitions: set transEffect = true in definitions.h)
  * corrected use of DMA for Neopixelbus by Makuna (Tests for other strips than SK6812 GRBW were not made)
  * 
-  * 27 September 2019
+ * 27 September 2019
  * Version Bump to 3.0.0.ALPHA1
  * removed LEGACY_ANIMATIONS
  * removed old Custom Animations from beginning of list.
@@ -184,4 +184,7 @@
  * moved Custom Animation 'Gradients' to number 61
  * REST-API changes (will be documented soon)
  *
+ * 29 September 2019
+ * Version Bump to 3.0.0.BETA1
+ * further code changes 
  */
