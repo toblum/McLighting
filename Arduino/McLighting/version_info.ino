@@ -186,5 +186,6 @@
  *
  * 29 September 2019
  * Version Bump to 3.0.0.BETA1
- * further code changes 
+ * further code changes
+ * bugfixes
  */

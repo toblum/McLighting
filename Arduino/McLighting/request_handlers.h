@@ -467,7 +467,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
       mode = OFF;
     }
     if (strcmp((char *) &mypayload[1], "on") == 0) {
-      mode = HOLD;
+      mode = SET;
     }
   }    
 }

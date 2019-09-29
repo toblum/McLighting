@@ -231,6 +231,9 @@
     DBG_OUTPUT_PORT.println(rgbcolor);
   });
 
+  server.on("/get_modes", []() {
+    getModesJSON();
+  });
 
   server.on("/status", []() {
     getStatusJSON();
@@ -342,14 +345,15 @@
     getStatusJSON();
   });
 
+  server.on("/on", []() {
+    mode = SET;
+    getStatusJSON();
+  });
+
   server.on("/set", []() {
     prevmode = HOLD;
     ws2812fx_mode = FX_MODE_STATIC;
     mode = SET;
     getArgs();
     getStatusJSON();
-  });
-
-  server.on("/get_modes", []() {
-    getModesJSON();
   });
