@@ -16,9 +16,9 @@ void handleAutoPlay() {
     hex_colors[0] = autoParams[autoCount][0];
     hex_colors[1] = autoParams[autoCount][1];
     hex_colors[2] = autoParams[autoCount][2];    
-    strip->setColors(selected_segment, hex_colors);
-    strip->setSpeed(selected_segment, convertSpeed((uint8_t)autoParams[autoCount][3]));
-    strip->setMode(selected_segment, (uint8_t)autoParams[autoCount][4]);
+    strip->setColors(segment, hex_colors);
+    strip->setSpeed(segment, convertSpeed((uint8_t)autoParams[autoCount][3]));
+    strip->setMode(segment, (uint8_t)autoParams[autoCount][4]);
     strip->trigger();
     autoDelay = millis() + (uint32_t)autoParams[autoCount][5];
     DBG_OUTPUT_PORT.print("autoTick ");
@@ -237,7 +237,7 @@ void Gradient() {
     } else {
       pixelnumber = j;
     }
-    color = trans(strip->getColors(selected_segment)[1], strip->getColors(selected_segment)[0], (j*255)/(WS2812FXStripSettings.stripSize - 1));
+    color = trans(strip->getColors(segment)[1], strip->getColors(segment)[0], (j*255)/(WS2812FXStripSettings.stripSize - 1));
     strip->setPixelColor(pixelnumber, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
   }
 }
@@ -245,31 +245,31 @@ void Gradient() {
 
 uint16_t myCustomEffect0() {
   handleAuto();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 
 uint16_t myCustomEffect1() {
   handleCustomWS();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
 uint16_t myCustomEffect2() {
   handleTV();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 
 uint16_t myCustomEffect3() {
   handleE131();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 
 uint16_t myCustomEffect4() {
   Fire2012();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 
 uint16_t myCustomEffect5() {
   Gradient();
-  return (strip->getSpeed() / WS2812FXStripSettings.stripSize);
+  return (strip->getSpeed(segment) / WS2812FXStripSettings.stripSize);
 }
 #endif

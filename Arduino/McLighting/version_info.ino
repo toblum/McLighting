@@ -188,4 +188,11 @@
  * Version Bump to 3.0.0.BETA1
  * further code changes
  * bugfixes
+ *
+ * 30 September 2019
+ * Version Bump to 3.1.0.ALPHA1
+ * further code changes
+ * removal of saving to EEPROM
+ * first integration of multi segments
+ *
  */

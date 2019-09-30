@@ -129,12 +129,7 @@
       root["ota"] = "OFF";
     #endif
     #if defined(ENABLE_STATE_SAVE)
-      #if ENABLE_STATE_SAVE == 1
-        root["state_save"] = "SPIFFS";
-      #endif
-      #if ENABLE_STATE_SAVE == 0
-        root["state_save"] = "EEPROM";
-      #endif
+      root["state_save"] = "SPIFFS";
     #else
       root["state_save"] = "OFF";
     #endif
@@ -256,6 +251,11 @@
 
     bool updateStrip = false;
     bool updateConf  = false;
+    if(server.hasArg("ws_seg")){
+      uint8_t wsseg = server.arg("ws_seg").toInt();
+      num_segments = constrain(wsseg, 1, MAX_NUM_SEGMENTS - 1);
+      updateStrip = true;   
+    }
     if(server.hasArg("ws_cnt")){
       uint16_t pixelCt = server.arg("ws_cnt").toInt();
       if (pixelCt > 0) {

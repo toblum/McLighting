@@ -17,6 +17,31 @@ void convertColors() {
   hex_colors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
 }
 
+uint32_t* convertColors2(uint8_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t w2, uint8_t r2, uint8_t g2, uint8_t b2, uint8_t w3, uint8_t r3, uint8_t g3, uint8_t b3) {
+  uint32_t hexcolors[3] = {};
+  hexcolors[0] = (uint32_t)(w  << 24) | (r  << 16) | (g  << 8) | b;
+  hexcolors[1] = (uint32_t)(w2 << 24) | (r2 << 16) | (g2 << 8) | b2;
+  hexcolors[2] = (uint32_t)(w3 << 24) | (r3 << 16) | (g3 << 8) | b3;
+  return hexcolors;
+}
+
+
+void getSegmentParams(uint8_t seg) {
+  ws2812fx_mode =  strip->getMode(seg);
+  main_color.white = ((strip->getColors(seg)[0] >> 24) & 0xFF);
+  main_color.red   = ((strip->getColors(seg)[0] >> 16) & 0xFF);
+  main_color.green = ((strip->getColors(seg)[0] >>  8) & 0xFF);
+  main_color.blue  = ((strip->getColors(seg)[0])  & 0xFF);
+  back_color.white = ((strip->getColors(seg)[1] >> 24) & 0xFF);
+  back_color.red   = ((strip->getColors(seg)[1] >> 16) & 0xFF);
+  back_color.green = ((strip->getColors(seg)[1] >>  8) & 0xFF);
+  back_color.blue  = ((strip->getColors(seg)[1]) & 0xFF);
+  xtra_color.white = ((strip->getColors(seg)[2] >> 24) & 0xFF);
+  xtra_color.red   = ((strip->getColors(seg)[2] >> 16) & 0xFF);
+  xtra_color.green = ((strip->getColors(seg)[2] >>  8) & 0xFF);
+  xtra_color.blue  = ((strip->getColors(seg)[2] >>  0) & 0xFF);
+}
+
 void calculateColorTransitionSteps() {
   //compare all colors and calculate steps
   trans_cnt_max = 0;
@@ -33,7 +58,7 @@ void calculateColorTransitionSteps() {
 void convertColorsFade() {
   if (transEffect) {
       if (trans_cnt > 1) {
-        memcpy(hex_colors, strip->getColors(selected_segment), sizeof(hex_colors));
+        memcpy(hex_colors, strip->getColors(segment), sizeof(hex_colors));
         DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
         trans_cnt = 1;
       }
@@ -43,6 +68,13 @@ void convertColorsFade() {
 
 void getArgs() {
   if (mode == SET) {
+    // Segment
+    if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <= MAX_NUM_SEGMENTS)) { 
+        prevsegment = segment;
+        segment = server.arg("seg").toInt();
+        getSegmentParams(segment);
+        memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
+    }
     //color wrgb
     if (server.arg("rgb") != "") {
       uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
@@ -131,7 +163,6 @@ void getArgs() {
       brightness = constrain(server.arg("p").toInt(), 0, 255);
     }
   }
-  
   DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStatusJSON());
 }
 
@@ -304,7 +335,6 @@ bool checkPin(uint8_t pin) {
   return false;
 }
 
-
 neoPixelType checkRGBOrder(char rgbOrder[5]) {
   for( uint8_t i=0 ; i < sizeof(rgbOrder) ; ++i ) rgbOrder[i] = toupper(rgbOrder[i]) ;
   DBG_OUTPUT_PORT.printf("Checking RGB Order: %s ...", rgbOrder);
@@ -385,31 +415,6 @@ neoPixelType checkRGBOrder(char rgbOrder[5]) {
   return returnOrder;
 }
 
-bool setConfByConfString(String saved_conf_string) {
-  if (getValue(saved_conf_string, '|', 0) == "CNF") {
-    DBG_OUTPUT_PORT.printf("Parsed conf: %s\r\n", saved_conf_string.c_str());
-    getValue(saved_conf_string, '|', 1).toCharArray(HOSTNAME, 64);
-  #if defined(ENABLE_MQTT)
-    getValue(saved_conf_string, '|', 2).toCharArray(mqtt_host, 64);
-    mqtt_port = getValue(saved_conf_string, '|', 3).toInt();
-    getValue(saved_conf_string, '|', 4).toCharArray(mqtt_user, 32);
-    getValue(saved_conf_string, '|', 5).toCharArray(mqtt_pass, 32);
-  #endif
-    WS2812FXStripSettings.stripSize = constrain(getValue(saved_conf_string, '|', 6).toInt(), 1, MAXLEDS);
-    checkPin(getValue(saved_conf_string, '|', 7).toInt());
-    char tmp_rgbOrder[5];
-    getValue(saved_conf_string, '|', 8).toCharArray(tmp_rgbOrder, 4);
-    checkRGBOrder(tmp_rgbOrder);
-    WS2812FXStripSettings.fxoptions = constrain(((getValue(saved_conf_string, '|', 9).toInt()>>1)<<1), 0, 255);
-    transEffect = getValue(saved_conf_string, '|', 10).toInt();
-    return true;
-  } else {
-    DBG_OUTPUT_PORT.println("Saved conf not found!");
-    return false;
-  }
-  return false;
-}
-
 bool setModeByStateString(String saved_state_string) {
   if (getValue(saved_state_string, '|', 0) == "STA") {
     DBG_OUTPUT_PORT.printf("Parsed state: %s\r\n", saved_state_string.c_str());
@@ -472,15 +477,14 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
   }    
 }
 
-char * listStatusJSON() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 500;
+char * listStatusJSONorg() {
+  const size_t bufferSize = JSON_ARRAY_SIZE(13) + JSON_OBJECT_SIZE(6) + 500;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
+  root["segment"] = segment;
   root["mode"] = (uint8_t) mode;
   root["ws2812fx_mode"] = ws2812fx_mode;
   root["ws2812fx_mode_name"] = strip->getModeName(ws2812fx_mode);
-  //root["ws2812fx_mode"] = tmp_mode;
-  //root["ws2812fx_mode_name"] = strip->getModeName(tmp_mode);
   root["speed"] = ws2812fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
@@ -503,8 +507,53 @@ char * listStatusJSON() {
   return buffer;
 }
 
+char * listStatusJSON() {
+  const size_t bufferSize = JSON_OBJECT_SIZE(3) + 25;
+  DynamicJsonDocument jsonBuffer(bufferSize);
+  JsonObject root = jsonBuffer.to<JsonObject>();
+  root["segment"] = segment;
+  root["mode"] = (uint8_t) mode;
+  root["brightness"] = brightness;
+  uint16_t msg_len = measureJson(root) + 1;
+  char * buffer = (char *) malloc(msg_len);
+  serializeJson(root, buffer, msg_len);
+  jsonBuffer.clear();
+  return buffer;
+}
+
+char * listSegmentStatusJSON(uint8_t seg) {
+  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(7) + 100;
+  DynamicJsonDocument jsonBuffer(bufferSize);
+  JsonObject root = jsonBuffer.to<JsonObject>();
+  root["segment"] = seg;
+  root["start"]   = strip->getSegment(seg)->start;
+  root["stop"]    = strip->getSegment(seg)->stop;
+  root["ws2812fx_mode"] = strip->getMode(seg);
+  root["ws2812fx_mode_name"] = strip->getModeName(strip->getMode(seg));
+  root["speed"] = ws2812fx_speed;
+  getSegmentParams(seg);
+  JsonArray color = root.createNestedArray("color");
+  color.add((strip->getColors(seg)[0] >> 24) & 0xFF);
+  color.add((strip->getColors(seg)[0] >> 16) & 0xFF);
+  color.add((strip->getColors(seg)[0] >>  8) & 0xFF);
+  color.add((strip->getColors(seg)[0])  & 0xFF);
+  color.add((strip->getColors(seg)[1] >> 24) & 0xFF);
+  color.add((strip->getColors(seg)[1] >> 16) & 0xFF);
+  color.add((strip->getColors(seg)[1] >>  8) & 0xFF);
+  color.add((strip->getColors(seg)[1])  & 0xFF);
+  color.add((strip->getColors(seg)[2] >> 24) & 0xFF);
+  color.add((strip->getColors(seg)[2] >> 16) & 0xFF);
+  color.add((strip->getColors(seg)[2] >>  8) & 0xFF);
+  color.add((strip->getColors(seg)[2])  & 0xFF);  
+  uint16_t msg_len = measureJson(root) + 1;
+  char * buffer = (char *) malloc(msg_len);
+  serializeJson(root, buffer, msg_len);
+  jsonBuffer.clear();
+  return buffer;
+}
+
 void getStatusJSON() {
-  char * buffer = listStatusJSON();
+  char * buffer = listStatusJSONorg();
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send ( 200, "application/json", buffer);
   free (buffer);
@@ -512,9 +561,9 @@ void getStatusJSON() {
 
 char * listConfigJSON() {
   #if defined(ENABLE_MQTT)
-    const size_t bufferSize = JSON_OBJECT_SIZE(9) + 500;
+    const size_t bufferSize = JSON_OBJECT_SIZE(10) + 500;
   #else
-    const size_t bufferSize = JSON_OBJECT_SIZE(5) + 150;
+    const size_t bufferSize = JSON_OBJECT_SIZE(6) + 150;
   #endif
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
@@ -525,6 +574,7 @@ char * listConfigJSON() {
     root["mqtt_user"] = mqtt_user;
     root["mqtt_pass"] = mqtt_pass;
   #endif
+  root["num_seg"]   = num_segments;
   root["ws_cnt"]    = WS2812FXStripSettings.stripSize;
   root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
   root["ws_pin"]    = WS2812FXStripSettings.pin;
@@ -545,7 +595,7 @@ void getConfigJSON() {
 }
 
 char * listModesJSON() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 1) + (strip->getModeCount() + 1)*JSON_OBJECT_SIZE(2) + 2000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray root = jsonBuffer.to<JsonArray>();
   JsonObject objectoff = root.createNestedObject();
@@ -622,6 +672,18 @@ void Dbg_Prefix(bool mqtt, uint8_t num) {
 }
 
 void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
+  // Select segment
+  if (payload[0] == 'S') {
+    uint8_t seg = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+    prevsegment = segment;
+    segment = constrain(seg, 0, MAX_NUM_SEGMENTS);
+    getSegmentParams(segment);
+    memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
+    mode = SET;
+    Dbg_Prefix(mqtt, num);
+    DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", segment);
+  }
+    
   // # ==> Set main color - ## ==> Set 2nd color - ### ==> Set 3rd color
   if (payload[0] == '#') {
     #if defined(ENABLE_MQTT)
@@ -696,7 +758,7 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
 
   // $ ==> Get status Info.
   if (payload[0] == '$') {
-    char * buffer = listStatusJSON();
+    char * buffer = listStatusJSONorg();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
@@ -722,6 +784,13 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     bool updateStrip = false;
     bool updateConf  = false;
     if (payload[1] == 's') {
+      if (payload[2] == 's') {
+        char tmp_segments[3];
+        snprintf(tmp_segments, sizeof(tmp_segments), "%s", &payload[3]);
+        tmp_segments[2] = 0x00;
+        num_segments = constrain(atoi(tmp_segments), 1, MAX_NUM_SEGMENTS - 1);
+        updateStrip = true;
+      }
       if (payload[2] == 'c') {
         char tmp_count[6];
         snprintf(tmp_count, sizeof(tmp_count), "%s", &payload[3]);
@@ -1441,202 +1510,238 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     updateConfig = true;
   }
   
-  #if ENABLE_STATE_SAVE == 0 
-    // ***************************************************************************
-    // EEPROM helper
-    // ***************************************************************************
-    String readEEPROM(uint16_t offset, uint16_t len) {
-      String res = "";
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        res += char(EEPROM.read(i + offset));
-        //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
-      }
-      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\r\n", res.c_str());
-      return res;
-    }
-    
-    void writeEEPROM(uint16_t offset, uint16_t len, String value) {
-      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\r\n", value.c_str());
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        if (i < value.length()) {
-          EEPROM.write(i + offset, value[i]);
-        } else {
-          EEPROM.write(i + offset, 0);
-        }
-      }
-    } 
-  #endif
-  #if ENABLE_STATE_SAVE == 1  
-    // Write configuration to FS JSON
-    bool writeConfigFS(bool saveConfig){
-      if (saveConfig) {
-        //FS save
-        DBG_OUTPUT_PORT.println("Saving config: ");    
-        File configFile = SPIFFS.open("/config.json", "w");
-        if (!configFile) {
-          DBG_OUTPUT_PORT.println("Failed!");
-          settings_save_conf.detach();
-          updateConfig = false;
-          return false;
-        }
-        DBG_OUTPUT_PORT.println(listConfigJSON());
-        configFile.print(listConfigJSON());
-        configFile.close();
+  // Write configuration to FS JSON
+  bool writeConfigFS(bool saveConfig){
+    if (saveConfig) {
+      //FS save
+      DBG_OUTPUT_PORT.println("Saving config: ");    
+      File configFile = SPIFFS.open("/config.json", "w");
+      if (!configFile) {
+        DBG_OUTPUT_PORT.println("Failed!");
         settings_save_conf.detach();
         updateConfig = false;
-        return true;
-        //end save
-      } else {
-        DBG_OUTPUT_PORT.println("SaveConfig is false!");
         return false;
       }
-    }
-      
-    // Read search_str to FS
-    bool readConfigFS() {
-      //read configuration from FS JSON
-      if (SPIFFS.exists("/config.json")) {
-        //file exists, reading and loading
-        DBG_OUTPUT_PORT.print("Reading config file... ");
-        File configFile = SPIFFS.open("/config.json", "r");
-        if (configFile) {
-          DBG_OUTPUT_PORT.println("Opened!");
-          size_t size = configFile.size();
-          std::unique_ptr<char[]> buf(new char[size]);
-          configFile.readBytes(buf.get(), size);
-          configFile.close();
-       #if defined(ENABLE_MQTT)
-          const size_t bufferSize = JSON_OBJECT_SIZE(5) + 500;
-       #else
-          const size_t bufferSize = JSON_OBJECT_SIZE(1) + 150;
-       #endif
-          DynamicJsonDocument jsonBuffer(bufferSize);
-          DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-          DBG_OUTPUT_PORT.print("Config: ");
-          if (!error) {
-            DBG_OUTPUT_PORT.println("Parsed!");
-            JsonObject root = jsonBuffer.as<JsonObject>();
-            serializeJson(root, DBG_OUTPUT_PORT);
-            DBG_OUTPUT_PORT.println("");
-            strcpy(HOSTNAME, root["hostname"]);
-          #if defined(ENABLE_MQTT)
-            strcpy(mqtt_host, root["mqtt_host"]);
-            mqtt_port = root["mqtt_port"].as<uint16_t>();
-            strcpy(mqtt_user, root["mqtt_user"]);
-            strcpy(mqtt_pass, root["mqtt_pass"]);
-          #endif
-            WS2812FXStripSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
-            char tmp_rgbOrder[5];
-            strcpy(tmp_rgbOrder, root["ws_rgbo"]);
-            checkRGBOrder(tmp_rgbOrder);
-            uint8_t temp_pin;
-            checkPin((uint8_t) root["ws_pin"]);
-            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
-            transEffect = root["transEffect"].as<bool>();
-            jsonBuffer.clear();
-            return true;
-          } else {
-            DBG_OUTPUT_PORT.print("Failed to load json config: ");
-            DBG_OUTPUT_PORT.println(error.c_str());
-            jsonBuffer.clear();
-          }
-        } else {
-          DBG_OUTPUT_PORT.println("Failed to open /config.json");
-        }
-      } else {
-        DBG_OUTPUT_PORT.println("Coudnt find config.json");
-        writeConfigFS(true);
-      }
-      //end read
+      DBG_OUTPUT_PORT.println(listConfigJSON());
+      configFile.print(listConfigJSON());
+      configFile.close();
+      settings_save_conf.detach();
+      updateConfig = false;
+      return true;
+      //end save
+    } else {
+      DBG_OUTPUT_PORT.println("SaveConfig is false!");
       return false;
     }
+  }
+ 
+  // Read search_str to FS
+  bool readConfigFS() {
+    //read configuration from FS JSON
+    if (SPIFFS.exists("/config.json")) {
+      //file exists, reading and loading
+      DBG_OUTPUT_PORT.print("Reading config file... ");
+      File configFile = SPIFFS.open("/config.json", "r");
+      if (configFile) {
+        DBG_OUTPUT_PORT.println("Opened!");
+        size_t size = configFile.size();
+        std::unique_ptr<char[]> buf(new char[size]);
+        configFile.readBytes(buf.get(), size);
+        configFile.close();
+     #if defined(ENABLE_MQTT)
+        const size_t bufferSize = JSON_OBJECT_SIZE(5) + 500;
+     #else
+        const size_t bufferSize = JSON_OBJECT_SIZE(1) + 150;
+     #endif
+        DynamicJsonDocument jsonBuffer(bufferSize);
+        DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+        DBG_OUTPUT_PORT.print("Config: ");
+        if (!error) {
+          DBG_OUTPUT_PORT.println("Parsed!");
+          JsonObject root = jsonBuffer.as<JsonObject>();
+          serializeJson(root, DBG_OUTPUT_PORT);
+          DBG_OUTPUT_PORT.println("");
+          strcpy(HOSTNAME, root["hostname"]);
+        #if defined(ENABLE_MQTT)
+          strcpy(mqtt_host, root["mqtt_host"]);
+          mqtt_port = root["mqtt_port"].as<uint16_t>();
+          strcpy(mqtt_user, root["mqtt_user"]);
+          strcpy(mqtt_pass, root["mqtt_pass"]);
+        #endif
+          num_segments = constrain(root["num_seg"].as<uint8_t>(), 1, MAX_NUM_SEGMENTS - 1);
+          WS2812FXStripSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
+          char tmp_rgbOrder[5];
+          strcpy(tmp_rgbOrder, root["ws_rgbo"]);
+          checkRGBOrder(tmp_rgbOrder);
+          uint8_t temp_pin;
+          checkPin((uint8_t) root["ws_pin"]);
+          WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
+          transEffect = root["transEffect"].as<bool>();
+          jsonBuffer.clear();
+          return true;
+        } else {
+          DBG_OUTPUT_PORT.print("Failed to load json config: ");
+          DBG_OUTPUT_PORT.println(error.c_str());
+          jsonBuffer.clear();
+        }
+      } else {
+        DBG_OUTPUT_PORT.println("Failed to open /config.json");
+      }
+    } else {
+      DBG_OUTPUT_PORT.println("Coudnt find config.json");
+      writeConfigFS(true);
+    }
+    //end read
+    return false;
+  }
   
-    bool writeStateFS(bool saveConfig){
-      if (saveConfig) {
-        //save the strip state to FS JSON
-        DBG_OUTPUT_PORT.print("Saving state: ");
-        //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-        File configFile = SPIFFS.open("/stripstate.json", "w");
+  bool writeStateFS(bool saveConfig){
+    if (saveConfig) {
+      //save the strip state to FS JSON
+      DBG_OUTPUT_PORT.print("Saving state: ");
+      //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
+      File configFile = SPIFFS.open("/stripstate.json", "w");
+      if (!configFile) {
+        DBG_OUTPUT_PORT.println("Failed!");
+        settings_save_state.detach();
+        updateState = false;
+        return false;
+      }
+      DBG_OUTPUT_PORT.println(listStatusJSON());
+      configFile.print(listStatusJSON());
+      configFile.close();
+      char filename[28];
+      for (uint8_t seg=0; seg < num_segments; seg++) { 
+        snprintf(filename, 28, "/stripstate_segment_%02i.json", seg);
+        filename[27] = 0x00;
+        File configFile = SPIFFS.open(filename, "w");
         if (!configFile) {
           DBG_OUTPUT_PORT.println("Failed!");
           settings_save_state.detach();
           updateState = false;
           return false;
         }
-        DBG_OUTPUT_PORT.println(listStatusJSON());
-        configFile.print(listStatusJSON());
+        DBG_OUTPUT_PORT.println(listSegmentStatusJSON(seg));
+        configFile.print(listSegmentStatusJSON(seg));
         configFile.close();
-        settings_save_state.detach();
-        updateState = false;
-        return true;
-        //end save
-      } else {
-        DBG_OUTPUT_PORT.println("SaveStateConfig is false!");
-        return false;
-      }
-    }
-    
-    bool readStateFS() {
-      //read strip state from FS JSON
-      //if (resetsettings) { SPIFFS.begin(); SPIFFS.remove("/config.json"); SPIFFS.format(); delay(1000);}
-      if (SPIFFS.exists("/stripstate.json")) {
-        //file exists, reading and loading
-        DBG_OUTPUT_PORT.print("Reading state file... ");
-        File configFile = SPIFFS.open("/stripstate.json", "r");
-        if (configFile) {
-          DBG_OUTPUT_PORT.println("Opened!");
-          size_t size = configFile.size();
-          // Allocate a buffer to store contents of the file.
-          std::unique_ptr<char[]> buf(new char[size]);
-          configFile.readBytes(buf.get(), size);
-          configFile.close();
-          const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_ARRAY_SIZE(12) + 500;
-          DynamicJsonDocument jsonBuffer(bufferSize);
-          DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-          DBG_OUTPUT_PORT.print("Config: ");
-          if (!error) {
-            DBG_OUTPUT_PORT.print("Parsed");
-            JsonObject root = jsonBuffer.as<JsonObject>();
-            serializeJson(root, DBG_OUTPUT_PORT);
-            DBG_OUTPUT_PORT.println("");
-            mode = static_cast<MODE>(root["mode"].as<uint8_t>());
-            ws2812fx_mode = root["ws2812fx_mode"].as<uint8_t>();
-            ws2812fx_speed = root["speed"].as<uint8_t>();
-            brightness =  root["brightness"];
-            main_color.white = root["color"][0].as<uint8_t>();
-            main_color.red =  root["color"][1].as<uint8_t>();
-            main_color.green = root["color"][2].as<uint8_t>();
-            main_color.blue =  root["color"][3].as<uint8_t>();
-            back_color.white = root["color"][4].as<uint8_t>();
-            back_color.red =  root["color"][5].as<uint8_t>();
-            back_color.green =  root["color"][6].as<uint8_t>();
-            back_color.blue =  root["color"][7].as<uint8_t>();
-            xtra_color.white = root["color"][8].as<uint8_t>();
-            xtra_color.red = root["color"][9].as<uint8_t>();
-            xtra_color.green =  root["color"][10].as<uint8_t>();
-            xtra_color.blue = root["color"][11].as<uint8_t>();
-            convertColors();
-            jsonBuffer.clear();
-            return true;
-          } else {
-            DBG_OUTPUT_PORT.print("Failed to load json config: ");
-            DBG_OUTPUT_PORT.println(error.c_str());
-            jsonBuffer.clear();
-          }
-        } else {
-          DBG_OUTPUT_PORT.println("Failed to open \"/stripstate.json\"");
-        }
-      } else {
-        DBG_OUTPUT_PORT.println("Couldn't find \"/stripstate.json\"");
-        writeStateFS(true);
-      }
-      //end read
+      } 
+      settings_save_state.detach();
+      updateState = false;
+      return true;
+      //end save
+    } else {
+      DBG_OUTPUT_PORT.println("SaveStateConfig is false!");
       return false;
     }
-  #endif
+  }
+    
+  bool readStateFS() {
+    //read strip state from FS JSON
+    if (SPIFFS.exists("/stripstate.json")) {
+      //file exists, reading and loading
+      DBG_OUTPUT_PORT.print("Reading state file... ");
+      File configFile = SPIFFS.open("/stripstate.json", "r");
+      if (configFile) {
+        DBG_OUTPUT_PORT.println("Opened!");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+        configFile.readBytes(buf.get(), size);
+        configFile.close();
+        const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_ARRAY_SIZE(12) + 500;
+        DynamicJsonDocument jsonBuffer(bufferSize);
+        DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+        DBG_OUTPUT_PORT.print("Config: ");
+        if (!error) {
+          DBG_OUTPUT_PORT.print("Parsed");
+          JsonObject root = jsonBuffer.as<JsonObject>();
+          serializeJson(root, DBG_OUTPUT_PORT);
+          DBG_OUTPUT_PORT.println("");
+          segment = root["segment"];
+          mode = static_cast<MODE>(root["mode"].as<uint8_t>());
+          brightness =  root["brightness"];
+          jsonBuffer.clear();
+          return true;
+        } else {
+          DBG_OUTPUT_PORT.print("Failed to load json config: ");
+          DBG_OUTPUT_PORT.println(error.c_str());
+          jsonBuffer.clear();
+        }
+      } else {
+        DBG_OUTPUT_PORT.println("Failed to open \"/stripstate.json\"");
+      }
+    } else {
+      DBG_OUTPUT_PORT.println("Couldn't find \"/stripstate.json\"");
+      writeStateFS(true);
+    }
+    //end read
+    return false;
+  }
+  
+  bool readStateSegmentFS(uint8_t seg) {
+    //read strip state from FS JSON
+    char filename[28];
+    snprintf(filename, 28, "/stripstate_segment_%02i.json", seg);
+    filename[27] = 0x00;
+    if (SPIFFS.exists(filename)) {
+      //file exists, reading and loading
+      DBG_OUTPUT_PORT.printf("Reading segmentstate file: %s\r\n", filename);
+      File configFile = SPIFFS.open(filename, "r");
+      if (configFile) {
+        DBG_OUTPUT_PORT.println("Opened!");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+        configFile.readBytes(buf.get(), size);
+        configFile.close();
+        const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_ARRAY_SIZE(12) + 500;
+        DynamicJsonDocument jsonBuffer(bufferSize);
+        DeserializationError error = deserializeJson(jsonBuffer, buf.get());
+        DBG_OUTPUT_PORT.print("Config: ");
+        if (!error) {
+          DBG_OUTPUT_PORT.print("Parsed");
+          JsonObject root = jsonBuffer.as<JsonObject>();
+          serializeJson(root, DBG_OUTPUT_PORT);
+          DBG_OUTPUT_PORT.println("");
+          seg_start = root["start"].as<uint16_t>();
+          seg_stop  = root["stop"].as<uint16_t>();
+          ws2812fx_mode = root["ws2812fx_mode"].as<uint8_t>();
+          ws2812fx_speed = root["speed"].as<uint8_t>();
+          main_color.white = root["color"][0].as<uint8_t>();
+          main_color.red =  root["color"][1].as<uint8_t>();
+          main_color.green = root["color"][2].as<uint8_t>();
+          main_color.blue =  root["color"][3].as<uint8_t>();
+          back_color.white = root["color"][4].as<uint8_t>();
+          back_color.red =  root["color"][5].as<uint8_t>();
+          back_color.green =  root["color"][6].as<uint8_t>();
+          back_color.blue =  root["color"][7].as<uint8_t>();
+          xtra_color.white = root["color"][8].as<uint8_t>();
+          xtra_color.red = root["color"][9].as<uint8_t>();
+          xtra_color.green =  root["color"][10].as<uint8_t>();
+          xtra_color.blue = root["color"][11].as<uint8_t>();
+          convertColors();
+          jsonBuffer.clear();
+          return true;
+        } else {
+          DBG_OUTPUT_PORT.print("Failed to load json config: ");
+          DBG_OUTPUT_PORT.println(error.c_str());
+          jsonBuffer.clear();
+        }
+      } else {
+        DBG_OUTPUT_PORT.printf("Failed to open \"/%s\"\r\n", filename);
+      }
+    } else {
+      DBG_OUTPUT_PORT.printf("Couldn't find \"/%s\"", filename);
+      writeStateFS(true);
+    }
+    //end read
+    return false;
+  }
+
+
+  
 #endif
+
 
 #if defined(ENABLE_REMOTE)
 // ***************************************************************************

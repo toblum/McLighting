@@ -27,10 +27,10 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #endif
 #define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
 
-#define ENABLE_STATE_SAVE 1           // If defined, load saved state on reboot and save state. If set to 0 from EEPROM, if set to 1 from SPIFFS
+#define ENABLE_STATE_SAVE             // If defined, load saved state on reboot and save state on SPIFFS 
 
 #define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h" 
-#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFs
+//#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
 
 #define TRANS_COLOR_DELAY 5            // Delay for color transition
 #define TRANS_DELAY 10                 // Delay for brightness and speed transition
@@ -49,7 +49,12 @@ unsigned long speedFadeDelay      = 0;
       uint8_t END_UNIVERSE = START_UNIVERSE; // Total number of Universes to listen for, starting at UNIVERSE
 
 #endif
-uint8_t selected_segment = 0;
+uint8_t  num_segments       = 1;
+uint8_t  segment            = 0;
+uint16_t seg_start          = 0;
+uint16_t seg_stop           = NUMLEDS - 1;
+uint8_t  prevsegment        = 0;
+
 #if defined(ENABLE_REMOTE)
   uint8_t  selected_color = 1;
   uint64_t last_remote_cmd;
