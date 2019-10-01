@@ -13,16 +13,16 @@ More info on how to create custom aniamtions for WS2812FX: https://github.com/ki
 
 void handleAutoPlay() {
   if (autoDelay <= millis()) {
-    hex_colors[0] = autoParams[autoCount][0];
-    hex_colors[1] = autoParams[autoCount][1];
-    hex_colors[2] = autoParams[autoCount][2];    
-    strip->setColors(selected_segment, hex_colors);
+    hex_colors_trans[0] = autoParams[autoCount][0];
+    hex_colors_trans[1] = autoParams[autoCount][1];
+    hex_colors_trans[2] = autoParams[autoCount][2];    
+    strip->setColors(selected_segment, hex_colors_trans);
     strip->setSpeed(selected_segment, convertSpeed((uint8_t)autoParams[autoCount][3]));
     strip->setMode(selected_segment, (uint8_t)autoParams[autoCount][4]);
     strip->trigger();
     autoDelay = millis() + (uint32_t)autoParams[autoCount][5];
     DBG_OUTPUT_PORT.print("autoTick ");
-    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", autoCount, hex_colors[0], hex_colors[1], hex_colors[2], autoParams[autoCount][3], autoParams[autoCount][4], autoParams[autoCount][5]);
+    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", autoCount, hex_colors_trans[0], hex_colors_trans[1], hex_colors_trans[2], autoParams[autoCount][3], autoParams[autoCount][4], autoParams[autoCount][5]);
 
     autoCount++;
     if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
