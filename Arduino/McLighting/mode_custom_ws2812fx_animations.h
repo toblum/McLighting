@@ -1,3 +1,7 @@
+// Prototypes
+uint16_t convertSpeed(uint8_t mcl_speed);
+uint32_t trans(uint32_t newcolor, uint32_t oldcolor, uint8_t level);
+// End Prototypes
 /*
 
 Example of adding the example: https://github.com/kitesurfer1404/WS2812FX/blob/master/examples/ws2812fx_custom_FastLED/ws2812fx_custom_FastLED.ino
@@ -68,7 +72,7 @@ void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint16_t led) {
 
 void updateLed (uint16_t led, uint8_t brightness) {
   ledstates[led] = brightness;
-  for (uint16_t i=0; i<WS2812FXStripSettings.stripSize; i++) {
+  for (uint16_t i=seg_start; i<=seg_stop; i++) {
     uint16_t index = (i%3 == 0) ? 400 : random(0,767);
     hsb2rgbAN1(index, 200, ledstates[i], i);
   }
@@ -200,12 +204,12 @@ void Fire2012() {
 // Array of temperature readings at each simulation cell
   
   // Step 1.  Cool down every cell a little
-  for( uint16_t i = 0; i < WS2812FXStripSettings.stripSize; i++) {
+  for( uint16_t i = seg_start; i <= seg_stop; i++) {
     ledstates[i] = qsub8( ledstates[i],  random8(0, ((COOLING * 10) / WS2812FXStripSettings.stripSize) + 2));
   }
 
   // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-  for( uint16_t k= WS2812FXStripSettings.stripSize - 1; k >= 2; k--) {
+  for( uint16_t k= seg_stop-seg_start - 1; k >= 2; k--) {
     ledstates[k] = (ledstates[k - 1] + ledstates[k - 2] + ledstates[k - 2]) / 3;
   }
 
@@ -216,11 +220,11 @@ void Fire2012() {
   }
 
   // Step 4.  Map from heat cells to LED colors
-  for( uint16_t j = 0; j < WS2812FXStripSettings.stripSize; j++) {
+  for( uint16_t j = seg_start; j <= seg_stop; j++) {
     CRGB color = HeatColor( ledstates[j]);
     uint16_t pixelnumber;
     if( gReverseDirection ) {
-      pixelnumber = (WS2812FXStripSettings.stripSize - 1) - j;
+      pixelnumber = seg_stop - j;
     } else {
       pixelnumber = j;
     }
@@ -229,15 +233,15 @@ void Fire2012() {
 }
 
 void Gradient() {
-  for( uint16_t j = 0; j < WS2812FXStripSettings.stripSize; j++) {
+  for( uint16_t j = seg_start; j <= seg_stop; j++) {
     uint16_t pixelnumber;
     uint32_t color;
     if( gReverseDirection ) {
-      pixelnumber = (WS2812FXStripSettings.stripSize - 1) - j;
+      pixelnumber = seg_stop - j;
     } else {
       pixelnumber = j;
     }
-    color = trans(strip->getColors(segment)[1], strip->getColors(segment)[0], (j*255)/(WS2812FXStripSettings.stripSize - 1));
+    color = trans(strip->getColors(segment)[1], strip->getColors(segment)[0], (j*255)/(seg_stop - seg_start));
     strip->setPixelColor(pixelnumber, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
   }
 }

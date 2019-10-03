@@ -1,4 +1,8 @@
 #include "definitions.h"
+// ***************************************************************************
+// Load library "ticker" for blinking status led, mqtt send and save state
+// ***************************************************************************
+#include <Ticker.h>
 #include "version.h"
 
 // ***************************************************************************
@@ -10,10 +14,10 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>           //https://github.com/tzapu/WiFiManager
-
+#include <FS.h>
+  
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
-#include <FS.h>
 #include <WebSockets.h>            //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
   
@@ -24,8 +28,6 @@
   #include <GY33_MCU.h>            //https://github.com/FabLab-Luenen/GY33_MCU/archive/master.zip ; //https://github.com/pasko-zh/brzo_i2c
   GY33_MCU tcs;
 #endif
-
-#include <ArduinoJson.h>         //https://github.com/bblanchon/ArduinoJson
 
 // MQTT
 #if defined(ENABLE_MQTT)
@@ -47,12 +49,11 @@
     AsyncMqttClient * mqtt_client;
     WiFiEventHandler wifiConnectHandler;
     WiFiEventHandler wifiDisconnectHandler;
+    Ticker mqttReconnectTimer;
+    Ticker wifiReconnectTimer;
   #endif
-#endif
-
-#if defined(ARDUINOJSON_VERSION)
-  #if !(ARDUINOJSON_VERSION_MAJOR == 6 and ARDUINOJSON_VERSION_MINOR >= 8)
-    #error "Install ArduinoJson v6.8.x or higher"
+  #if defined(ENABLE_HOMEASSISTANT)
+    Ticker ha_send_data;
   #endif
 #endif
 
@@ -166,21 +167,9 @@ WS2812FX * strip = NULL;
   }
 #endif
 
-// ***************************************************************************
-// Load library "ticker" for blinking status led, mqtt send and save state
-// ***************************************************************************
-#include <Ticker.h>
 Ticker ticker;
 
-#if defined(ENABLE_MQTT)
-  #if ENABLE_MQTT == 1
-    Ticker mqttReconnectTimer;
-    Ticker wifiReconnectTimer;
-  #endif
-  #if defined(ENABLE_HOMEASSISTANT)
-    Ticker ha_send_data;
-  #endif
-#endif
+
 
 void tick() {
   //toggle state
@@ -192,9 +181,6 @@ void tick() {
   IRrecv irrecv(ENABLE_REMOTE);
   decode_results results;
 #endif
-
-Ticker settings_save_state;
-Ticker settings_save_conf;
 
 // ***************************************************************************
 // Saved state handling in WifiManager
@@ -243,96 +229,21 @@ void saveConfigCallback () {
 #include "spiffs_webserver.h"
 
 // ***************************************************************************
-// Include: Request handlers
-// ***************************************************************************
-#include "request_handlers.h"
-
-// ***************************************************************************
 // Include: Custom animations
 // ***************************************************************************
 #include "mode_custom_ws2812fx_animations.h" // Add animations in this file
 
-// function to Initialize the strip
-void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, char RGBOrder[5] = WS2812FXStripSettings.RGBOrder, uint8_t pin = WS2812FXStripSettings.pin, uint8_t fxoptions = WS2812FXStripSettings.fxoptions ){
-  DBG_OUTPUT_PORT.println("Initializing strip!");
-/*#if defined(USE_WS2812FX_DMA)
-  if (dma != NULL) {
-     delete(dma);
-  }
-#endif*/
-  if (strip != NULL) {
-    delete(strip);
-    WS2812FXStripSettings.stripSize = stripSize;
-    strcpy(WS2812FXStripSettings.RGBOrder, RGBOrder);
-    WS2812FXStripSettings.pin = pin;
-    WS2812FXStripSettings.fxoptions = fxoptions;
-  }
- 
-  if (ledstates != NULL) {
-    delete(ledstates);
-  } 
-  ledstates = new uint8_t [WS2812FXStripSettings.stripSize];
+// ***************************************************************************
+// Include: helper functions
+// ***************************************************************************
+#include "helper_functions.h"
 
-#if !defined(LED_TYPE_WS2811)
-  strip = new WS2812FX(stripSize, pin, checkRGBOrder(RGBOrder) + NEO_KHZ800);
-#else
-  strip = new WS2812FX(stripSize, pin, checkRGBOrder(RGBOrder) + NEO_KHZ400);
-#endif
-  // Parameter 1 = number of pixels in strip
-  // Parameter 2 = Arduino pin number (most are valid)
-  // Parameter 3 = pixel type flags, add together as needed:
-  //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-  //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-  //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-  //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-
-  // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
-  // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
-  // and minimize distance between Arduino and first pixel.  Avoid connecting
-  // on a live circuit...if you must, connect GND first.
-  strip->init();
-  #if defined(USE_WS2812FX_DMA)
-    initDMA(stripSize);
-    strip->setCustomShow(DMA_Show);
-  #endif
-//parameters: index, start, stop, mode, color, speed, options
-  for (uint8_t seg=0; seg < num_segments; seg++) { 
-  (readStateSegmentFS(seg)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
-    strip->setSegment(seg,  seg_start,  seg_stop , ws2812fx_mode, hex_colors_trans, convertSpeed(ws2812fx_speed), fxoptions);
-  }
-  //strip->setSegment(0,  0,  (stripSize - 1)/2, ws2812fx_mode, hex_colors_trans, convertSpeed(ws2812fx_speed), fxoptions);
-  //strip->setSegment(1,  ((stripSize - 1)/2) + 1, (stripSize - 1), ws2812fx_mode, hex_colors_trans, convertSpeed(ws2812fx_speed), fxoptions);
-  strip->setCustomMode(0, F("Autoplay"), myCustomEffect0);
-  strip->setCustomMode(1, F("Custom WS"), myCustomEffect1);
-#if defined(CUSTOM_WS2812FX_ANIMATIONS)
-  strip->setCustomMode(2, F("TV"), myCustomEffect2);
-  strip->setCustomMode(3, F("E1.31"),  myCustomEffect3);
-  strip->setCustomMode(4, F("Fire 2012"), myCustomEffect4);
-  strip->setCustomMode(5, F("Gradient"),  myCustomEffect5);
-  gReverseDirection = (WS2812FXStripSettings.fxoptions & 128);
-  DBG_OUTPUT_PORT.print("Number of Segments: ");
-  DBG_OUTPUT_PORT.println(strip->getNumSegments());
-
-  if (e131 != NULL) { delete(e131); }
-  e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
-  float universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
-  if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-    //universe_leds = 128.0;
-  }
-  float float_enduni = stripSize/universe_leds; 
-  uint8_t END_UNIVERSE = stripSize/universe_leds;
-  if (float_enduni > END_UNIVERSE) {
-    END_UNIVERSE = END_UNIVERSE +1;
-  }
-    
-  // if (e131.begin(E131_UNICAST))                              // Listen via Unicast
-  if (e131->begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) {// Listen via Multicast
-      DBG_OUTPUT_PORT.println(F("Listening for data..."));
-  } else {
-      DBG_OUTPUT_PORT.println(F("*** e131.begin failed ***"));
-  }
-#endif
-}
+// ***************************************************************************
+// Include: other functions
+// ***************************************************************************
+#include "json_functions.h"
+#include "filesystem_functions.h"
+#include "request_handlers.h"
 
 #if defined(ENABLE_MQTT)
 void initMqtt() {
@@ -713,6 +624,7 @@ void loop() {
   // ***************************************************************************
   // Simple statemachine that handles the different modes
   // *************************************************************************** 
+
   if ((mode == OFF) && ((strip->getBrightness() == 0) || !transEffect)) {
     if(strip->isRunning()) {
       strip->strip_off();        // Workaround: to be shure,
@@ -741,15 +653,6 @@ void loop() {
         brightness_trans   = 0;
       } 
     }
-  }
-   
-  if (mode == INIT_STRIP) {
-     mode = prevmode;
-     strip->strip_off();
-     delay(10);
-     if(strip->isRunning()) strip->stop();
-     initStrip();
-     prevmode = INIT_STRIP;
   }
   
   if (mode == SET) {
@@ -790,8 +693,16 @@ void loop() {
     }
     prevmode = SET;
     strip->trigger();
-  }  
- 
+  }
+    
+  if ((mode == HOLD) || ((mode == OFF) && (strip->getBrightness() > 0) && transEffect)) { 
+    if (ws2812fx_mode == FX_MODE_CUSTOM_0) {
+      handleAutoPlay();
+    }
+    if(!strip->isRunning()) strip->start();
+    strip->service();
+  }
+   
   if (prevmode != mode) {
     convertColors();
     if (memcmp(hex_colors_trans, strip->getColors(segment), sizeof(hex_colors_trans)) != 0) {
@@ -800,13 +711,6 @@ void loop() {
     }
     strip->setSpeed(segment, convertSpeed(ws2812fx_speed_actual));
     //strip->setBrightness(brightness_actual);       
-    if (prevmode != INIT_STRIP) {  // do not save if INIT_STRIP mode was set
-      #if defined(ENABLE_STATE_SAVE)
-        if(!settings_save_state.active()) settings_save_state.once(3, tickerSaveState);
-      #endif
-      snprintf(last_state, sizeof(last_state), "STA|%2d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d", prevmode, ws2812fx_mode, ws2812fx_speed, brightness, main_color.red, main_color.green, main_color.blue, main_color.white, back_color.red, back_color.green, back_color.blue, back_color.white, xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
-      last_state[sizeof(last_state) - 1] = 0x00;
-    }
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
         mqtt_client->publish(mqtt_outtopic, mqtt_buf);
@@ -819,22 +723,21 @@ void loop() {
       #endif
     #endif
   }
+  
+  prevmode = mode;
+  
   #if defined(ENABLE_STATE_SAVE)
     if (updateState){
-      (writeStateFS(updateState)) ? DBG_OUTPUT_PORT.println(" State FS Save Success!") : DBG_OUTPUT_PORT.println("State FS Save failure!");
+      (writeStateFS(updateState)) ? DBG_OUTPUT_PORT.println("State FS Save Success!") : DBG_OUTPUT_PORT.println("State FS Save failure!");
+    }
+    if (updateSegState) {
+      (writeSegmentStateFS(updateSegState, segment)) ? DBG_OUTPUT_PORT.println("Segment State FS Save Success!") : DBG_OUTPUT_PORT.println("Segment State FS Save failure!");
+      initStrip();
     }
     if (updateConfig) {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
     }
   #endif
-
-  if ((mode == HOLD) || ((mode == OFF) && (strip->getBrightness() > 0) && transEffect)) { 
-    if (ws2812fx_mode == FX_MODE_CUSTOM_0) {
-      handleAutoPlay();
-    }
-    if(!strip->isRunning()) strip->start();
-    strip->service();
-  }
   
   // Async color transition
   if (memcmp(hex_colors_trans, strip->getColors(segment), sizeof(hex_colors_trans)) != 0) {
@@ -917,7 +820,6 @@ void loop() {
     }
   }
 */
-  prevmode = mode;
   
   #if defined(ENABLE_REMOTE)
     handleRemote();

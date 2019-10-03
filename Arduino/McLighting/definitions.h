@@ -18,6 +18,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_OTA 1                  // If defined, enable Arduino OTA code. If set to 0 enable Arduino OTA code, if set to 1 enable ESP8266HTTPUpdateServer OTA code.
 #define ENABLE_MQTT 1                 // If defined use MQTT OR AMQTT, if set to 0 enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API, if set to 1, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT_HOSTNAME_CHIPID   // Uncomment/comment to add ESPChipID to end of MQTT hostname
+//#define ENABLE_MQTT_INCLUDE_IP        // uncomment/comment to add the IP-adress to the MQTT message
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
@@ -30,7 +31,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_STATE_SAVE             // If defined, load saved state on reboot and save state on SPIFFS 
 
 #define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h" 
-//#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
+#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
 
 #define TRANS_COLOR_DELAY 5            // Delay for color transition
 #define TRANS_DELAY 10                 // Delay for brightness and speed transition
@@ -146,7 +147,7 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
 // List of all color modes
-enum MODE {OFF, HOLD, SET, INIT_STRIP};
+enum MODE {OFF, HOLD, SET};
 MODE mode = SET;           // Standard mode that is active when software starts
 MODE prevmode = HOLD;          // Do not change
 
@@ -175,8 +176,6 @@ LEDState back_color = {   0, 0, 0, 0 };  // Store the "2nd color" of the strip u
 LEDState xtra_color = {   0, 0, 0, 0 };  // Store the "3rd color" of the strip used in single color modes
 
 bool updateConfig = false;  // For WiFiManger custom config and config
-char last_state[67];            // Keeps the state representation before auto or off mode 
-bool updateState  = false;
 
 // Button handling
 

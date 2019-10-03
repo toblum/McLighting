@@ -1,359 +1,406 @@
-  // ***************************************************************************
-  // Setup: Webserver handler
-  // ***************************************************************************
-  //list directory
-  server.on("/list", HTTP_GET, handleFileList);
-  //create file
-  server.on("/edit", HTTP_PUT, handleFileCreate);
-  //delete file
-  server.on("/edit", HTTP_DELETE, handleFileDelete);
-  //first callback is called after the request has ended with all parsed arguments
-  //second callback handles file uploads at that location
-  server.on("/edit", HTTP_POST, []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", "");
-  }, handleFileUpload);
+// ***************************************************************************
+// Setup: Webserver handler
+// ***************************************************************************
+//list directory
+server.on("/list", HTTP_GET, handleFileList);
+//create file
+server.on("/edit", HTTP_PUT, handleFileCreate);
+//delete file
+server.on("/edit", HTTP_DELETE, handleFileDelete);
+//first callback is called after the request has ended with all parsed arguments
+//second callback handles file uploads at that location
+server.on("/edit", HTTP_POST, []() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "");
+}, handleFileUpload);
 
 // ***************************************************************************
 // Setup: SPIFFS Webserver handler
 // ***************************************************************************
 
-  server.on("/", HTTP_GET, [&](){
-    #if defined(USE_HTML_MIN_GZ)
-      server.sendHeader("Content-Encoding", "gzip", true);
-      server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
-    #else
-      if (!handleFileRead(server.uri()))
-        handleNotFound();
-    #endif
-  });
-  
-  server.on("/edit", HTTP_GET, [&](){
-    #if defined(USE_HTML_MIN_GZ)
-      server.sendHeader("Content-Encoding", "gzip", true);
-      server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
-    #else
-      if (!handleFileRead("/edit.htm"))
-        handleNotFound();
-    #endif
-  });
-
-
-  //called when the url is not defined here
-  //use it to load content from SPIFFS
-  server.onNotFound([]() {
+server.on("/", HTTP_GET, [&](){
+  #if defined(USE_HTML_MIN_GZ)
+    server.sendHeader("Content-Encoding", "gzip", true);
+    server.send_P(200, PSTR("text/html"), index_htm_gz, index_htm_gz_len);
+  #else
     if (!handleFileRead(server.uri()))
       handleNotFound();
-  });
+  #endif
+});
 
-  server.on("/upload", handleMinimalUpload);
+server.on("/edit", HTTP_GET, [&](){
+  #if defined(USE_HTML_MIN_GZ)
+    server.sendHeader("Content-Encoding", "gzip", true);
+    server.send_P(200, PSTR("text/html"), edit_htm_gz, edit_htm_gz_len);
+  #else
+    if (!handleFileRead("/edit.htm"))
+      handleNotFound();
+  #endif
+});
 
-  server.on("/esp_status", HTTP_GET, []() { //get heap status, analog input value and all GPIO statuses in one json call 
-    const size_t bufferSize = JSON_OBJECT_SIZE(31) + 1500;
-    DynamicJsonDocument jsonBuffer(bufferSize);
-    JsonObject root = jsonBuffer.to<JsonObject>();
-    root["HOSTNAME"] = HOSTNAME;
-    root["version"] = SKETCH_VERSION;
-    root["heap"] = ESP.getFreeHeap();
-    root["sketch_size"] = ESP.getSketchSize();
-    root["free_sketch_space"] = ESP.getFreeSketchSpace();
-    root["flash_chip_size"] = ESP.getFlashChipSize();
-    root["flash_chip_real_size"] = ESP.getFlashChipRealSize();
-    root["flash_chip_speed"] = ESP.getFlashChipSpeed();
-    root["sdk_version"] = ESP.getSdkVersion();
-    root["core_version"] = ESP.getCoreVersion();
-    root["cpu_freq"] = ESP.getCpuFreqMHz();
-    root["chip_id"] = ESP.getFlashChipId();
-    #if defined(USE_WS2812FX_DMA)
-      #if USE_WS2812FX_DMA == 0
-        root["animation_lib"] = "WS2812FX_DMA";
-      #endif
-      #if USE_WS2812FX_DMA == 1
-        root["animation_lib"] = "WS2812FX_UART1";
-      #endif
-      #if USE_WS2812FX_DMA == 2
-        root["animation_lib"] = "WS2812FX_UART2";
-      #endif
-    #else
-      root["animation_lib"] = "WS2812FX";
-    #endif
-    root["ws2812_pin"]  = WS2812FXStripSettings.pin;
-    root["led_count"] = WS2812FXStripSettings.stripSize;
-    root["rgb_order"] = WS2812FXStripSettings.RGBOrder;
-    if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
-      root["rgbw_mode"] = "ON";
-    } else {
-      root["rgbw_mode"] = "OFF";
-    }
-    #if defined(ENABLE_BUTTON)
-      root["button_mode"] = "ON";
-      root["button_pin"] = ENABLE_BUTTON;
-    #else
-      root["button_mode"] = "OFF";
-    #endif
-    #if defined(ENABLE_BUTTON_GY33)
-      root["button_gy33"] = "ON";
-      root["gy33_pin"] = ENABLE_BUTTON_GY33;
-    #else
-      root["button_gy33"] = "OFF";
-    #endif
-    #if defined(ENABLE_REMOTE)
-      root["ir_remote"] = "ON";
-      root["tsop_ir_pin"] = ENABLE_REMOTE;
-    #else
-      root["ir_remote"] = "OFF";
-    #endif
-    #if defined(ENABLE_MQTT)
-      #if ENABLE_MQTT == 0
-        root["mqtt"] = "MQTT";
-      #endif
-      #if ENABLE_MQTT == 1
-        root["mqtt"] = "AMQTT";
-      #endif
-    #else
-      root["mqtt"] = "OFF";
-    #endif
-    #if defined(ENABLE_HOMEASSISTANT)
-      root["home_assistant"] = "ON";
-    #else
-      root["home_assistant"] = "OFF";
-    #endif
-    #if defined(ENABLE_OTA)
-      #if ENABLE_OTA == 0
-        root["ota"] = "ARDUINO";
-      #endif
-      #if ENABLE_OTA == 1
-        root["ota"] = "HTTP";
-      #endif
-    #else
-      root["ota"] = "OFF";
-    #endif
-    #if defined(ENABLE_STATE_SAVE)
-      root["state_save"] = "SPIFFS";
-    #else
-      root["state_save"] = "OFF";
-    #endif
-    uint16_t msg_len = measureJson(root) + 1;
-    char * buffer = (char *) malloc(msg_len);
-    serializeJson(root, buffer, msg_len);
-    jsonBuffer.clear();
+
+//called when the url is not defined here
+//use it to load content from SPIFFS
+server.onNotFound([]() {
+  if (!handleFileRead(server.uri()))
+    handleNotFound();
+});
+
+server.on("/upload", handleMinimalUpload);
+
+server.on("/esp_status", HTTP_GET, []() { //get heap status, analog input value and all GPIO statuses in one json call 
+  getESPStateJSON();
+});
+
+server.on("/restart", []() {
+  DBG_OUTPUT_PORT.printf("/restart\r\n");
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "restarting..." );
+  ESP.restart();
+});
+
+server.on("/reset_wlan", []() {
+  DBG_OUTPUT_PORT.printf("/reset_wlan\r\n");
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "Resetting WLAN and restarting..." );
+  WiFiManager wifiManager;
+  wifiManager.resetSettings();
+  ESP.restart();
+});
+
+server.on("/start_config_ap", []() {
+  DBG_OUTPUT_PORT.printf("/start_config_ap\r\n");
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "Starting config AP ..." );
+  WiFiManager wifiManager;
+  wifiManager.startConfigPortal(HOSTNAME);
+});
+
+server.on("/format_spiffs", []() {
+  DBG_OUTPUT_PORT.printf("/format_spiffs\r\n");
+  server.send(200, "text/plain", "Formatting SPIFFS ..." );
+  SPIFFS.format();
+});
+
+server.on("/get_brightness", []() {
+  char str_brightness[4];
+  snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (brightness / 2.55));
+  str_brightness[sizeof(str_brightness) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", str_brightness );
+  DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (brightness / 2.55));
+});
+
+server.on("/get_speed", []() {
+  char str_speed[4];
+  snprintf(str_speed, sizeof(str_speed), "%i", ws2812fx_speed);
+  str_speed[sizeof(str_speed) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", str_speed );
+  DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", ws2812fx_speed);
+});
+
+server.on("/get_switch", []() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
+  DBG_OUTPUT_PORT.printf("/get_switch: %s\r\n", (mode == OFF) ? "0" : "1");
+});
+
+server.on("/get_color", []() {
+  char rgbcolor[10];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+  rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", rgbcolor );
+  DBG_OUTPUT_PORT.print("/get_color: ");
+  DBG_OUTPUT_PORT.println(rgbcolor);
+});
+
+server.on("/get_color2", []() {
+  char rgbcolor[10];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", back_color.white, back_color.red, back_color.green, back_color.blue);
+  rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", rgbcolor );
+  DBG_OUTPUT_PORT.print("/get_color2: ");
+  DBG_OUTPUT_PORT.println(rgbcolor);
+});
+
+server.on("/get_color3", []() {
+  char rgbcolor[10];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", xtra_color.white, xtra_color.red, xtra_color.green, xtra_color.blue);
+  rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", rgbcolor );
+  DBG_OUTPUT_PORT.print("/get_color3: ");
+  DBG_OUTPUT_PORT.println(rgbcolor);
+});
+
+server.on("/get_modes", []() {
+  getModesJSON();
+});
+
+server.on("/status", []() {
+  getStateJSON();
+});
+
+server.on("/config", []() {
+
+  /*
+
+  // This will be used later when web-interface is ready and HTTP_GET will not be allowed to update the Strip Settings
+
+  if(server.args() == 0 and server.method() != HTTP_POST)
+  {
     server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", buffer);
-    free (buffer);
-  });
+    server.send(200, "text/plain", "Only HTTP POST method is allowed and check the number of arguments!");
+    return;
+  }
+
+  */
+  // ToDo do not save if no change
+  bool _updateStrip = false;
+  bool _updateConfig  = false;
+  if(server.hasArg("ws_seg")){
+    uint8_t wsseg = server.arg("ws_seg").toInt();
+    num_segments = constrain(wsseg, 1, MAX_NUM_SEGMENTS - 1);
+    _updateStrip = true;   
+  }
+  if(server.hasArg("ws_cnt")){
+    uint16_t pixelCt = server.arg("ws_cnt").toInt();
+    if (pixelCt > 0) {
+      WS2812FXStripSettings.stripSize = constrain(pixelCt, 1, MAXLEDS);
+      _updateStrip = true;   
+    }
+  }
+  if(server.hasArg("ws_rgbo")){
+    char tmp_rgbOrder[5];
+    snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", server.arg("ws_rgbo").c_str());
+    tmp_rgbOrder[sizeof(tmp_rgbOrder) - 1] = 0x00;
+    checkRGBOrder(tmp_rgbOrder);
+    _updateStrip = true;
+  }
   
-  server.on("/restart", []() {
-    DBG_OUTPUT_PORT.printf("/restart\r\n");
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", "restarting..." );
-    ESP.restart();
-  });
-
-  server.on("/reset_wlan", []() {
-    DBG_OUTPUT_PORT.printf("/reset_wlan\r\n");
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", "Resetting WLAN and restarting..." );
-    WiFiManager wifiManager;
-    wifiManager.resetSettings();
-    ESP.restart();
-  });
-
-  server.on("/start_config_ap", []() {
-    DBG_OUTPUT_PORT.printf("/start_config_ap\r\n");
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", "Starting config AP ..." );
-    WiFiManager wifiManager;
-    wifiManager.startConfigPortal(HOSTNAME);
-  });
-
-  server.on("/format_spiffs", []() {
-    DBG_OUTPUT_PORT.printf("/format_spiffs\r\n");
-    server.send(200, "text/plain", "Formatting SPIFFS ..." );
-    SPIFFS.format();
-  });
-
-  server.on("/get_brightness", []() {
-    char str_brightness[4];
-    snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (brightness / 2.55));
-    str_brightness[sizeof(str_brightness) - 1] = 0x00;
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", str_brightness );
-    DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (brightness / 2.55));
-  });
-
-  server.on("/get_speed", []() {
-    char str_speed[4];
-    snprintf(str_speed, sizeof(str_speed), "%i", ws2812fx_speed);
-    str_speed[sizeof(str_speed) - 1] = 0x00;
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", str_speed );
-    DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", ws2812fx_speed);
-  });
-
-  server.on("/get_switch", []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
-    DBG_OUTPUT_PORT.printf("/get_switch: %s\r\n", (mode == OFF) ? "0" : "1");
-  });
-
-  server.on("/get_color", []() {
-    char rgbcolor[10];
-    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
-    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", rgbcolor );
-    DBG_OUTPUT_PORT.print("/get_color: ");
-    DBG_OUTPUT_PORT.println(rgbcolor);
-  });
-  
-  server.on("/get_color2", []() {
-    char rgbcolor[10];
-    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", back_color.white, back_color.red, back_color.green, back_color.blue);
-    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", rgbcolor );
-    DBG_OUTPUT_PORT.print("/get_color2: ");
-    DBG_OUTPUT_PORT.println(rgbcolor);
-  });
-
-  server.on("/get_color3", []() {
-    char rgbcolor[10];
-    snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", xtra_color.white, xtra_color.red, xtra_color.green, xtra_color.blue);
-    rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "text/plain", rgbcolor );
-    DBG_OUTPUT_PORT.print("/get_color3: ");
-    DBG_OUTPUT_PORT.println(rgbcolor);
-  });
-
-  server.on("/get_modes", []() {
-    getModesJSON();
-  });
-
-  server.on("/status", []() {
-    getStatusJSON();
-  });
-
-  server.on("/config", []() {
-
-    /*
-
-    // This will be used later when web-interface is ready and HTTP_GET will not be allowed to update the Strip Settings
-
-    if(server.args() == 0 and server.method() != HTTP_POST)
-    {
-      server.sendHeader("Access-Control-Allow-Origin", "*");
-      server.send(200, "text/plain", "Only HTTP POST method is allowed and check the number of arguments!");
-      return;
-    }
-
-    */
-
-    bool updateStrip = false;
-    bool updateConf  = false;
-    if(server.hasArg("ws_seg")){
-      uint8_t wsseg = server.arg("ws_seg").toInt();
-      num_segments = constrain(wsseg, 1, MAX_NUM_SEGMENTS - 1);
-      updateStrip = true;   
-    }
-    if(server.hasArg("ws_cnt")){
-      uint16_t pixelCt = server.arg("ws_cnt").toInt();
-      if (pixelCt > 0) {
-        WS2812FXStripSettings.stripSize = constrain(pixelCt, 1, MAXLEDS);
-        updateStrip = true;   
-      }
-    }
-    if(server.hasArg("ws_rgbo")){
-      char tmp_rgbOrder[5];
-      snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", server.arg("ws_rgbo").c_str());
-      tmp_rgbOrder[sizeof(tmp_rgbOrder) - 1] = 0x00;
-      checkRGBOrder(tmp_rgbOrder);
-      updateStrip = true;
-    }
-    
 #if !defined(USE_WS2812FX_DMA)    
-    if(server.hasArg("ws_pin")){
-      if (checkPin(server.arg("ws_pin").toInt())) {
-        updateStrip = true;
-        DBG_OUTPUT_PORT.print("Pin was set to: ");
-        DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
-      } else {
-        DBG_OUTPUT_PORT.println("invalid input!");
-      }
+  if(server.hasArg("ws_pin")){
+    if (checkPin(server.arg("ws_pin").toInt())) {
+      _updateStrip = true;
+      DBG_OUTPUT_PORT.print("Pin was set to: ");
+      DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
+    } else {
+      DBG_OUTPUT_PORT.println("invalid input!");
     }
+  }
 #endif
-    
-    if(server.hasArg("ws_fxopt")){
-      WS2812FXStripSettings.fxoptions = ((constrain(server.arg("ws_fxopt").toInt(), 0, 255)>>1)<<1);
-      updateStrip = true;
-    }
+  
+  if(server.hasArg("ws_fxopt")){
+    WS2812FXStripSettings.fxoptions = ((constrain(server.arg("ws_fxopt").toInt(), 0, 255)>>1)<<1);
+    _updateStrip = true;
+  }
 
-    if(updateStrip) {
-      mode = INIT_STRIP;
-    }
-    
-    if(server.hasArg("hostname")){
-      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", server.arg("hostname").c_str());
-      HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
-      updateConf = true;
-    }
-    
+  if(_updateStrip) {
+    initStrip();
+  }
+  
+  if(server.hasArg("hostname")){
+    snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", server.arg("hostname").c_str());
+    HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
+    _updateConfig = true;
+  }
+  
 #if defined(ENABLE_MQTT)   
-    if(server.hasArg("mqtt_host")){
-      snprintf(mqtt_host, sizeof(mqtt_host), "%s", server.arg("mqtt_host").c_str());
-      mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
-      updateConf = true;
-    }
-    if(server.hasArg("mqtt_port")){
-      if ((server.arg("mqtt_port").toInt() >= 0) && (server.arg("mqtt_port").toInt() <=65535)) {
-        mqtt_port = server.arg("mqttport").toInt();
-        updateConf = true;
-      }    
-    }
-    if(server.hasArg("mqtt_user")){
-      snprintf(mqtt_user, sizeof(mqtt_user), "%s", server.arg("mqtt_user").c_str());
-      mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
-      updateConf = true;
-    }
-    if(server.hasArg("mqtt_pass")){
-      snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
-      mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
-      updateConf = true;
-    }
-    if (updateConf) {
-      initMqtt();
-    }
+  if(server.hasArg("mqtt_host")){
+    snprintf(mqtt_host, sizeof(mqtt_host), "%s", server.arg("mqtt_host").c_str());
+    mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
+    _updateConfig = true;
+  }
+  if(server.hasArg("mqtt_port")){
+    if ((server.arg("mqtt_port").toInt() >= 0) && (server.arg("mqtt_port").toInt() <=65535)) {
+      mqtt_port = server.arg("mqttport").toInt();
+      _updateConfig = true;
+    }    
+  }
+  if(server.hasArg("mqtt_user")){
+    snprintf(mqtt_user, sizeof(mqtt_user), "%s", server.arg("mqtt_user").c_str());
+    mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
+    _updateConfig = true;
+  }
+  if(server.hasArg("mqtt_pass")){
+    snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
+    mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
+    _updateConfig = true;
+  }
+  if (_updateConfig) {
+    initMqtt();
+  }
 #endif
 
-    if(server.hasArg("trans_effect")){
-      transEffect = server.arg("trans_effect").toInt();
-      updateConf = true;
-    }
+  if(server.hasArg("trans_effect")){
+    transEffect = server.arg("trans_effect").toInt();
+    _updateConfig = true;
+  }
 
 #if defined(ENABLE_STATE_SAVE)
-    if (updateStrip || updateConf) {
-      if(!settings_save_conf.active()) settings_save_conf.once(3, tickerSaveConfig);
-    }
+  if (_updateStrip || _updateConfig) {
+    if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
+  }
 #endif
-    updateStrip = false;
-    updateConf = false;
-    getConfigJSON();
-  });
-  
-  server.on("/off", []() {
+  _updateStrip = false;
+  _updateConfig = false;
+  getConfigJSON();
+});
+
+server.on("/off", []() {
+  if (prevmode != OFF) {
     mode = OFF;
-    getStatusJSON();
-  });
+    getStateJSON();
+    #if defined(ENABLE_STATE_SAVE)
+      if(!save_state.active()) save_state.once(3, tickerSaveState);
+    #endif
+  }
+});
 
-  server.on("/on", []() {
+server.on("/on", []() {
+  if (prevmode == OFF) {
     mode = SET;
-    getStatusJSON();
-  });
+    getStateJSON();
+    #if defined(ENABLE_STATE_SAVE)
+      if(!save_state.active()) save_state.once(3, tickerSaveState);
+    #endif
+  }
+});
 
-  server.on("/set", []() {
-    prevmode = HOLD;
-    ws2812fx_mode = FX_MODE_STATIC;
+server.on("/set", []() {
+  prevmode = HOLD;
+  ws2812fx_mode = FX_MODE_STATIC;
+  boolean _updateState = false;
+  boolean _updateSegState = false;
+  // Segment
+  if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <= MAX_NUM_SEGMENTS)) { 
+      segment = server.arg("seg").toInt();  
+      if (prevsegment != segment) {
+        prevsegment = segment;
+        getSegmentParams(segment);
+        memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
+        mode = SET;
+        _updateState = true;
+      }
+  }
+  //color wrgb
+  if (server.arg("rgb") != "") {
+    uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
+    main_color.white = ((rgb >> 24) & 0xFF);
+    main_color.red = ((rgb >> 16) & 0xFF);
+    main_color.green = ((rgb >> 8) & 0xFF);
+    main_color.blue = ((rgb >> 0) & 0xFF);
+  } else {
+    if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
+      main_color.red = server.arg("r").toInt();
+    }
+    if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
+      main_color.green = server.arg("g").toInt();
+    }
+    if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
+      main_color.blue = server.arg("b").toInt();
+    }
+    if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
+      main_color.white = server.arg("w").toInt();
+    }
+  } 
+  if (server.arg("rgb2") != "") {
+    uint32_t rgb2 = (uint32_t) strtoul(server.arg("rgb2").c_str(), NULL, 16);
+    back_color.white = ((rgb2 >> 24) & 0xFF);
+    back_color.red = ((rgb2 >> 16) & 0xFF);
+    back_color.green = ((rgb2 >> 8) & 0xFF);
+    back_color.blue = ((rgb2 >> 0) & 0xFF);
+  } else {
+    if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
+      back_color.red = server.arg("r2").toInt();
+    }
+    if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
+      back_color.green = server.arg("g2").toInt();
+    }
+    if ((server.arg("b2") != "") && (server.arg("b2").toInt() >= 0) && (server.arg("b2").toInt() <= 255)) {
+      back_color.blue = server.arg("b2").toInt();
+    }
+    if ((server.arg("w2") != "") && (server.arg("w2").toInt() >= 0) && (server.arg("w2").toInt() <= 255)){
+      back_color.white = server.arg("w2").toInt();
+    }
+  }
+  if (server.arg("rgb3") != "") {
+    uint32_t rgb3 = (uint32_t) strtoul(server.arg("rgb3").c_str(), NULL, 16);
+    xtra_color.white = ((rgb3 >> 24) & 0xFF);
+    xtra_color.red = ((rgb3 >> 16) & 0xFF);
+    xtra_color.green = ((rgb3 >> 8) & 0xFF);
+    xtra_color.blue = ((rgb3 >> 0) & 0xFF);
+  } else {
+    if ((server.arg("r3") != "") && (server.arg("r3").toInt() >= 0) && (server.arg("r3").toInt() <= 255)) { 
+      xtra_color.red = server.arg("r3").toInt();
+    }
+    if ((server.arg("g3") != "") && (server.arg("g3").toInt() >= 0) && (server.arg("g3").toInt() <= 255)) {
+      xtra_color.green = server.arg("g3").toInt();
+    }
+    if ((server.arg("b3") != "") && (server.arg("b3").toInt() >= 0) && (server.arg("b3").toInt() <= 255)) {
+      xtra_color.blue = server.arg("b3").toInt();
+    }
+    if ((server.arg("w3") != "") && (server.arg("w3").toInt() >= 0) && (server.arg("w3").toInt() <= 255)){
+      xtra_color.white = server.arg("w3").toInt();
+    }
+  }
+  main_color.red = constrain(main_color.red, 0, 255);
+  main_color.green = constrain(main_color.green, 0, 255);
+  main_color.blue = constrain(main_color.blue, 0, 255);
+  main_color.white = constrain(main_color.white, 0, 255);
+  back_color.red = constrain(back_color.red, 0, 255);
+  back_color.green = constrain(back_color.green, 0, 255);
+  back_color.blue = constrain(back_color.blue, 0, 255);
+  back_color.white = constrain(back_color.white, 0, 255);
+  xtra_color.red = constrain(xtra_color.red, 0, 255);
+  xtra_color.green = constrain(xtra_color.green, 0, 255);
+  xtra_color.blue = constrain(xtra_color.blue, 0, 255);
+  xtra_color.white = constrain(xtra_color.white, 0, 255);
+  
+  
+  // Speed
+  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
+    ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
     mode = SET;
-    getArgs();
-    getStatusJSON();
-  });
+    _updateSegState = true;
+  }
+  //Mode
+  if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
+    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
+    if (ws2812fx_mode !=  strip->getMode(segment)) {
+      mode = SET;
+      _updateSegState = true;
+    }
+  }
+  
+  // Brightness
+  if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) { 
+    brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
+  } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
+    brightness = constrain(server.arg("p").toInt(), 0, 255);
+  }
+  if (strip->getBrightness() != brightness) {
+    mode = SET;
+    _updateState = true;
+  }
+  DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStateJSONfull()); 
+  getStateJSON();
+  
+#if defined(ENABLE_STATE_SAVE)
+  if (_updateState) {
+    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+    if(!save_state.active()) save_state.once(3, tickerSaveState);
+  }
+  if (_updateSegState) {
+    DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+    if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+  }
+#endif
+  _updateState = false;
+  _updateSegState = false;
+});
+
+  

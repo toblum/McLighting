@@ -877,7 +877,7 @@ input[type=number], label{
                         </div>
                     </div>
                 </div>
-                <div class="flex xs12 sm7">
+                <div class="flex xs12 sm8">
                     <div class="sliders container">
                         <div class="color-wrap" style="display:none">
                             <div id="color-display"></div>
@@ -911,6 +911,13 @@ input[type=number], label{
                             <label for="speed" style="padding:8px 7px 3px 7px;"><i aria-hidden="true" class="material-icons">timer</i></label>
                             <input type="number" id="speedNum">
                             <input value="255" type="range" min="0" max="255" id="speed">
+                        </div>
+                        <div id="segments" class="container" style="text-align: left;">
+                            <div class="layout row wrap">
+                                <div class="flex xs12 sm2" id="selectSegLbl" style="text-align: left;"><p>selectSeg</p>
+                                    <select id="selectseg" class="custom-select" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%; "></select>
+                                </div>
+                            </div>
                         </div>
                         <div id="message" class="container hidden" style="text-align: left;">
                             <div id="wsmessageLbl" style="text-align: left;"><p>wsMessage</p>
@@ -959,14 +966,17 @@ input[type=number], label{
                     </div>
                 </div>
                 <div class="layout row wrap">
-                    <div class="flex xs12 sm4"><p>selectCount</p>
-                        <input type="number" min="0" max="65535" id="selectcount" style="border: 2px solid #aaaaaa; border-radius: 6px; width:100%;" />
+                    <div class="flex xs12 sm3"><p>selectSegCnt</p>
+                        <input type="number" min="1" max="9" id="selectsegcnt" style="border: 2px solid #aaaaaa; border-radius: 6px; width:50%;" />
                     </div>
-                    <div class="flex xs12 sm4"><p>selectRGBO</p>
+                    <div class="flex xs12 sm3"><p>selectCount</p>
+                        <input type="number" min="0" max="65535" id="selectcount" style="border: 2px solid #aaaaaa; border-radius: 6px; width:50%;" />
+                    </div>
+                    <div class="flex xs12 sm3"><p>selectRGBO</p>
                         <select id="selectrgbo" class="custom-select"></select>
                     </div>
-                    <div class="flex xs12 sm4"><p>selectPin</p>
-                        <input type="number" min="0" max="16" id="selectpin" style="border: 2px solid #aaaaaa; border-radius: 6px; width:100%;" />
+                    <div class="flex xs12 sm3"><p>selectPin</p>
+                        <input type="number" min="0" max="16" id="selectpin" style="border: 2px solid #aaaaaa; border-radius: 6px; width:50%;" />
                     </div>
                 </div>
                 <div class="layout row wrap">
@@ -981,6 +991,14 @@ input[type=number], label{
                     </div>
                     <div class="flex xs12 sm3"><p>selectOPTSIZE</p>
                         <select id="selectoptsize" class="custom-select"></select>
+                    </div>
+                </div>
+                <div class="layout row wrap">
+                    <div class="flex xs12 sm6"><p>segStart</p>
+                        <input type="number" min="0" max="*jsvariable" id="segstart" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
+                    </div>
+                    <div class="flex xs12 sm6"><p>segStop</p>
+                        <input type="number" min="0" max="*jsvariable" id="segstop" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
                     </div>
                 </div>
                 <div class="layout row wrap">
@@ -1043,6 +1061,9 @@ var language = {
         white: "White",
         not_greater: "cannot enter numbers greater than 255",
         not_less: "cannot enter numbers less than 0",
+        selectSeg: "Select segment",
+        segStart: "First LED of selected segment",
+        segStop: "Last LED of selected segment",
         wsMessage: "Websocket Message:",
         selectLanguage: "Select Language:",
         selectHostname: "Hostname:",
@@ -1050,6 +1071,7 @@ var language = {
         selectMQTTPort: "and Port:",
         selectMQTTUser: "MQTT Username:",
         selectMQTTPass: "MQTT Password:",
+        selectSegCnt: "Number of Segments:",
         selectCount: "Strip LED Count:",
         selectRGBO: "RGB Order:",
         selectPin: "Strip GPIO Pin:",
@@ -1099,6 +1121,9 @@ var language = {
         white: "Wit",
         not_greater: "Geen nummers hoger dan 255",
         not_less: "Geen nummers lager dan 0",
+        selectSeg: "Selecteer segment",
+        segStart: "Eerste LED van huidige segmenten",
+        segStop: "Laatste LED van huidige segmenten",
         wsMessage: "Websocket message:",
         selectLanguage: "Selecteer Taal:",
         selectHostname: "Hostname:",
@@ -1106,6 +1131,7 @@ var language = {
         selectMQTTPort: "en Port:",
         selectMQTTUser: "MQTT gebruikersnaam:",
         selectMQTTPass: "MQTT wachtwoord:",
+        selectSegCnt: "Number of Segments:",
         selectCount: "LED nummer:",
         selectPin: "Strip GPIO Pin:",
         selectRGBO: "RGB Order:",
@@ -1155,6 +1181,9 @@ var language = {
         white: "Weiß",
         not_greater: "Akzeptiere keine Nummern größer 255",
         not_less: "Akzeptiere keine Nummern kleiner 0",
+        selectSeg: "Segment wählen",
+        segStart: "Erste LED des gewählten Segments",
+        segStop: "Letzte LED des gewählten Segments",
         wsMessage: "Websocket Message:",
         selectLanguage: "Sprache auswählen:",
         selectHostname: "Hostname:",
@@ -1162,6 +1191,7 @@ var language = {
         selectMQTTPort: "und Port:",
         selectMQTTUser: "MQTT Username:",
         selectMQTTPass: "MQTT Password:",
+        selectSegCnt: "Anzahl Segmente:",
         selectCount: "Strip LED Anzahl:",
         selectRGBO: "RGB Reihenfolge:",
         selectPin: "Strip GPIO Pin:",
@@ -1281,6 +1311,7 @@ var config = {
     mqtt_port: 0,
     mqtt_user: "",
     mqtt_pass: "",
+    ws_seg: 1,
     ws_cnt: 0,
     ws_rgbo: "",
     ws_pin: 0,
@@ -1289,6 +1320,9 @@ var config = {
     transitionEffects: true
 };
 var data = {
+    segment: 0,
+    start: 0,
+    stop: 0,
     mode: 0,
     color: {w:0, r:0, g:0, b:0, hex:"00000000", w2:0, r2:0, g2:0, b2:0, hex2:"00000000", w3:0, r3:0, g3:0, b3:0, hex3:"00000000"},
     brightness: 192,
@@ -1341,7 +1375,7 @@ function displayColors(all = false) {
 }
 
 // initial color val numbers when DOM is loaded 
-function colorNumrVals(){
+function colorNumVals(){
     redNumVal.value = red.value;
     greenNumVal.value = green.value;
     blueNumVal.value = blue.value;
@@ -1447,7 +1481,7 @@ function initcolorSliders(){
         displayColors();
         initSliderColors();
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         redNumVal.dispatchEvent(event);
     });
@@ -1456,7 +1490,7 @@ function initcolorSliders(){
         displayColors();
         initSliderColors();
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         greenNumVal.dispatchEvent(event);
     });
@@ -1465,7 +1499,7 @@ function initcolorSliders(){
         displayColors();
         initSliderColors();
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         blueNumVal.dispatchEvent(event);
     });
@@ -1474,7 +1508,7 @@ function initcolorSliders(){
         displayColors();
         initSliderColors();
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         whiteNumVal.dispatchEvent(event);
     });
@@ -1482,14 +1516,14 @@ function initcolorSliders(){
     bright.addEventListener('input', () => {
         initSliderColors();
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         brightNumVal.dispatchEvent(event);
     });
 
     speed.addEventListener('input', () => {
         changeRangeNumVal();
-        colorNumrVals();
+        colorNumVals();
         // Trigger onChange event to send value
         speedNumVal.dispatchEvent(event);
     });
@@ -1548,6 +1582,7 @@ function getConfig() {
                 if (typeof res.mqtt_port !== "undefined") config.mqtt_port = res.mqtt_port;
                 if (typeof res.mqtt_user !== "undefined") config.mqtt_user = res.mqtt_user;
                 if (typeof res.mqtt_pass !== "undefined") config.mqtt_pass = res.mqtt_pass;
+                if (typeof res.ws_seg    !== "undefined") config.ws_seg = res.ws_seg;
                 if (typeof res.ws_cnt    !== "undefined") config.ws_cnt = res.ws_cnt;
                 if (typeof res.ws_rgbo   !== "undefined") {
                      config.ws_rgbo   = res.ws_rgbo;
@@ -1612,8 +1647,12 @@ function readSettings() {
             if (typeof(tmpsettings[set]) !== "undefined") settings[set] = tmpsettings[set];
         }
         applySettings();
-        if (e && e.substring(0,6) !== "ERROR!") connectAdditionalNodes();
-        else console.warn("ERROR loading settings", e);
+        if (e && e.substring(0,6) !== "ERROR!") {
+            connectAdditionalNodes();
+        } else {
+            console.warn("ERROR loading settings", e);
+            saveSettings();
+        }
     });
 }
 function applySettings() {
@@ -1684,7 +1723,7 @@ function onSelectColNum(colnum) {
     white.value = data.color["w" + (colnum > 1 ? colnum : "")];
     initSliderColors();
     changeRangeNumVal();
-    colorNumrVals();
+    colorNumVals();
 }
 function initSettings() {
     // Add languages to language select
@@ -1736,11 +1775,33 @@ function initSettings() {
         config.mqtt_pass = mqtt_pass.value;
         ws_send("Cmw" + config.mqtt_pass);
     });
-    var count = document.getElementById("selectcount");
-    count.value = config.ws_cnt;
-    count.addEventListener('change', ()=>{
-        config.ws_cnt = count.value;
-        ws_send("Csc" + config.ws_cnt);
+    var selsegment = document.getElementById("selectseg");
+    for(var i = 0; i < config.ws_seg; i++) {
+        var option = document.createElement("OPTION");
+        option.setAttribute("value", i);
+        option.innerHTML = i;
+        selsegment.appendChild(option);
+    }
+    selsegment.value = data.segment;
+    selsegment.addEventListener('change', ()=>{
+        data.segment = selsegment.value;
+        ws_send("Ss" + data.segment);
+    });
+    var num_segments = document.getElementById("selectsegcnt");
+    num_segments.value = config.ws_seg;
+    num_segments.addEventListener('change', ()=>{
+        config.ws_seg = num_segments.value;
+        ws_send("Css" + config.ws_seg);
+        while (selsegment.firstChild) {
+            selsegment.removeChild(selsegment.firstChild);
+        }
+        for(var i = 0; i < config.ws_seg; i++) {
+            var option = document.createElement("OPTION");
+            option.setAttribute("value", i);
+            option.innerHTML = i;
+            selsegment.appendChild(option);
+        }
+        selsegment.value = data.segment;
     });
     var pin = document.getElementById("selectpin");
     pin.value = config.ws_pin;
@@ -1759,6 +1820,28 @@ function initSettings() {
     rgbo.addEventListener('change', ()=>{
         config.ws_rgbo = rgbo.value;
         ws_send("Csr" + config.ws_rgbo);
+    });
+    var start = document.getElementById("segstart");
+    start.setAttribute("max",config.ws_cnt-1);
+    start.value = data.start;
+    start.addEventListener('change', ()=>{
+        data.start = start.value;
+        ws_send("S[" + data.start);
+    });
+    var stop = document.getElementById("segstop");
+    stop.setAttribute("max",config.ws_cnt-1);
+    stop.value = data.stop;
+    stop.addEventListener('change', ()=>{
+        data.stop = stop.value;
+        ws_send("S]" + data.stop);
+    });
+    var count = document.getElementById("selectcount");
+    count.value = config.ws_cnt;
+    count.addEventListener('change', ()=>{
+        config.ws_cnt = count.value;
+        ws_send("Csc" + config.ws_cnt);
+        start.setAttribute("max",config.ws_cnt-1);
+        stop.setAttribute("max",config.ws_cnt-1);
     });
     var optrev = document.getElementById("selectoptrev");
     for (var code in selectoptrev) {
@@ -1855,6 +1938,7 @@ function initSettings() {
         settings.theme_back = colback.value;
         document.getElementById("container").style.backgroundColor = settings.theme_back;
         document.getElementById("language").style.backgroundColor = settings.theme_back;
+        document.getElementById("selectseg").style.backgroundColor = settings.theme_back;
         document.getElementById("selectrgbo").style.backgroundColor = settings.theme_back;
         document.getElementById("selectoptrev").style.backgroundColor = settings.theme_back;
         document.getElementById("selectoptfade").style.backgroundColor = settings.theme_back;
@@ -1867,6 +1951,7 @@ function initSettings() {
         for (var i = 0; i < icons.length; i++) {
             icons[i].style.color = (yiq >= 125) ? '#222' : '#EEE';
         }
+        document.getElementById("selectSegLbl").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("wsmessageLbl").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("redNum").style.color = (yiq >= 125) ? '#111' : '#EEE';
         document.getElementById("greenNum").style.color = (yiq >= 125) ? '#111' : '#EEE';
@@ -2069,18 +2154,21 @@ function ws_connect() {
 //             document.getElementById('modal').style.display = "none";
             // console.log("res", res);
             if (res) {
-                // Status starts here
                 if (typeof res.mode !== "undefined") data.mode = res.mode;
+                if (typeof res.brightness !== "undefined") {
+                    data.brightness = res.brightness;
+                    // init ColorSliderVals
+                    bright.value = res.brightness;
+                }
+                // Segment Status starts here
+                if (typeof res.segment !== "undefined") { data.segment= res.segment; document.getElementById("selectseg").value = data.segment; }
+                if (typeof res.start !== "undefined")   { data.start= res.start; document.getElementById("segstart").value = data.start; }
+                if (typeof res.stop !== "undefined")    { data.stop = res.stop; document.getElementById("segstop").value = data.stop; }
                 if (typeof res.ws2812fx_mode !== "undefined") data.ws2812fx_mode = res.ws2812fx_mode;
                 if (typeof res.speed !== "undefined") {
                      data.speed = res.speed;
                     // init SliderVals
                     speed.value = res.speed;
-                }
-                if (typeof res.brightness !== "undefined") {
-                    data.brightness = res.brightness;
-                    // init ColorSliderVals
-                    bright.value = res.brightness;
                 }
                 if (typeof res.color !== "undefined") {
                     data.color.w = res.color[0];
@@ -2115,7 +2203,7 @@ function ws_connect() {
                         red.value = data.color.r3;
                         green.value = data.color.g3;
                         blue.value = data.color.b3;
-                       white.value = data.color.w3;
+                        white.value = data.color.w3;
                     }
                 }
                 // Config starts here
@@ -2124,6 +2212,7 @@ function ws_connect() {
                 if (typeof res.mqtt_port !== "undefined") { config.mqtt_port = res.mqtt_port; document.getElementById("mqtt_port").value = config.mqtt_port; }
                 if (typeof res.mqtt_user !== "undefined") { config.mqtt_user = res.mqtt_user; document.getElementById("mqtt_user").value = config.mqtt_user; }
                 if (typeof res.mqtt_pass !== "undefined") { config.mqtt_pass = res.mqtt_pass; document.getElementById("mqtt_pass").value = config.mqtt_pass; }
+                if (typeof res.ws_seg    !== "undefined") { config.ws_seg = res.ws_seg; document.getElementById("selectsegcnt").value = config.ws_seg; }
                 if (typeof res.ws_cnt    !== "undefined") { config.ws_cnt = res.ws_cnt; document.getElementById("selectcount").value = config.ws_cnt; }
                 if (typeof res.ws_rgbo   !== "undefined") {
                      config.ws_rgbo   = res.ws_rgbo;
@@ -2148,6 +2237,7 @@ function ws_connect() {
                     document.getElementById("selectoptgamma").value = (config.ws_fxopt & 8);
                     document.getElementById("selectoptsize").value = (config.ws_fxopt & 6); 
                 }
+                if (typeof res.transEffect  !== "undefined") { config.transitionEffects = res.transEffect; document.getElementById("set-transitionEffects").value = config.transitionEffects; }
                 // Modes starts here
                 if (typeof res[0] !== "undefined") {
                      res.forEach(item => {
@@ -2157,7 +2247,7 @@ function ws_connect() {
                     });
                 }
                // init Color Vals
-                colorNumrVals();
+                colorNumVals();
                 initSliderColors();
                 // init Change Range Val
                 changeRangeNumVal();
@@ -2218,6 +2308,8 @@ function select_active_button() {
         if (arr.indexOf("hidden") === -1) {
             wsmess.className += " hidden";
         }
+        segments = document.getElementById("segments");
+        segments.className = segments.className.replace(/\b hidden\b/g, "");
     }
     if (data.mode >= 1) {
         document.getElementById(data.ws2812fx_mode).style.backgroundColor = settings.theme_btnsel;
@@ -2229,6 +2321,11 @@ function select_active_button() {
         } else if (data.ws2812fx_mode === 57) { //CUSTOM_WS
             wsmess = document.getElementById("message");
             wsmess.className = wsmess.className.replace(/\b hidden\b/g, "");
+            sements = document.getElementById("segments");
+            var arr = segments.className.split(" ");
+            if (arr.indexOf("hidden") === -1) {
+                segments.className += " hidden";
+            }
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
@@ -2357,7 +2454,7 @@ function onSelectColor(event) {
     displayColors();
     initSliderColors();
     changeRangeNumVal();
-    colorNumrVals();
+    colorNumVals();
 }
 }
 function redrawColorPicker() {
@@ -2525,7 +2622,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     getModes();
     readSettings();
     ws_connect();
-    ws_send("$")
+    ws_send("$");
     document.getElementById("modal-content").innerHTML = language.en.loadModes;
     //ws_send("C");
     getConfig();
