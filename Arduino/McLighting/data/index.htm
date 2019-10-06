@@ -910,7 +910,7 @@ input[type=number], label{
                         <div>
                             <label for="speed" style="padding:8px 7px 3px 7px;"><i aria-hidden="true" class="material-icons">timer</i></label>
                             <input type="number" id="speedNum">
-                            <input value="255" type="range" min="0" max="255" id="speed">
+                            <input value="255" type="range" min="0" max="65535" id="speed">
                         </div>
                         <div id="segments" class="container" style="text-align: left;">
                             <div class="layout row wrap">
@@ -980,6 +980,14 @@ input[type=number], label{
                     </div>
                 </div>
                 <div class="layout row wrap">
+                    <div class="flex xs12 sm6"><p>segStart</p>
+                        <input type="number" min="0" max="*jsvariable" id="segstart" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
+                    </div>
+                    <div class="flex xs12 sm6"><p>segStop</p>
+                        <input type="number" min="0" max="*jsvariable" id="segstop" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
+                    </div>
+                </div>
+                <div class="layout row wrap">
                     <div class="flex xs12 sm3"><p>selectOPTREV</p>
                         <select id="selectoptrev" class="custom-select"></select>
                     </div>
@@ -991,14 +999,6 @@ input[type=number], label{
                     </div>
                     <div class="flex xs12 sm3"><p>selectOPTSIZE</p>
                         <select id="selectoptsize" class="custom-select"></select>
-                    </div>
-                </div>
-                <div class="layout row wrap">
-                    <div class="flex xs12 sm6"><p>segStart</p>
-                        <input type="number" min="0" max="*jsvariable" id="segstart" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
-                    </div>
-                    <div class="flex xs12 sm6"><p>segStop</p>
-                        <input type="number" min="0" max="*jsvariable" id="segstop" style="border: 2px solid #aaaaaa; border-radius: 6px; width:90%;" />
                     </div>
                 </div>
                 <div class="layout row wrap">
@@ -1048,6 +1048,7 @@ var language = {
         connectError2: " times. Please use the RECONNECT button to try again.",
         loadModes: "Loading modes ...", // This language-string is not translated (settings not loaded yet)
         loadSettings: "Loading settings ...", // This language-string is not translated (settings not loaded yet)
+        loadConfig: "Loading configuration ...",
         loadWebsock: "Connecting websockets ...",
         loadReady: "Ready ...",
         loadError: "Error loading animation modes, please try again...", // This language-string is not translated (settings not loaded yet)
@@ -1108,6 +1109,7 @@ var language = {
         connectError2: " keer geprobeerd. Gebruik de Verbind opnieuw knop om opnieuw te proberen.",
         loadModes: "Modes laden...", // This language-string is not translated (settings not loaded yet)
         loadSettings: "Instellingen laden...", // This language-string is not translated (settings not loaded yet)
+        loadConfig: "Configuratie laden ...",
         loadWebsock: "Websockets verbinden...",
         loadReady: "Klaar...",
         loadError: "Fout bij laden van animatie modes, probeer opnieuw...", // This language-string is not translated (settings not loaded yet)
@@ -1168,6 +1170,7 @@ var language = {
         connectError2: " mal versucht. Benutze WIEDER VERBINDEN, um es nochmal zu probieren.",
         loadModes: "Lade Modi ...", // This language-string is not translated (settings not loaded yet)
         loadSettings: "Lade Einstellungen ...", // This language-string is not translated (settings not loaded yet)
+        loadConfig: "Lade Konfiguration ...",
         loadWebsock: "Verbinde Websockets ...",
         loadReady: "Fertig ...",
         loadError: "Fehler beim Laden der Animations-Modi, bitte nochmal versuchen...", // This language-string is not translated (settings not loaded yet)
@@ -1315,19 +1318,27 @@ var config = {
     ws_cnt: 0,
     ws_rgbo: "",
     ws_pin: 0,
-    ws_fxopt: 0,
-    enable_rgbw: false,
-    transitionEffects: true
+    ws_trans: false,
+    enable_rgbw: false
 };
-var data = {
+var state = {
+    mode: 0,
     segment: 0,
+    brightness: 192
+}
+
+var segstate = {
     start: 0,
     stop: 0,
-    mode: 0,
-    color: {w:0, r:0, g:0, b:0, hex:"00000000", w2:0, r2:0, g2:0, b2:0, hex2:"00000000", w3:0, r3:0, g3:0, b3:0, hex3:"00000000"},
-    brightness: 192,
+    mode: null,
     speed: 192,
-    ws2812fx_mode: null,
+    color: {w:0, r:0, g:0, b:0, hex:"00000000", w2:0, r2:0, g2:0, b2:0, hex2:"00000000", w3:0, r3:0, g3:0, b3:0, hex3:"00000000"},
+    ws_fxopt: 0
+}
+
+
+var data = {
+    init: true,
     color_num: 1,
     modes: [],
     connection: null,
@@ -1335,7 +1346,6 @@ var data = {
     num_additional_connections: 0,
     is_connected: false,
     refresh_interval: 0,
-    init: true,
     color_disabled: false
 };
 var sendIt; // Timer to prevent lots of sending
@@ -1365,12 +1375,12 @@ function displayColors(all = false) {
         clearTimeout(sendIt);
         sendIt = setTimeout(function() { set_color(); }, 50);
     } else {
-        document.getElementById("colorSel1").style.backgroundColor = `rgb(${data.color.r}, ${data.color.g}, ${data.color.b})`;
-        document.getElementById("colorHex1").innerHTML = "#" + data.color.hex;
-        document.getElementById("colorSel2").style.backgroundColor = `rgb(${data.color.r2}, ${data.color.g2}, ${data.color.b2})`;
-        document.getElementById("colorHex2").innerHTML = "#" + data.color.hex2;
-        document.getElementById("colorSel3").style.backgroundColor = `rgb(${data.color.r3}, ${data.color.g3}, ${data.color.b3})`;
-        document.getElementById("colorHex3").innerHTML = "#" + data.color.hex3;
+        document.getElementById("colorSel1").style.backgroundColor = `rgb(${segstate.color.r}, ${segstate.color.g}, ${segstate.color.b})`;
+        document.getElementById("colorHex1").innerHTML = "#" + segstate.color.hex;
+        document.getElementById("colorSel2").style.backgroundColor = `rgb(${segstate.color.r2}, ${segstate.color.g2}, ${segstate.color.b2})`;
+        document.getElementById("colorHex2").innerHTML = "#" + segstate.color.hex2;
+        document.getElementById("colorSel3").style.backgroundColor = `rgb(${segstate.color.r3}, ${segstate.color.g3}, ${segstate.color.b3})`;
+        document.getElementById("colorHex3").innerHTML = "#" + segstate.color.hex3;
     }
 }
 
@@ -1411,44 +1421,44 @@ function initSliderColors(){
 function changeRangeNumVal(){
     redNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        red.value = checkNumVal(redNumVal, red.value);
-        if (data.color_num === 1) data.color.r = red.value;
-        if (data.color_num === 2) data.color.r2 = red.value;
-        if (data.color_num === 3) data.color.r3 = red.value;
+        red.value = checkNumVal8(redNumVal, red.value);
+        if (data.color_num === 1) segstate.color.r = red.value;
+        if (data.color_num === 2) segstate.color.r2 = red.value;
+        if (data.color_num === 3) segstate.color.r3 = red.value;
         initSliderColors();
         displayColors();
     });
     greenNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        green.value = checkNumVal(greenNumVal, green.value);
-        if (data.color_num === 1) data.color.g = green.value;
-        if (data.color_num === 2) data.color.g2 = green.value;
-        if (data.color_num === 3) data.color.g3 = green.value;
+        green.value = checkNumVal8(greenNumVal, green.value);
+        if (data.color_num === 1) segstate.color.g = green.value;
+        if (data.color_num === 2) segstate.color.g2 = green.value;
+        if (data.color_num === 3) segstate.color.g3 = green.value;
         initSliderColors();
         displayColors();
     });
     blueNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        blue.value = checkNumVal(blueNumVal, blue.value);
-        if (data.color_num === 1) data.color.b = blue.value;
-        if (data.color_num === 2) data.color.b2 = blue.value;
-        if (data.color_num === 3) data.color.b3 = blue.value;
+        blue.value = checkNumVal8(blueNumVal, blue.value);
+        if (data.color_num === 1) segstate.color.b = blue.value;
+        if (data.color_num === 2) segstate.color.b2 = blue.value;
+        if (data.color_num === 3) segstate.color.b3 = blue.value;
         initSliderColors();
         displayColors();
     });
     whiteNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        white.value = checkNumVal(whiteNumVal, white.value);
-        if (data.color_num === 1) data.color.w = white.value;
-        if (data.color_num === 2) data.color.w2 = white.value;
-        if (data.color_num === 3) data.color.w3 = white.value;
+        white.value = checkNumVal8(whiteNumVal, white.value);
+        if (data.color_num === 1) segstate.color.w = white.value;
+        if (data.color_num === 2) segstate.color.w2 = white.value;
+        if (data.color_num === 3) segstate.color.w3 = white.value;
         initSliderColors();
         displayColors();
     });
     brightNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        bright.value = checkNumVal(brightNumVal, bright.value);
-        data.brightness = bright.value;
+        bright.value = checkNumVal8(brightNumVal, bright.value);
+        state.brightness = bright.value;
         initSliderColors();
         // Send Brightness
         clearTimeout(sendIt);
@@ -1456,15 +1466,26 @@ function changeRangeNumVal(){
     });
     speedNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        speed.value = checkNumVal(speedNumVal, speed.value);
-        data.speed = speed.value;
+        speed.value = checkNumVal16(speedNumVal, speed.value);
+        segstate.speed = speed.value;
         // Send Speed
         clearTimeout(sendIt);
         sendIt = setTimeout(function() { set_speed(); }, 50);
     });
 }
-function checkNumVal(numVal, curVal) {
+function checkNumVal8(numVal, curVal) {
     if(numVal.value > 255) {
+        alert(language[settings.lang]["not_greater"]);
+        numVal.value = curVal;
+    } else if(numVal.value < 0) {
+        alert(language[settings.lang]["not_less"]);
+        numVal.value = curVal;
+    }
+    return numVal.value;
+}
+
+function checkNumVal16(numVal, curVal) {
+    if(numVal.value > 65535) {
         alert(language[settings.lang]["not_greater"]);
         numVal.value = curVal;
     } else if(numVal.value < 0) {
@@ -1552,8 +1573,11 @@ function xhttp(url, post, callback) {
     xhr.send(post);
 }
 function getModes() {
+    document.getElementById("percentage").innerHTML = "0%";
+    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "0,100");
+    document.getElementById("modal-content").innerHTML = language.en.loadModes;
     xhttp("http://" + host + "/get_modes", false, function(e) {
-        //console.log("Getting modes list via REST:", e);
+        console.log("Getting modes list via REST:", e);
         if (e && e.substring(0,6) !== "ERROR!") {
             modes = JSON.parse(e);
             if (typeof modes[0] !== "undefined") {
@@ -1572,6 +1596,9 @@ function getModes() {
 
 }
 function getConfig() {
+    document.getElementById("percentage").innerHTML = "75%";
+    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "75,100");
+    document.getElementById("modal-content").innerHTML = language.en.loadConfig;
     xhttp("http://" + host + "/config", false, function(e) {
         console.log("Getting config via REST:", e);
         if (e && e.substring(0,6) !== "ERROR!") {
@@ -1589,8 +1616,7 @@ function getConfig() {
                      config.enable_rgbw = config.ws_rgbo.includes("W");
                 }
                 if (typeof res.ws_pin    !== "undefined") config.ws_pin = res.ws_pin;
-                if (typeof res.ws_fxopt  !== "undefined") config.ws_fxopt = res.ws_fxopt;
-                if (typeof res.transEffect  !== "undefined") config.transitionEffects = res.transEffect;
+                if (typeof res.ws_trans  !== "undefined") config.ws_trans = res.ws_trans;
             }
         } else {
             console.error(e);
@@ -1602,9 +1628,9 @@ function getConfig() {
         } else {
                 document.getElementById("white").parentNode.className = "hidden";
                 white.value = 0;
-                data.color.w = 0;
-                data.color.w2 = 0;
-                data.color.w3 = 0;
+                segstate.color.w = 0;
+                segstate.color.w2 = 0;
+                segstate.color.w3 = 0;
         }
     });
 }
@@ -1635,8 +1661,8 @@ function showModes(mode, index) {
     document.getElementById("modes").appendChild(div);
 }
 function readSettings() {
-    document.getElementById("percentage").innerHTML = "33%";
-    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "33,100");
+    document.getElementById("percentage").innerHTML = "25%";
+    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "25,100");
     document.getElementById("modal-content").innerHTML = language.en.loadSettings;
     xhttp("http://" + host + "/uistate.json", false, function(e) {
         //console.log("readSettings()", e);
@@ -1717,10 +1743,10 @@ function onSelectColNum(colnum) {
     x = document.getElementById("colorSel" + colnum);
     x.className = x.className.replace(/\belevation-3\b/g, "elevation-9");
     // Set ColorPicker and Sliders to selected color
-    red.value = data.color["r" + (colnum > 1 ? colnum : "")];
-    green.value = data.color["g" + (colnum > 1 ? colnum : "")];
-    blue.value = data.color["b" + (colnum > 1 ? colnum : "")];
-    white.value = data.color["w" + (colnum > 1 ? colnum : "")];
+    red.value = segstate.color["r" + (colnum > 1 ? colnum : "")];
+    green.value = segstate.color["g" + (colnum > 1 ? colnum : "")];
+    blue.value = segstate.color["b" + (colnum > 1 ? colnum : "")];
+    white.value = segstate.color["w" + (colnum > 1 ? colnum : "")];
     initSliderColors();
     changeRangeNumVal();
     colorNumVals();
@@ -1782,10 +1808,10 @@ function initSettings() {
         option.innerHTML = i;
         selsegment.appendChild(option);
     }
-    selsegment.value = data.segment;
+    selsegment.value = state.segment;
     selsegment.addEventListener('change', ()=>{
-        data.segment = selsegment.value;
-        ws_send("Ss" + data.segment);
+        state.segment = selsegment.value;
+        ws_send("Ss" + state.segment);
     });
     var num_segments = document.getElementById("selectsegcnt");
     num_segments.value = config.ws_seg;
@@ -1801,7 +1827,10 @@ function initSettings() {
             option.innerHTML = i;
             selsegment.appendChild(option);
         }
-        selsegment.value = data.segment;
+        if (state.segment > config.ws_seg - 1) {
+            state.segment = config.ws_seg - 1;
+        }
+        selsegment.value = state.segment;
     });
     var pin = document.getElementById("selectpin");
     pin.value = config.ws_pin;
@@ -1823,17 +1852,17 @@ function initSettings() {
     });
     var start = document.getElementById("segstart");
     start.setAttribute("max",config.ws_cnt-1);
-    start.value = data.start;
+    start.value = segstate.start;
     start.addEventListener('change', ()=>{
-        data.start = start.value;
-        ws_send("S[" + data.start);
+        segstate.start = start.value;
+        ws_send("S[" + segstate.start);
     });
     var stop = document.getElementById("segstop");
     stop.setAttribute("max",config.ws_cnt-1);
-    stop.value = data.stop;
+    stop.value = segstate.stop;
     stop.addEventListener('change', ()=>{
-        data.stop = stop.value;
-        ws_send("S]" + data.stop);
+        segstate.stop = stop.value;
+        ws_send("S]" + segstate.stop);
     });
     var count = document.getElementById("selectcount");
     count.value = config.ws_cnt;
@@ -1850,10 +1879,10 @@ function initSettings() {
         option.innerHTML = selectoptrev[code];
         optrev.appendChild(option);
     }
-    optrev.value = (config.ws_fxopt & 128);
+    optrev.value = (segstate.ws_fxopt & 128);
     optrev.addEventListener('change', ()=>{
-        config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
-        ws_send("Cso" + config.ws_fxopt);
+        segstate.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
+        ws_send("So" + segstate.ws_fxopt);
     });
     var optfade = document.getElementById("selectoptfade");
     for (var code in selectoptfade) {
@@ -1862,10 +1891,10 @@ function initSettings() {
         option.innerHTML = selectoptfade[code];
         optfade.appendChild(option);
     }
-    optfade.value = (config.ws_fxopt & 112);
+    optfade.value = (segstate.ws_fxopt & 112);
     optfade.addEventListener('change', ()=>{
-        config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
-        ws_send("Cso" + config.ws_fxopt);
+        segstate.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
+        ws_send("So" + segstate.ws_fxopt);
     });
     var optgamma = document.getElementById("selectoptgamma");
     for (var code in selectoptgamma) {
@@ -1874,10 +1903,10 @@ function initSettings() {
         option.innerHTML = selectoptgamma[code];
         optgamma.appendChild(option);
     }
-    optgamma.value = (config.ws_fxopt & 8);
+    optgamma.value = (segstate.ws_fxopt & 8);
     optgamma.addEventListener('change', ()=>{
-        config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
-        ws_send("Cso" + config.ws_fxopt);
+        segstate.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
+        ws_send("So" + segstate.ws_fxopt);
     });
     var optsize = document.getElementById("selectoptsize");
     for (var code in selectoptsize) {
@@ -1886,10 +1915,10 @@ function initSettings() {
         option.innerHTML = selectoptsize[code];
         optsize.appendChild(option);
     }
-    optsize.value = (config.ws_fxopt & 6)
+    optsize.value = (segstate.ws_fxopt & 6)
     optsize.addEventListener('change', ()=>{
-        config.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
-        ws_send("Cso" + config.ws_fxopt);
+        segstate.ws_fxopt = optrev.value | optfade.value | optgamma.value | optsize.value;
+        ws_send("So" + segstate.ws_fxopt);
     });
     slavenodes.value = settings.slave_nodes;
     lang.addEventListener('change', ()=>{
@@ -2103,8 +2132,8 @@ function ws_reconnect() {
 
 function ws_connect() {
     data.connection = new ReconnectingWebSocket(ws_url, "arduino", ws_options);
-    document.getElementById("percentage").innerHTML = "67%";
-    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "67,100");
+    document.getElementById("percentage").innerHTML = "75%";
+    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "75,100");
     document.getElementById("modal-content").innerHTML = language[settings.lang].loadWebsock;
 
     // When the connection is open, send some data to the server
@@ -2116,12 +2145,12 @@ function ws_connect() {
         con.className = "hidden";
         con = document.getElementById("connected");
         con.className = con.className = "";
-        document.getElementById("percentage").innerHTML = "100%";
-        document.getElementById("percentage-done").setAttribute("stroke-dasharray", "100,100");
-        document.getElementById("modal-content").innerHTML = language[settings.lang].loadReady;
         //setTimeout(function() { ws_send("$"); }, 2000);
         //setTimeout(function() { ws_send("C"); }, 3000);
         //setTimeout(function() { ws_send("~"); }, 4000);
+        document.getElementById("percentage").innerHTML = "100%";
+        document.getElementById("percentage-done").setAttribute("stroke-dasharray", "100,100");
+        document.getElementById("modal-content").innerHTML = language[settings.lang].loadReady;
     };
 
     // When the connection is open, send some data to the server
@@ -2154,56 +2183,56 @@ function ws_connect() {
 //             document.getElementById('modal').style.display = "none";
             // console.log("res", res);
             if (res) {
-                if (typeof res.mode !== "undefined") data.mode = res.mode;
+                if (typeof res.segment !== "undefined") { state.segment= res.segment; document.getElementById("selectseg").value = state.segment; }
+                if (typeof res.mode !== "undefined") { state.mode = res.mode; }
                 if (typeof res.brightness !== "undefined") {
-                    data.brightness = res.brightness;
+                    state.brightness = res.brightness;
                     // init ColorSliderVals
                     bright.value = res.brightness;
                 }
                 // Segment Status starts here
-                if (typeof res.segment !== "undefined") { data.segment= res.segment; document.getElementById("selectseg").value = data.segment; }
-                if (typeof res.start !== "undefined")   { data.start= res.start; document.getElementById("segstart").value = data.start; }
-                if (typeof res.stop !== "undefined")    { data.stop = res.stop; document.getElementById("segstop").value = data.stop; }
-                if (typeof res.ws2812fx_mode !== "undefined") data.ws2812fx_mode = res.ws2812fx_mode;
+                if (typeof res.start !== "undefined")   { segstate.start= res.start; document.getElementById("segstart").value = segstate.start; }
+                if (typeof res.stop !== "undefined")    { segstate.stop = res.stop; document.getElementById("segstop").value = segstate.stop; }
+                if (typeof res.fx_mode !== "undefined") { segstate.mode = res.fx_mode; }
                 if (typeof res.speed !== "undefined") {
-                     data.speed = res.speed;
+                     segstate.speed = res.speed;
                     // init SliderVals
                     speed.value = res.speed;
                 }
                 if (typeof res.color !== "undefined") {
-                    data.color.w = res.color[0];
-                    data.color.r = res.color[1];
-                    data.color.g = res.color[2];
-                    data.color.b = res.color[3];
-                    data.color.hex = rgbToHex([res.color[0], res.color[1], res.color[2], res.color[3]]);
-                    data.color.w2 = res.color[4];
-                    data.color.r2 = res.color[5];
-                    data.color.g2 = res.color[6];
-                    data.color.b2 = res.color[7];
-                    data.color.hex2 = rgbToHex([res.color[4], res.color[5], res.color[6], res.color[7]]);
-                    data.color.w3 = res.color[8];
-                    data.color.r3 = res.color[9];
-                    data.color.g3 = res.color[10];
-                    data.color.b3 = res.color[11];
-                    data.color.hex3 = rgbToHex([res.color[8], res.color[9], res.color[10], res.color[11]]);
+                    segstate.color.w = res.color[0];
+                    segstate.color.r = res.color[1];
+                    segstate.color.g = res.color[2];
+                    segstate.color.b = res.color[3];
+                    segstate.color.hex = rgbToHex([res.color[0], res.color[1], res.color[2], res.color[3]]);
+                    segstate.color.w2 = res.color[4];
+                    segstate.color.r2 = res.color[5];
+                    segstate.color.g2 = res.color[6];
+                    segstate.color.b2 = res.color[7];
+                    segstate.color.hex2 = rgbToHex([res.color[4], res.color[5], res.color[6], res.color[7]]);
+                    segstate.color.w3 = res.color[8];
+                    segstate.color.r3 = res.color[9];
+                    segstate.color.g3 = res.color[10];
+                    segstate.color.b3 = res.color[11];
+                    segstate.color.hex3 = rgbToHex([res.color[8], res.color[9], res.color[10], res.color[11]]);
                     // init ColorSliderVals
                     if (data.color_num === 1) {
-                        red.value = data.color.r;
-                        green.value = data.color.g;
-                        blue.value = data.color.b;
-                        white.value = data.color.w;
+                        red.value = segstate.color.r;
+                        green.value = segstate.color.g;
+                        blue.value = segstate.color.b;
+                        white.value = segstate.color.w;
                     }
                     if (data.color_num === 2) {
-                        red.value = data.color.r2;
-                        green.value = data.color.g2;
-                        blue.value = data.color.b2;
-                        white.value = data.color.w2;
+                        red.value = segstate.color.r2;
+                        green.value = segstate.color.g2;
+                        blue.value = segstate.color.b2;
+                        white.value = segstate.color.w2;
                     }
                    if (data.color_num === 3) {
-                        red.value = data.color.r3;
-                        green.value = data.color.g3;
-                        blue.value = data.color.b3;
-                        white.value = data.color.w3;
+                        red.value = segstate.color.r3;
+                        green.value = segstate.color.g3;
+                        blue.value = segstate.color.b3;
+                        white.value = segstate.color.w3;
                     }
                 }
                 // Config starts here
@@ -2223,21 +2252,21 @@ function ws_connect() {
                      } else {
                          document.getElementById("white").parentNode.className = "hidden";
                          white.value = 0;
-                         data.color.w = 0;
-                         data.color.w2 = 0;
-                         data.color.w3 = 0;
+                         segstate.color.w = 0;
+                         segstate.color.w2 = 0;
+                         segstate.color.w3 = 0;
                      }
 
                 }
                 if (typeof res.ws_pin    !== "undefined") { config.ws_pin = res.ws_pin; document.getElementById("selectpin").value = config.ws_pin; }
+                if (typeof res.ws_trans  !== "undefined") { config.ws_trans = res.ws_trans; document.getElementById("set-transitionEffects").value = config.ws_trans; }
                 if (typeof res.ws_fxopt  !== "undefined") {
-                    config.ws_fxopt = res.ws_fxopt;
-                    document.getElementById("selectoptrev").value = (config.ws_fxopt & 128);
-                    document.getElementById("selectoptfade").value = (config.ws_fxopt & 112);
-                    document.getElementById("selectoptgamma").value = (config.ws_fxopt & 8);
-                    document.getElementById("selectoptsize").value = (config.ws_fxopt & 6); 
+                    segstate.ws_fxopt = res.ws_fxopt;
+                    document.getElementById("selectoptrev").value = (segstate.ws_fxopt & 128);
+                    document.getElementById("selectoptfade").value = (segstate.ws_fxopt & 112);
+                    document.getElementById("selectoptgamma").value = (segstate.ws_fxopt & 8);
+                    document.getElementById("selectoptsize").value = (segstate.ws_fxopt & 6); 
                 }
-                if (typeof res.transEffect  !== "undefined") { config.transitionEffects = res.transEffect; document.getElementById("set-transitionEffects").value = config.transitionEffects; }
                 // Modes starts here
                 if (typeof res[0] !== "undefined") {
                      res.forEach(item => {
@@ -2254,11 +2283,15 @@ function ws_connect() {
                 // init Colors controls
                 // init display Colors
                 displayColors(true);
+                console.log("displayColors finished!");
                 select_active_button();
+                console.log("select_active_button finished!");
             }
-            if (data.init === true) {
+            console.log("data.init: ", data.init);
+            if (data.init == true) {
+                console.log("Initializing...");
                 // Set selected mode button
-                //document.getElementById(data.ws2812fx_mode).style.backgroundColor = settings.theme_btnsel;
+                //document.getElementById(segstate.mode).style.backgroundColor = settings.theme_btnsel;
                 // Close Loading Modal
                 setTimeout(() => {
                     document.getElementById('modal').style.display = "none";
@@ -2302,7 +2335,7 @@ function select_active_button() {
     for (i = 0; i < btns.length; i++) {
         btns[i].style.backgroundColor = settings.theme_btn;
     }
-    if (data.mode != 1 || (data.mode === 1 && data.ws2812fx_mode !== 57)) {  // CUSTOM WS MODE
+    if (state.mode != 1 || (state.mode == 1 && segstate.mode != 57)) {  // CUSTOM WS MODE
         wsmess = document.getElementById("message");
         var arr = wsmess.className.split(" ");
         if (arr.indexOf("hidden") === -1) {
@@ -2311,14 +2344,14 @@ function select_active_button() {
         segments = document.getElementById("segments");
         segments.className = segments.className.replace(/\b hidden\b/g, "");
     }
-    if (data.mode >= 1) {
-        document.getElementById(data.ws2812fx_mode).style.backgroundColor = settings.theme_btnsel;
-        if (data.ws2812fx_mode === 56) { // AUTOPLAY
+    if (state.mode >= 1) {
+        document.getElementById(segstate.mode).style.backgroundColor = settings.theme_btnsel;
+        if (segstate.mode == 56) { // AUTOPLAY
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
             disable_speed_selection(true);
-        } else if (data.ws2812fx_mode === 57) { //CUSTOM_WS
+        } else if (segstate.mode == 57) { //CUSTOM_WS
             wsmess = document.getElementById("message");
             wsmess.className = wsmess.className.replace(/\b hidden\b/g, "");
             sements = document.getElementById("segments");
@@ -2330,17 +2363,17 @@ function select_active_button() {
             disable_color_selection(true);
             disable_bright_selection(false);
             disable_speed_selection(true);
-        } else if (data.ws2812fx_mode === 58) { //TV
+        } else if (segstate.mode == 58) { //TV
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
             disable_speed_selection(false);
-        } else if (data.ws2812fx_mode === 59) {  //E1.31
+        } else if (segstate.mode == 59) {  //E1.31
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
             disable_speed_selection(true);
-        } else if (data.ws2812fx_mode === 60) {  //Fire2012
+        } else if (segstate.mode == 60) {  //Fire2012
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
@@ -2351,7 +2384,7 @@ function select_active_button() {
             disable_bright_selection(false);
             disable_speed_selection(false);
         }
-    } else if (data.mode === 0) {
+    } else if (state.mode == 0) {
                 document.getElementById("off").style.backgroundColor = settings.theme_btnsel;
                 disable_modebuttons(false);
                 disable_color_selection(true);
@@ -2379,32 +2412,32 @@ function disable_modebuttons(status) {
 
 function set_mode(mode_id) {
     if (Number.isInteger(mode_id)) {
-        data.mode = 1;
-        data.ws2812fx_mode = mode_id;
+        state.mode = 1;
+        segstate.mode = mode_id;
     } else {
         // For named modes
         if (mode_id == "off") {
-          data.mode = 0;
+          state.mode = 0;
         }
     }
     select_active_button();
     ws_send("/" + mode_id);
 }
 function set_speed() {
-    ws_send("?" + data.speed);
+    ws_send("?" + segstate.speed);
 }
 function set_brightness() {
-    ws_send("%" + data.brightness);
+    ws_send("%" + state.brightness);
 }
 function set_color() {
     if (data.color_num === 1) {
-        ws_send("#" + rgbToHex([data.color.w, data.color.r, data.color.g, data.color.b]));
+        ws_send("#" + rgbToHex([segstate.color.w, segstate.color.r, segstate.color.g, segstate.color.b]));
     }
     if (data.color_num === 2) {
-        ws_send("##" + rgbToHex([data.color.w2, data.color.r2, data.color.g2, data.color.b2]));
+        ws_send("##" + rgbToHex([segstate.color.w2, segstate.color.r2, segstate.color.g2, segstate.color.b2]));
     }
     if (data.color_num === 3) {
-        ws_send("###" + rgbToHex([data.color.w3, data.color.r3, data.color.g3, data.color.b3]));
+        ws_send("###" + rgbToHex([segstate.color.w3, segstate.color.r3, segstate.color.g3, segstate.color.b3]));
     }
 }    
 
@@ -2442,11 +2475,11 @@ function onSelectColor(event) {
     var color = context.getImageData(pos.x, pos.y, 1, 1).data;
     var hex_color = rgbToHex(color);
     var colnum = (data.color_num === 1) ? "" : data.color_num;
-    data.color["hex" + colnum] = hex_color;
-    data.color["r" + colnum] = color[0];
-    data.color["g" + colnum] = color[1];
-    data.color["b" + colnum] = color[2];
-    data.color["w" + colnum] = 0;
+    segstate.color["hex" + colnum] = hex_color;
+    segstate.color["r" + colnum] = color[0];
+    segstate.color["g" + colnum] = color[1];
+    segstate.color["b" + colnum] = color[2];
+    segstate.color["w" + colnum] = 0;
     red.value = color[0];
     green.value = color[1];
     blue.value = color[2];
@@ -2623,12 +2656,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
     readSettings();
     ws_connect();
     ws_send("$");
-    document.getElementById("modal-content").innerHTML = language.en.loadModes;
     //ws_send("C");
     getConfig();
     canvas.width = 400;
     canvas.height = 400;
-
     redrawColorPicker();
 });
         </script>

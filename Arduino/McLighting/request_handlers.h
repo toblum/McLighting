@@ -7,7 +7,7 @@
 bool handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  if (rgb != strip->getColors(segment)[0]) { 
+  if (rgb != strip->getColors(FXSettings.segment)[0]) { 
     main_color.white = ((rgb >> 24) & 0xFF);
     main_color.red = ((rgb >> 16) & 0xFF);
     main_color.green = ((rgb >> 8) & 0xFF);
@@ -20,7 +20,7 @@ bool handleSetMainColor(uint8_t * mypayload) {
 bool handleSetBackColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[2], NULL, 16);
-  if (rgb != strip->getColors(segment)[1]) { 
+  if (rgb != strip->getColors(FXSettings.segment)[1]) { 
     back_color.white = ((rgb >> 24) & 0xFF);
     back_color.red = ((rgb >> 16) & 0xFF);
     back_color.green = ((rgb >> 8) & 0xFF);
@@ -32,7 +32,7 @@ bool handleSetBackColor(uint8_t * mypayload) {
 bool handleSetXtraColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[3], NULL, 16);
-  if (rgb != strip->getColors(segment)[2]) { 
+  if (rgb != strip->getColors(FXSettings.segment)[2]) { 
     xtra_color.white = ((rgb >> 24) & 0xFF);
     xtra_color.red = ((rgb >> 16) & 0xFF);
     xtra_color.green = ((rgb >> 8) & 0xFF);
@@ -45,13 +45,13 @@ bool handleSetXtraColor(uint8_t * mypayload) {
 bool handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  if ((mode = OFF) || (ws2812fx_mode != strip->getMode(segment)) || (rgb != strip->getColors(segment)[0])) {
+  if ((mode = OFF) || (fx_mode != strip->getMode(FXSettings.segment)) || (rgb != strip->getColors(FXSettings.segment)[0])) {
     main_color.white = ((rgb >> 24) & 0xFF);
     main_color.red = ((rgb >> 16) & 0xFF);
     main_color.green = ((rgb >> 8) & 0xFF);
     main_color.blue = ((rgb >> 0) & 0xFF);
     DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
-    ws2812fx_mode = FX_MODE_STATIC;
+    fx_mode = FX_MODE_STATIC;
     mode = SET;
     return true;
   }
@@ -65,8 +65,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   templed[4] = 0x00;
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, WS2812FXStripSettings.stripSize, mypayload );
-  if (led <= WS2812FXStripSettings.stripSize) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, FXSettings.stripSize, mypayload );
+  if (led <= FXSettings.stripSize) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
@@ -101,7 +101,7 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strip->show();
   }
   mode = HOLD;
-  ws2812fx_mode= FX_MODE_CUSTOM_1;
+  fx_mode= FX_MODE_CUSTOM_1;
 }
 
 void handleSetDifferentColors(uint8_t * mypayload) {
@@ -152,10 +152,10 @@ bool setModeByStateString(String saved_state_string) {
     DBG_OUTPUT_PORT.printf("Parsed state: %s\r\n", saved_state_string.c_str());
     String str_mode = getValue(saved_state_string, '|', 1);
     mode = static_cast<MODE>(str_mode.toInt());
-    String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
-    ws2812fx_mode = str_ws2812fx_mode.toInt();
-    String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
-    ws2812fx_speed = str_ws2812fx_speed.toInt();
+    String str_fx_mode = getValue(saved_state_string, '|', 2);
+    fx_mode = str_fx_mode.toInt();
+    String str_fx_speed = getValue(saved_state_string, '|', 3);
+    fx_speed = str_fx_speed.toInt();
     String str_brightness = getValue(saved_state_string, '|', 4);
     brightness = str_brightness.toInt();
     String str_red = getValue(saved_state_string, '|', 5);
@@ -196,12 +196,12 @@ bool setModeByStateString(String saved_state_string) {
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   if (isDigit(mypayload[1])) {
-    ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-    ws2812fx_mode = constrain(ws2812fx_mode, 0, strip->getModeCount() - 1);
+    fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
+    fx_mode = constrain(fx_mode, 0, strip->getModeCount() - 1);
     mode = SET;
   } else  {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
-      mode = OFF;
+      if (mode == OFF) { mode = SET; } else { mode = OFF; };
     }
     if (strcmp((char *) &mypayload[1], "on") == 0) {
       mode = SET;
@@ -268,36 +268,57 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   if (_payload[0] == 'S') {
     if (_payload[1] == 's') {
       uint8_t seg = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
-      segment = constrain(seg, 0, MAX_NUM_SEGMENTS);
-      if (prevsegment != segment) {
-        prevsegment = segment;
-        getSegmentParams(segment);
+      FXSettings.segment = constrain(seg, 0, num_segments - 1);
+      if (prevsegment != FXSettings.segment) {
+        prevsegment = FXSettings.segment;
+        getSegmentParams(FXSettings.segment);
+        //convertColors();
+        //memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
         memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
-        mode = SET;
         _updateState = true;
         Dbg_Prefix(mqtt, num);
-        DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", segment);
+        DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", FXSettings.segment);
       }
     }
     // / ==> Set segment first LED
     if (_payload[1] == '[') {
-      uint16_t segstart = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
-      getSegmentParams(segment);
-      seg_start = constrain(segstart, 0, WS2812FXStripSettings.stripSize);
-      _updateSegState = true;
-      Dbg_Prefix(mqtt, num);
-      DBG_OUTPUT_PORT.printf("Set segment start to: [%u]\r\n", segstart);
+      uint16_t _seg_start = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
+      //getSegmentParams(FXSettings.segment);
+      _seg_start = constrain(_seg_start, 0, FXSettings.stripSize - 1);
+      if (_seg_start != seg_start) {
+        seg_start = _seg_start;
+        _updateSegState = true;
+        setSegmentSize();
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment start to: [%u]\r\n", _seg_start);
+      }
     }
     // / ==> Set segment last LED
     if (_payload[1] == ']') {
-      uint16_t segstop = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
-      getSegmentParams(segment);
-      seg_stop = constrain(segstop, 0, WS2812FXStripSettings.stripSize - 1);
-      _updateSegState = true;
-      Dbg_Prefix(mqtt, num);
-      DBG_OUTPUT_PORT.printf("Set segment stop to: [%u]\r\n", segstop);
-    } 
-    char * buffer = listSegmentStateJSON(segment);
+      uint16_t _seg_stop = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
+      //getSegmentParams(FXSettings.segment);
+      _seg_stop = constrain(_seg_stop, seg_start, FXSettings.stripSize - 1);
+      if (_seg_stop != seg_stop) {
+        seg_stop = _seg_stop;
+        _updateSegState = true;
+        setSegmentSize();
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment stop to: [%u]\r\n", _seg_stop);
+      }
+    }
+    if (_payload[1] == 'o') {
+      char _fx_options[4];
+      snprintf(_fx_options, sizeof(_fx_options), "%s", &_payload[2]);
+      _fx_options[3] = 0x00;
+      if (((constrain(atoi(_fx_options), 0, 255)>>1)<<1) != fx_options) {
+        fx_options = ((constrain(atoi(_fx_options), 0, 255)>>1)<<1);
+        _updateSegState = true;
+        strip->setOptions(FXSettings.segment, fx_options);
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment options to: [%u]\r\n", fx_options);
+      }
+    }    
+    char * buffer = listSegmentStateJSON(FXSettings.segment);
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
@@ -317,7 +338,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   // / ==> Set WS2812 mode.
   if (_payload[0] == '/') {
     handleSetWS2812FXMode(_payload);
-    if (ws2812fx_mode !=  strip->getMode(segment)) {
+    if (fx_mode !=  strip->getMode(FXSettings.segment)) {
       _updateSegState = true;
       Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\r\n", _payload);
@@ -354,12 +375,12 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
 
   // ? ==> Set speed
   if (_payload[0] == '?') {
-    uint8_t d = (uint8_t) strtol((const char *) &_payload[1], NULL, 10);
-    ws2812fx_speed = constrain(d, 0, 255);
+    uint16_t _fx_speed = (uint16_t) strtol((const char *) &_payload[1], NULL, 10);
+    fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX );
     mode = SET;
     _updateSegState = true;
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", ws2812fx_speed);
+    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", fx_speed);
   }
 
   // % ==> Set brightness
@@ -430,26 +451,31 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   if (_payload[0] == 'C') {
     bool _updateStrip = false;
     bool _updateConfig  = false;
+    bool _updateSegState = false;
     if (_payload[1] == 's') {
       if (_payload[2] == 's') {
-        char tmp_segments[3];
-        snprintf(tmp_segments, sizeof(tmp_segments), "%s", &_payload[3]);
-        tmp_segments[2] = 0x00;
-        num_segments = constrain(atoi(tmp_segments), 1, MAX_NUM_SEGMENTS - 1);
+        char _num_segments[3];
+        snprintf(_num_segments, sizeof(_num_segments), "%s", &_payload[3]);
+        _num_segments[2] = 0x00;
+        num_segments = constrain(atoi(_num_segments), 1, MAX_NUM_SEGMENTS - 1);
+        if (FXSettings.segment >=  num_segments) {
+          FXSettings.segment = num_segments - 1;
+        }
         _updateStrip = true;
+        _updateSegState = true;
       }
       if (_payload[2] == 'c') {
         char tmp_count[6];
         snprintf(tmp_count, sizeof(tmp_count), "%s", &_payload[3]);
         tmp_count[5] = 0x00;
-        WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 1, MAXLEDS);
+        FXSettings.stripSize = constrain(atoi(tmp_count), 1, MAXLEDS);
         _updateStrip = true;
       }
       if (_payload[2] == 'r') {     
-        char tmp_rgbOrder[5];
-        snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", &_payload[3]);
-        tmp_rgbOrder[4] = 0x00;
-        checkRGBOrder(tmp_rgbOrder);
+        char _rgbOrder[5];
+        snprintf(_rgbOrder, sizeof(_rgbOrder), "%s", &_payload[3]);
+        _rgbOrder[4] = 0x00;
+        checkRGBOrder(_rgbOrder);
         _updateStrip=true;    
       }
     #if !defined(USE_WS2812FX_DMA)
@@ -460,14 +486,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         checkPin(atoi(tmp_pin));
         _updateStrip = true;
       }
-    #endif
-      if (_payload[2] == 'o') {
-         char tmp_fxoptions[4];
-         snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%s", &_payload[3]);
-         tmp_fxoptions[3] = 0x00;
-         WS2812FXStripSettings.fxoptions = ((constrain(atoi(tmp_fxoptions), 0, 255)>>1)<<1);
-         _updateStrip = true;
-      }       
+    #endif   
     }
     if (_updateStrip){
       initStrip();   
@@ -507,10 +526,10 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     }    
   #endif   
     if (_payload[1] == 'e') {
-      char tmp_transEffect[2];
-      snprintf(tmp_transEffect, sizeof(tmp_transEffect), "%s", &_payload[2]);
-      tmp_transEffect[sizeof(tmp_transEffect) - 1] = 0x00;
-      transEffect = atoi(tmp_transEffect);
+      char _transEffect[2];
+      snprintf(_transEffect, sizeof(_transEffect), "%s", &_payload[2]);
+      _transEffect[sizeof(_transEffect) - 1] = 0x00;
+      FXSettings.transEffect = atoi(_transEffect);
       _updateConfig = true;
     }
     
@@ -535,9 +554,15 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.println("Saving config.json!");
       if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
     }
+    if (_updateSegState) {
+      DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+      if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+      
+    }
 #endif
     _updateStrip = false;
     _updateConfig  = false;
+    _updateSegState = false;
     DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
     free (buffer);
   }
@@ -705,12 +730,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        color["g3"] = xtra_color.green;
        color["b3"] = xtra_color.blue;
        color["w3"] = xtra_color.white;
-       if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+       if (strstr(FXSettings.RGBOrder, "W") != NULL) {
          root["white_value"]= main_color.white;
        }
        root["brightness"] = brightness;
        root["color_temp"] = color_temp;
-       root["speed"] = ws2812fx_speed;
+       root["speed"] = fx_speed;
        //char modeName[30];
        //strncpy_P(modeName, (PGM_P)strip->getModeName(strip->getMode()), sizeof(modeName)); // copy from progmem
        #if defined(ENABLE_HOMEASSISTANT)
@@ -787,9 +812,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
       
       if (root.containsKey("speed")) {
-        uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
-        if (json_speed != ws2812fx_speed) {
-          ws2812fx_speed = json_speed;
+        uint16_t _fx_speed = constrain((uint8_t) root["speed"], SPEED_MIN, SPEED_MAX);
+        if (_fx_speed != fx_speed) {
+          fx_speed = _fx_speed;
           mode = SET;
         }
       }
@@ -820,7 +845,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           if(String(strip->getModeName(i)) == effectString) {
             mode = SET;
-            ws2812fx_mode = i;
+            fx_mode = i;
             break;
           }
         }
@@ -900,7 +925,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             #endif
             root["brightness"] = "true";
             root["rgb"] = "true";
-            if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+            if (strstr(FXSettings.RGBOrder, "W") != NULL) {
               root["white_value"]= "true";
             }
             root["optimistic"] = "false";
@@ -1005,7 +1030,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #endif
           root["brightness"] = "true";
           root["rgb"] = "true";
-          if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+          if (strstr(FXSettings.RGBOrder, "W") != NULL) {
             root["white_value"]= "true";
           }
           root["optimistic"] = "false";
@@ -1203,23 +1228,23 @@ void handleRemote() {
             mode = SET;
           }
         }
-        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 57)) {
+        if ((fx_mode < 56) || (fx_mode > 57)) {
           if (results.value == rmt_commands[SPEED_UP]) { //Speed Up
             last_remote_cmd = results.value;
-            if (ws2812fx_speed + chng <= 255) {
-              ws2812fx_speed = ws2812fx_speed + chng;
+            if (fx_speed + chng <= 65535) {
+              fx_speed = fx_speed + (chng * 5);
               mode = SET;
             }
           }
           if (results.value == rmt_commands[SPEED_DOWN]) { //Speed down
             last_remote_cmd = results.value;
-            if (ws2812fx_speed - chng >= 0) {
-              ws2812fx_speed = ws2812fx_speed - chng;
+            if (fx_speed - chng >= 0) {
+              fx_speed = fx_speed - (chng * 5);
               mode = SET;
             }
           }
         }
-        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 60)) {        
+        if ((fx_mode < 56) || (fx_mode > 60)) {        
           if (results.value == rmt_commands[RED_UP]) { //Red Up
             last_remote_cmd = results.value;
             if (selected_color == 1) {
@@ -1404,48 +1429,48 @@ void handleRemote() {
       } // end of if HOLD
       if (results.value == rmt_commands[MODE_UP]) { //Mode Up
         last_remote_cmd = results.value;
-        if ((ws2812fx_mode < strip->getModeCount()-1) && (mode == HOLD)) {
-          ws2812fx_mode = ws2812fx_mode + 1;
+        if ((fx_mode < strip->getModeCount()-1) && (mode == HOLD)) {
+          fx_mode = fx_mode + 1;
         }
         mode = SET;
       }
       if (results.value == rmt_commands[MODE_DOWN]) { //Mode down
         last_remote_cmd = results.value;
-        if ((ws2812fx_mode > 0) && (mode == HOLD)) {
-          ws2812fx_mode = ws2812fx_mode - 1;
+        if ((fx_mode > 0) && (mode == HOLD)) {
+          fx_mode = fx_mode - 1;
         }
         mode = SET;
       }
       if (results.value == rmt_commands[AUTOMODE]) { // Toggle Automode
         last_remote_cmd = 0;
-        ws2812fx_mode = 56;
+        fx_mode = 56;
         mode = SET;
       }
     #if defined(CUSTOM_WS2812FX_ANIMATIONS)
       if (results.value == rmt_commands[CUST_1]) { // Select TV Mode
         last_remote_cmd = 0;
-        ws2812fx_mode = 57;
+        fx_mode = 57;
         mode = SET;
       }
     #endif 
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
-        ws2812fx_mode = 12;
+        fx_mode = 12;
         mode = SET;
       } 
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
-        ws2812fx_mode = 48;
+        fx_mode = 48;
         mode = SET;
       } 
       if (results.value == rmt_commands[CUST_4]) { // Select Custom Mode 4
         last_remote_cmd = 0;
-        ws2812fx_mode = 21;
+        fx_mode = 21;
         mode = SET; 
       }
       if (results.value == rmt_commands[CUST_5]) { // Select Custom Mode 5
         last_remote_cmd = 0;
-        ws2812fx_mode = 46;
+        fx_mode = 46;
         mode = SET;
       } 
       irrecv.resume();  // Receive the next value

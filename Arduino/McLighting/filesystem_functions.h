@@ -78,14 +78,13 @@
           strcpy(mqtt_pass, root["mqtt_pass"]);
         #endif
           num_segments = constrain(root["ws_seg"].as<uint8_t>(), 1, MAX_NUM_SEGMENTS - 1);
-          WS2812FXStripSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
-          char tmp_rgbOrder[5];
-          strcpy(tmp_rgbOrder, root["ws_rgbo"]);
-          checkRGBOrder(tmp_rgbOrder);
+          FXSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
+          char _rgbOrder[5];
+          strcpy(_rgbOrder, root["ws_rgbo"]);
+          checkRGBOrder(_rgbOrder);
           uint8_t temp_pin;
           checkPin((uint8_t) root["ws_pin"]);
-          WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
-          transEffect = root["transEffect"].as<bool>();
+          FXSettings.transEffect = root["ws_trans"].as<bool>();
           jsonBuffer.clear();
           return true;
         } else {
@@ -152,7 +151,7 @@
           JsonObject root = jsonBuffer.as<JsonObject>();
           serializeJson(root, DBG_OUTPUT_PORT);
           DBG_OUTPUT_PORT.println("");
-          segment = root["segment"];
+          FXSettings.segment = root["segment"];
           mode = static_cast<MODE>(root["mode"].as<uint8_t>());
           brightness =  root["brightness"];
           jsonBuffer.clear();
@@ -225,10 +224,10 @@
           JsonObject root = jsonBuffer.as<JsonObject>();
           serializeJson(root, DBG_OUTPUT_PORT);
           DBG_OUTPUT_PORT.println("");
-          seg_start = root["start"].as<uint16_t>();
-          seg_stop  = root["stop"].as<uint16_t>();
-          ws2812fx_mode = root["ws2812fx_mode"].as<uint8_t>();
-          ws2812fx_speed = root["speed"].as<uint8_t>();
+          seg_start = constrain(root["start"].as<uint16_t>(), 0, FXSettings.stripSize - 1) ;
+          seg_stop  = constrain(root["stop"].as<uint16_t>(), 0, FXSettings.stripSize - 1);
+          fx_mode = root["fx_mode"].as<uint8_t>();
+          fx_speed = root["speed"].as<uint8_t>();
           main_color.white = root["color"][0].as<uint8_t>();
           main_color.red =  root["color"][1].as<uint8_t>();
           main_color.green = root["color"][2].as<uint8_t>();
@@ -241,6 +240,7 @@
           xtra_color.red = root["color"][9].as<uint8_t>();
           xtra_color.green =  root["color"][10].as<uint8_t>();
           xtra_color.blue = root["color"][11].as<uint8_t>();
+          fx_options = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
           convertColors();
           jsonBuffer.clear();
           return true;

@@ -7,17 +7,16 @@
 #endif
 
 char * listStateJSONfull() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(20) + 250;
+  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(19) + 250;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
-  root["segment"] = segment;
+  root["segment"] = FXSettings.segment;
   root["start"]   = seg_start;
   root["stop"]    = seg_stop;
   root["mode"] = (uint8_t) mode;
   //getSegmentParams(segment);
-  root["ws2812fx_mode"] = ws2812fx_mode;
-  root["ws2812fx_mode_name"] = strip->getModeName(ws2812fx_mode);
-  root["speed"] = ws2812fx_speed;
+  root["fx_mode"] = fx_mode;
+  root["speed"] = fx_speed;
   root["brightness"] = brightness;
   JsonArray color = root.createNestedArray("color");
   color.add(main_color.white);
@@ -32,6 +31,7 @@ char * listStateJSONfull() {
   color.add(xtra_color.red);
   color.add(xtra_color.green);
   color.add(xtra_color.blue);
+  root["ws_fxopt"]  = fx_options;
   root["hostname"] = HOSTNAME;
   #if defined(ENABLE_MQTT)
     root["mqtt_host"] = mqtt_host;
@@ -40,11 +40,10 @@ char * listStateJSONfull() {
     root["mqtt_pass"] = mqtt_pass;
   #endif
   root["ws_seg"]    = num_segments;
-  root["ws_cnt"]    = WS2812FXStripSettings.stripSize;
-  root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
-  root["ws_pin"]    = WS2812FXStripSettings.pin;
-  root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
-  root["transEffect"] = transEffect;  
+  root["ws_cnt"]    = FXSettings.stripSize;
+  root["ws_rgbo"]   = FXSettings.RGBOrder;
+  root["ws_pin"]    = FXSettings.pin;
+  root["ws_trans"] = FXSettings.transEffect;  
   uint16_t msg_len = measureJson(root) + 1;
   char * buffer = (char *) malloc(msg_len);
   serializeJson(root, buffer, msg_len);
@@ -56,7 +55,7 @@ char * listStateJSON() {
   const size_t bufferSize = JSON_OBJECT_SIZE(3) + 25;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
-  root["segment"] = segment;
+  root["segment"] = FXSettings.segment;
   root["mode"] = (uint8_t) mode;
   root["brightness"] = brightness;
   uint16_t msg_len = measureJson(root) + 1;
@@ -67,11 +66,10 @@ char * listStateJSON() {
 }
 
 char * listSegmentStateJSON(uint8_t seg) {
-  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(7) + 100;
+  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 100;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
-  root["segment"] = seg;
-  if (seg == segment) {
+  if (seg == FXSettings.segment) {
     root["start"]   = seg_start;
     root["stop"]    = seg_stop;
   } else {
@@ -79,22 +77,37 @@ char * listSegmentStateJSON(uint8_t seg) {
     root["stop"]    = strip->getSegment(seg)->stop;
   }
   //getSegmentParams(seg);
-  root["ws2812fx_mode"] = strip->getMode(seg);
-  root["ws2812fx_mode_name"] = strip->getModeName(strip->getMode(seg));
-  root["speed"] = ws2812fx_speed;
+  root["fx_mode"] = strip->getMode(seg);
+  root["speed"] = fx_speed;
   JsonArray color = root.createNestedArray("color");
-  color.add((strip->getColors(seg)[0] >> 24) & 0xFF);
-  color.add((strip->getColors(seg)[0] >> 16) & 0xFF);
-  color.add((strip->getColors(seg)[0] >>  8) & 0xFF);
-  color.add((strip->getColors(seg)[0])  & 0xFF);
-  color.add((strip->getColors(seg)[1] >> 24) & 0xFF);
-  color.add((strip->getColors(seg)[1] >> 16) & 0xFF);
-  color.add((strip->getColors(seg)[1] >>  8) & 0xFF);
-  color.add((strip->getColors(seg)[1])  & 0xFF);
-  color.add((strip->getColors(seg)[2] >> 24) & 0xFF);
-  color.add((strip->getColors(seg)[2] >> 16) & 0xFF);
-  color.add((strip->getColors(seg)[2] >>  8) & 0xFF);
-  color.add((strip->getColors(seg)[2])  & 0xFF);  
+  if (seg == FXSettings.segment) {
+    color.add(main_color.white);
+    color.add(main_color.red);
+    color.add(main_color.green);
+    color.add(main_color.blue);
+    color.add(back_color.white);
+    color.add(back_color.red);
+    color.add(back_color.green);
+    color.add(back_color.blue);
+    color.add(xtra_color.white);
+    color.add(xtra_color.red);
+    color.add(xtra_color.green);
+    color.add(xtra_color.blue);
+  } else {
+    color.add((strip->getColors(seg)[0] >> 24) & 0xFF);
+    color.add((strip->getColors(seg)[0] >> 16) & 0xFF);
+    color.add((strip->getColors(seg)[0] >>  8) & 0xFF);
+    color.add((strip->getColors(seg)[0])  & 0xFF);
+    color.add((strip->getColors(seg)[1] >> 24) & 0xFF);
+    color.add((strip->getColors(seg)[1] >> 16) & 0xFF);
+    color.add((strip->getColors(seg)[1] >>  8) & 0xFF);
+    color.add((strip->getColors(seg)[1])  & 0xFF);
+    color.add((strip->getColors(seg)[2] >> 24) & 0xFF);
+    color.add((strip->getColors(seg)[2] >> 16) & 0xFF);
+    color.add((strip->getColors(seg)[2] >>  8) & 0xFF);
+    color.add((strip->getColors(seg)[2])  & 0xFF);
+  }
+  root["ws_fxopt"]  = fx_options;
   uint16_t msg_len = measureJson(root) + 1;
   char * buffer = (char *) malloc(msg_len);
   serializeJson(root, buffer, msg_len);
@@ -111,9 +124,9 @@ void getStateJSON() {
 
 char * listConfigJSON() {
   #if defined(ENABLE_MQTT)
-    const size_t bufferSize = JSON_OBJECT_SIZE(11) + 150;
+    const size_t bufferSize = JSON_OBJECT_SIZE(10) + 150;
   #else
-    const size_t bufferSize = JSON_OBJECT_SIZE(7) + 100;
+    const size_t bufferSize = JSON_OBJECT_SIZE(6) + 100;
   #endif
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
@@ -125,11 +138,10 @@ char * listConfigJSON() {
     root["mqtt_pass"] = mqtt_pass;
   #endif
   root["ws_seg"]    = num_segments;
-  root["ws_cnt"]    = WS2812FXStripSettings.stripSize;
-  root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
-  root["ws_pin"]    = WS2812FXStripSettings.pin;
-  root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
-  root["transEffect"] = transEffect;
+  root["ws_cnt"]    = FXSettings.stripSize;
+  root["ws_rgbo"]   = FXSettings.RGBOrder;
+  root["ws_pin"]    = FXSettings.pin;
+  root["ws_trans"]  = FXSettings.transEffect;
   uint16_t msg_len = measureJson(root) + 1;
   char * buffer = (char *) malloc(msg_len);
   serializeJson(root, buffer, msg_len);
@@ -199,10 +211,10 @@ char * listESPStateJSON() {
   #else
     root["animation_lib"] = "WS2812FX";
   #endif
-  root["ws2812_pin"]  = WS2812FXStripSettings.pin;
-  root["led_count"] = WS2812FXStripSettings.stripSize;
-  root["rgb_order"] = WS2812FXStripSettings.RGBOrder;
-  if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+  root["ws2812_pin"]  = FXSettings.pin;
+  root["led_count"] = FXSettings.stripSize;
+  root["rgb_order"] = FXSettings.RGBOrder;
+  if (strstr(FXSettings.RGBOrder, "W") != NULL) {
     root["rgbw_mode"] = "ON";
   } else {
     root["rgbw_mode"] = "OFF";

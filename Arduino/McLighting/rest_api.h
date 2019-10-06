@@ -92,12 +92,12 @@ server.on("/get_brightness", []() {
 });
 
 server.on("/get_speed", []() {
-  char str_speed[4];
-  snprintf(str_speed, sizeof(str_speed), "%i", ws2812fx_speed);
+  char str_speed[6];
+  snprintf(str_speed, sizeof(str_speed), "%i", fx_speed);
   str_speed[sizeof(str_speed) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", str_speed );
-  DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", ws2812fx_speed);
+  DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", fx_speed);
 });
 
 server.on("/get_switch", []() {
@@ -161,23 +161,29 @@ server.on("/config", []() {
   // ToDo do not save if no change
   bool _updateStrip = false;
   bool _updateConfig  = false;
-  if(server.hasArg("ws_seg")){
-    uint8_t wsseg = server.arg("ws_seg").toInt();
-    num_segments = constrain(wsseg, 1, MAX_NUM_SEGMENTS - 1);
-    _updateStrip = true;   
+  if(server.hasArg("seg")){
+    uint8_t _ws_seg = server.arg("seg").toInt();
+    _ws_seg = constrain(_ws_seg, 1, MAX_NUM_SEGMENTS - 1);
+    if (_ws_seg != num_segments){
+      num_segments = _ws_seg;
+      _updateStrip = true; 
+    }
   }
   if(server.hasArg("ws_cnt")){
-    uint16_t pixelCt = server.arg("ws_cnt").toInt();
-    if (pixelCt > 0) {
-      WS2812FXStripSettings.stripSize = constrain(pixelCt, 1, MAXLEDS);
-      _updateStrip = true;   
+    uint16_t _stripSize = server.arg("ws_cnt").toInt();
+    if (_stripSize > 0) {
+      _stripSize = constrain(_stripSize, 1, MAXLEDS);
+      if (_stripSize != FXSettings.stripSize) {
+        FXSettings.stripSize = _stripSize;
+        _updateStrip = true;   
+      }
     }
   }
   if(server.hasArg("ws_rgbo")){
-    char tmp_rgbOrder[5];
-    snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", server.arg("ws_rgbo").c_str());
-    tmp_rgbOrder[sizeof(tmp_rgbOrder) - 1] = 0x00;
-    checkRGBOrder(tmp_rgbOrder);
+    char _ws_rgbo[5];
+    snprintf(_ws_rgbo, sizeof(_ws_rgbo), "%s", server.arg("ws_rgbo").c_str());
+    _ws_rgbo[sizeof(_ws_rgbo) - 1] = 0x00;
+    checkRGBOrder(_ws_rgbo);
     _updateStrip = true;
   }
   
@@ -186,49 +192,61 @@ server.on("/config", []() {
     if (checkPin(server.arg("ws_pin").toInt())) {
       _updateStrip = true;
       DBG_OUTPUT_PORT.print("Pin was set to: ");
-      DBG_OUTPUT_PORT.println(WS2812FXStripSettings.pin);
+      DBG_OUTPUT_PORT.println(FXSettings.pin);
     } else {
-      DBG_OUTPUT_PORT.println("invalid input!");
+      DBG_OUTPUT_PORT.println("invalid input or same value!");
     }
   }
 #endif
   
-  if(server.hasArg("ws_fxopt")){
-    WS2812FXStripSettings.fxoptions = ((constrain(server.arg("ws_fxopt").toInt(), 0, 255)>>1)<<1);
-    _updateStrip = true;
-  }
-
   if(_updateStrip) {
     initStrip();
   }
   
   if(server.hasArg("hostname")){
-    snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", server.arg("hostname").c_str());
-    HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
-    _updateConfig = true;
+    char _hostname[sizeof(HOSTNAME)]; 
+    snprintf(_hostname, sizeof(_hostname), "%s", server.arg("hostname").c_str());
+    _hostname[sizeof(_hostname) - 1] = 0x00;
+    if (strcmp(HOSTNAME, _hostname) != 0) {
+      strcpy(HOSTNAME, _hostname);
+      _updateConfig = true;
+    }
   }
   
 #if defined(ENABLE_MQTT)   
   if(server.hasArg("mqtt_host")){
-    snprintf(mqtt_host, sizeof(mqtt_host), "%s", server.arg("mqtt_host").c_str());
-    mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
-    _updateConfig = true;
+    char _mqtt_host[sizeof(mqtt_host)];
+    snprintf(_mqtt_host, sizeof(_mqtt_host), "%s", server.arg("mqtt_host").c_str());
+    _mqtt_host[sizeof(_mqtt_host) - 1] = 0x00;
+    if (strcmp(mqtt_host, _mqtt_host) != 0) {
+      strcpy(mqtt_host, _mqtt_host);
+      _updateConfig = true;
+    }
   }
   if(server.hasArg("mqtt_port")){
-    if ((server.arg("mqtt_port").toInt() >= 0) && (server.arg("mqtt_port").toInt() <=65535)) {
-      mqtt_port = server.arg("mqttport").toInt();
+    uint16_t _mqtt_port = constrain(server.arg("mqtt_port").toInt(), 1, 65535);
+    if (_mqtt_port != mqtt_port) {
+      mqtt_port = _mqtt_port;
       _updateConfig = true;
     }    
   }
   if(server.hasArg("mqtt_user")){
-    snprintf(mqtt_user, sizeof(mqtt_user), "%s", server.arg("mqtt_user").c_str());
-    mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
-    _updateConfig = true;
+    char _mqtt_user[sizeof(mqtt_user)];
+    snprintf(_mqtt_user, sizeof(_mqtt_user), "%s", server.arg("mqtt_user").c_str());
+    _mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
+    if (strcmp(mqtt_user, _mqtt_user) != 0) {    
+      strcpy(mqtt_user, _mqtt_user);
+      _updateConfig = true;
+    }
   }
   if(server.hasArg("mqtt_pass")){
-    snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
-    mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
-    _updateConfig = true;
+    char _mqtt_pass[sizeof(mqtt_pass)];
+    snprintf(_mqtt_pass, sizeof(_mqtt_pass), "%s", server.arg("mqtt_pass").c_str());
+    _mqtt_pass[sizeof(_mqtt_pass) - 1] = 0x00;
+    if (strcmp(mqtt_pass, _mqtt_pass) != 0) {    
+      strcpy(mqtt_pass, _mqtt_pass);
+      _updateConfig = true;
+    }
   }
   if (_updateConfig) {
     initMqtt();
@@ -236,7 +254,7 @@ server.on("/config", []() {
 #endif
 
   if(server.hasArg("trans_effect")){
-    transEffect = server.arg("trans_effect").toInt();
+    FXSettings.transEffect = server.arg("trans_effect").toInt();
     _updateConfig = true;
   }
 
@@ -272,19 +290,46 @@ server.on("/on", []() {
 
 server.on("/set", []() {
   prevmode = HOLD;
-  ws2812fx_mode = FX_MODE_STATIC;
+  fx_mode = FX_MODE_STATIC;
   boolean _updateState = false;
   boolean _updateSegState = false;
   // Segment
   if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <= MAX_NUM_SEGMENTS)) { 
-      segment = server.arg("seg").toInt();  
-      if (prevsegment != segment) {
-        prevsegment = segment;
-        getSegmentParams(segment);
+      FXSettings.segment = server.arg("seg").toInt();  
+      if (prevsegment != FXSettings.segment) {
+        prevsegment = FXSettings.segment;
+        getSegmentParams(FXSettings.segment);
         memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
         mode = SET;
         _updateState = true;
+      }      
+  }
+  if ((server.arg("start") != "") && (server.arg("start").toInt() >= 0) && (server.arg("start").toInt() <= MAX_NUM_SEGMENTS)) { 
+      uint16_t _seg_start = server.arg("start").toInt();  
+      _seg_start = constrain(seg_start, 0, FXSettings.stripSize -1);
+      if (_seg_start != seg_start) {
+        seg_start = _seg_start;
+        setSegmentSize();
+        _updateSegState = true;
       }
+  }
+  if ((server.arg("stop") != "") && (server.arg("stop").toInt() >= 0) && (server.arg("stop").toInt() <= MAX_NUM_SEGMENTS)) { 
+      uint16_t _seg_stop = server.arg("stop").toInt();
+      _seg_stop = constrain(_seg_stop, seg_start, FXSettings.stripSize - 1);
+      if (_seg_stop != seg_stop) {
+        seg_stop = _seg_stop;
+        setSegmentSize();
+        _updateSegState = true;
+      }
+  }
+
+  if(server.hasArg("fxopt")){
+    uint8_t _ws_fxopt = ((constrain(server.arg("fxopt").toInt(), 0, 255)>>1)<<1);
+    if (_ws_fxopt != fx_options) {
+      fx_options = _ws_fxopt;
+      strip->setOptions(FXSettings.segment, fx_options);
+      _updateSegState = true;
+    }
   }
   //color wrgb
   if (server.arg("rgb") != "") {
@@ -362,15 +407,15 @@ server.on("/set", []() {
   
   
   // Speed
-  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
-    ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
+  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 65535)) {
+    fx_speed = constrain(server.arg("s").toInt(), SPEED_MIN, SPEED_MAX);
     mode = SET;
     _updateSegState = true;
   }
   //Mode
   if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
-    ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
-    if (ws2812fx_mode !=  strip->getMode(segment)) {
+    fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
+    if (fx_mode !=  strip->getMode(FXSettings.segment)) {
       mode = SET;
       _updateSegState = true;
     }
@@ -402,5 +447,3 @@ server.on("/set", []() {
   _updateState = false;
   _updateSegState = false;
 });
-
-  
