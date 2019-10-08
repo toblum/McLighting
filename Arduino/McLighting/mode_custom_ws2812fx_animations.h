@@ -1,5 +1,5 @@
 // Prototypes
-uint16_t convertSpeed(uint16_t _mcl_speed);
+uint16_t convertSpeed(uint8_t _mcl_speed);
 uint32_t trans(uint32_t _newcolor, uint32_t _oldcolor, uint8_t _level, uint8_t _steps);
 // End Prototypes
 /*
@@ -12,22 +12,28 @@ More info on how to create custom aniamtions for WS2812FX: https://github.com/ki
 // ***************************************************************************
 // Functions and variables for automatic cycling
 // ***************************************************************************
-
-void handleAutoPlay() {
+uint16_t handleSegmentOFF(void) {
   WS2812FX::Segment* _seg = strip->getSegment();
-  if (autoDelay <= millis()) {   
-    hex_colors_trans[0] = autoParams[autoCount][0];
-    hex_colors_trans[1] = autoParams[autoCount][1];
-    hex_colors_trans[2] = autoParams[autoCount][2];    
-    strip->setColors(FXSettings.segment, hex_colors_trans);
-    strip->setSpeed(FXSettings.segment, convertSpeed((uint16_t)autoParams[autoCount][3]));
-    strip->setMode(FXSettings.segment, (uint8_t)autoParams[autoCount][4]);
-    strip->trigger();
-    autoDelay = millis() + (uint32_t)autoParams[autoCount][5];
-    DBG_OUTPUT_PORT.print("autoTick ");
-    DBG_OUTPUT_PORT.printf("autoTick[%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", autoCount, hex_colors[0], hex_colors[1], hex_colors[2], autoParams[autoCount][3], autoParams[autoCount][4], autoParams[autoCount][5]);
-    autoCount++;
-    if (autoCount >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount = 0;
+  return _seg->speed;
+}
+
+void handleAutoPlay(uint8_t _seg) {
+  //WS2812FX::Segment* _seg = strip->getSegment();
+  if (autoDelay[_seg] <= millis()) {   
+  uint32_t _hex_colors[3] = {};
+    //if (_seg == 
+      _hex_colors[0] = autoParams[autoCount[_seg]][0];
+      _hex_colors[1] = autoParams[autoCount[_seg]][1];
+      _hex_colors[2] = autoParams[autoCount[_seg]][2];
+    //}  
+    strip->setColors(_seg, _hex_colors);
+    strip->setSpeed(_seg, convertSpeed((uint16_t)autoParams[autoCount[_seg]][3]));
+    strip->setMode(_seg, (uint8_t)autoParams[autoCount[_seg]][4]);
+    //strip->trigger();
+    autoDelay[_seg] = millis() + (unsigned long)autoParams[autoCount[_seg]][5];
+    DBG_OUTPUT_PORT.printf("autoTick[%d][%d]: {0x%08x, 0x%08x, 0x%08x, %d, %d, %d}\r\n", _seg, autoCount[_seg], autoParams[autoCount[_seg]][0], autoParams[autoCount[_seg]][1], autoParams[autoCount[_seg]][2], autoParams[autoCount[_seg]][3], autoParams[autoCount[_seg]][4], autoParams[autoCount[_seg]][5]);
+    autoCount[_seg]++;
+    if (autoCount[_seg] >= (sizeof(autoParams) / sizeof(autoParams[0]))) autoCount[_seg] = 0;
   }
 }
 
@@ -41,7 +47,7 @@ void handleAutoPlay() {
   unsigned long dipStartTime;
   unsigned long currentMillis;
   uint8_t  ledState = LOW;
-  long     previousMillis = 0; 
+  unsigned long previousMillis = 0; 
   uint16_t interv = 2000;
   uint8_t  twitch = 50;
   uint8_t  dipCount = 0;
@@ -119,7 +125,7 @@ uint16_t handleTV(void) {
     if(currentMillis-previousMillis > interv) {
       previousMillis = currentMillis;
       //interv = random(750,4001);//Adjusts the interval for more/less frequent random light changes
-      interv = random(1000-(fx_speed*2),5001-(fx_speed*8));
+      interv = random(1000-(_seg->speed/128),5001-(_seg->speed/32));
       twitch = random(40,100);// Twitch provides motion effect but can be a bit much if too high
       dipCount = dipCount++;
     }
@@ -145,7 +151,7 @@ uint16_t handleTV(void) {
     currentDipTime = millis();
     if (currentDipTime - dipStartTime < darkTime) {
       for (uint16_t i=(_seg->start + 3); i<= _seg->stop; i++) {
-        ledstates[i] = brightness;
+        ledstates[i] = State.brightness;
         for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
           uint16_t index = (j%3 == 0) ? 400 : random(0,767);
           hsb2rgbAN1(index, 200, ledstates[j], j);
@@ -178,11 +184,11 @@ uint16_t handleE131(void) {
 /*  #if defined(RGBW)
     uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
     if (NUMLEDS <= multipacketOffset) return;
-    uint16_t len = (128 + multipacketOffset > FXSettings.stripSize) ? (FXSettings.stripSize - multipacketOffset) : 128;
+    uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
   #else*/
     uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-    if (FXSettings.stripSize <= multipacketOffset) return _seg->speed;
-    uint16_t len = (170 + multipacketOffset > FXSettings.stripSize) ? (FXSettings.stripSize - multipacketOffset) : 170;
+    if (Config.stripSize <= multipacketOffset) return _seg->speed;
+    uint16_t len = (170 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 170;
 /*  #endif */
     for (uint16_t i = 0; i < len; i++){
       if ((i >= _seg->start) && (i <= _seg->stop)) {
@@ -219,11 +225,13 @@ uint16_t handleFire2012(void) {
   }
 
   // Step 4.  Map from heat cells to LED colors
+  
+  //                    98                143
   for( uint16_t j = _seg->start; j <= _seg->stop; j++) {
     CRGB color = HeatColor(ledstates[j]);
     uint16_t pixel;
     if ((_seg->options & 128) > 0) {
-      pixel = _seg->stop - j;
+      pixel = _seg->stop + (_seg->start - j);
     } else {
       pixel = j;
     }

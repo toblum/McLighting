@@ -84,26 +84,26 @@ server.on("/format_spiffs", []() {
 
 server.on("/get_brightness", []() {
   char str_brightness[4];
-  snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (brightness / 2.55));
+  snprintf(str_brightness, sizeof(str_brightness), "%i", (int) (State.brightness / 2.55));
   str_brightness[sizeof(str_brightness) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", str_brightness );
-  DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (brightness / 2.55));
+  DBG_OUTPUT_PORT.printf("/get_brightness: %i\r\n", (int) (State.brightness / 2.55));
 });
 
 server.on("/get_speed", []() {
-  char str_speed[6];
-  snprintf(str_speed, sizeof(str_speed), "%i", fx_speed);
+  char str_speed[4];
+  snprintf(str_speed, sizeof(str_speed), "%i", segState.speed[State.segment]);
   str_speed[sizeof(str_speed) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", str_speed );
-  DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", fx_speed);
+  DBG_OUTPUT_PORT.printf("/get_speed: %i\r\n", segState.speed[State.segment]);
 });
 
 server.on("/get_switch", []() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "text/plain", (mode == OFF) ? "0" : "1" );
-  DBG_OUTPUT_PORT.printf("/get_switch: %s\r\n", (mode == OFF) ? "0" : "1");
+  server.send(200, "text/plain", (State.mode == OFF) ? "0" : "1" );
+  DBG_OUTPUT_PORT.printf("/get_switch: %s\r\n", (State.mode == OFF) ? "0" : "1");
 });
 
 server.on("/get_color", []() {
@@ -161,20 +161,25 @@ server.on("/config", []() {
   // ToDo do not save if no change
   bool _updateStrip = false;
   bool _updateConfig  = false;
-  if(server.hasArg("seg")){
-    uint8_t _ws_seg = server.arg("seg").toInt();
+  bool _updateState = false;
+  if(server.hasArg("ws_seg")){
+    uint8_t _ws_seg = server.arg("ws_seg").toInt();
     _ws_seg = constrain(_ws_seg, 1, MAX_NUM_SEGMENTS - 1);
-    if (_ws_seg != num_segments){
-      num_segments = _ws_seg;
-      _updateStrip = true; 
+    if (_ws_seg != Config.segments){
+      Config.segments = _ws_seg;
+      _updateStrip = true;
+      if (State.segment >=  Config.segments) {
+        State.segment = Config.segments - 1;
+        _updateState = true;
+      }
     }
   }
   if(server.hasArg("ws_cnt")){
     uint16_t _stripSize = server.arg("ws_cnt").toInt();
     if (_stripSize > 0) {
       _stripSize = constrain(_stripSize, 1, MAXLEDS);
-      if (_stripSize != FXSettings.stripSize) {
-        FXSettings.stripSize = _stripSize;
+      if (_stripSize != Config.stripSize) {
+        Config.stripSize = _stripSize;
         _updateStrip = true;   
       }
     }
@@ -192,7 +197,7 @@ server.on("/config", []() {
     if (checkPin(server.arg("ws_pin").toInt())) {
       _updateStrip = true;
       DBG_OUTPUT_PORT.print("Pin was set to: ");
-      DBG_OUTPUT_PORT.println(FXSettings.pin);
+      DBG_OUTPUT_PORT.println(Config.pin);
     } else {
       DBG_OUTPUT_PORT.println("invalid input or same value!");
     }
@@ -254,80 +259,87 @@ server.on("/config", []() {
 #endif
 
   if(server.hasArg("trans_effect")){
-    FXSettings.transEffect = server.arg("trans_effect").toInt();
+    Config.transEffect = server.arg("trans_effect").toInt();
     _updateConfig = true;
   }
 
 #if defined(ENABLE_STATE_SAVE)
   if (_updateStrip || _updateConfig) {
+    DBG_OUTPUT_PORT.println("Saving config.json!");
     if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
+  }
+  if (_updateState) {
+    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+    if(!save_state.active()) save_state.once(3, tickerSaveState);
   }
 #endif
   _updateStrip = false;
   _updateConfig = false;
+  _updateState = false;
   getConfigJSON();
 });
 
 server.on("/off", []() {
-  if (prevmode != OFF) {
-    mode = OFF;
-    getStateJSON();
-    #if defined(ENABLE_STATE_SAVE)
-      if(!save_state.active()) save_state.once(3, tickerSaveState);
-    #endif
-  }
+  if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
+  getStateJSON();
+  #if defined(ENABLE_STATE_SAVE)
+    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+    if(!save_state.active()) save_state.once(3, tickerSaveState);
+  #endif
 });
 
 server.on("/on", []() {
   if (prevmode == OFF) {
-    mode = SET;
+    State.mode = SET;
     getStateJSON();
     #if defined(ENABLE_STATE_SAVE)
+      DBG_OUTPUT_PORT.println("Saving stripstate.json!");
       if(!save_state.active()) save_state.once(3, tickerSaveState);
     #endif
+  } else {
+    getStateJSON(); 
   }
 });
 
 server.on("/set", []() {
   prevmode = HOLD;
-  fx_mode = FX_MODE_STATIC;
   boolean _updateState = false;
   boolean _updateSegState = false;
   // Segment
   if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <= MAX_NUM_SEGMENTS)) { 
-      FXSettings.segment = server.arg("seg").toInt();  
-      if (prevsegment != FXSettings.segment) {
-        prevsegment = FXSettings.segment;
-        getSegmentParams(FXSettings.segment);
-        memcpy(hex_colors_trans, hex_colors, sizeof(hex_colors_trans));
-        mode = SET;
+      State.segment = server.arg("seg").toInt();  
+      if (prevsegment != State.segment) {
+        prevsegment = State.segment;
+        getSegmentParams(State.segment);
+        memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
+        State.mode = SET;
         _updateState = true;
       }      
   }
-  if ((server.arg("start") != "") && (server.arg("start").toInt() >= 0) && (server.arg("start").toInt() <= MAX_NUM_SEGMENTS)) { 
+  if ((server.arg("start") != "") && (server.arg("start").toInt() >= 0) && (server.arg("start").toInt() <= segState.stop)) { 
       uint16_t _seg_start = server.arg("start").toInt();  
-      _seg_start = constrain(seg_start, 0, FXSettings.stripSize -1);
-      if (_seg_start != seg_start) {
-        seg_start = _seg_start;
+      _seg_start = constrain(segState.start, 0, Config.stripSize -1);
+      if (_seg_start != segState.start) {
+        segState.start = _seg_start;
         setSegmentSize();
         _updateSegState = true;
       }
   }
-  if ((server.arg("stop") != "") && (server.arg("stop").toInt() >= 0) && (server.arg("stop").toInt() <= MAX_NUM_SEGMENTS)) { 
+  if ((server.arg("stop") != "") && (server.arg("stop").toInt() >= segState.start) && (server.arg("stop").toInt() <= Config.stripSize)) { 
       uint16_t _seg_stop = server.arg("stop").toInt();
-      _seg_stop = constrain(_seg_stop, seg_start, FXSettings.stripSize - 1);
-      if (_seg_stop != seg_stop) {
-        seg_stop = _seg_stop;
+      _seg_stop = constrain(_seg_stop, segState.start, Config.stripSize - 1);
+      if (_seg_stop != segState.stop) {
+        segState.stop = _seg_stop;
         setSegmentSize();
         _updateSegState = true;
       }
   }
 
   if(server.hasArg("fxopt")){
-    uint8_t _ws_fxopt = ((constrain(server.arg("fxopt").toInt(), 0, 255)>>1)<<1);
-    if (_ws_fxopt != fx_options) {
-      fx_options = _ws_fxopt;
-      strip->setOptions(FXSettings.segment, fx_options);
+    uint8_t _fx_options = ((constrain(server.arg("fxopt").toInt(), 0, 255)>>1)<<1);
+    if (_fx_options != segState.options) {
+      segState.options = _fx_options;
+      strip->setOptions(State.segment, segState.options);
       _updateSegState = true;
     }
   }
@@ -407,28 +419,28 @@ server.on("/set", []() {
   
   
   // Speed
-  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 65535)) {
-    fx_speed = constrain(server.arg("s").toInt(), SPEED_MIN, SPEED_MAX);
-    mode = SET;
+  if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
+    segState.speed[State.segment] = constrain(server.arg("s").toInt(), 0, 255);
+    State.mode = SET;
     _updateSegState = true;
   }
   //Mode
   if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
     fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
-    if (fx_mode !=  strip->getMode(FXSettings.segment)) {
-      mode = SET;
+    if (fx_mode !=  segState.mode[State.segment]) {
+      State.mode = SET;
       _updateSegState = true;
     }
   }
   
   // Brightness
   if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) { 
-    brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
+    State.brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
   } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
-    brightness = constrain(server.arg("p").toInt(), 0, 255);
+    State.brightness = constrain(server.arg("p").toInt(), 0, 255);
   }
-  if (strip->getBrightness() != brightness) {
-    mode = SET;
+  if (strip->getBrightness() != State.brightness) {
+    State.mode = SET;
     _updateState = true;
   }
   DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStateJSONfull()); 

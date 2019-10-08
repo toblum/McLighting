@@ -195,10 +195,18 @@
  * removal of saving to EEPROM
  * first integration of multi segments
  *
- * * 3 October 2019
+ * 3 October 2019
  * Version Bump to 3.1.0.ALPHA2
  * further code changes
  * further integration of multi segments
  * integration of multi segments to GUI
  *
+ * 5 October 2019
+ * Version Bump to 3.1.0.ALPHA2
+ * further code changes
+ * further integration of multi segments
+ * known problem: as always: AUTOPLAY (as it is not multi segment capable yet)
+ * 
+ * Version Bump to 3.1.0.BETA1
+ * bugfixes
  */

@@ -910,7 +910,7 @@ input[type=number], label{
                         <div>
                             <label for="speed" style="padding:8px 7px 3px 7px;"><i aria-hidden="true" class="material-icons">timer</i></label>
                             <input type="number" id="speedNum">
-                            <input value="255" type="range" min="0" max="65535" id="speed">
+                            <input value="255" type="range" min="0" max="255" id="speed">
                         </div>
                         <div id="segments" class="container" style="text-align: left;">
                             <div class="layout row wrap">
@@ -1324,14 +1324,14 @@ var config = {
 var state = {
     mode: 0,
     segment: 0,
-    brightness: 192
+    brightness: 0
 }
 
 var segstate = {
     start: 0,
     stop: 0,
     mode: null,
-    speed: 192,
+    speed: 0,
     color: {w:0, r:0, g:0, b:0, hex:"00000000", w2:0, r2:0, g2:0, b2:0, hex2:"00000000", w3:0, r3:0, g3:0, b3:0, hex3:"00000000"},
     ws_fxopt: 0
 }
@@ -1466,7 +1466,7 @@ function changeRangeNumVal(){
     });
     speedNumVal.addEventListener('change', ()=>{
         // make sure numbers are entered between 0 to 255
-        speed.value = checkNumVal16(speedNumVal, speed.value);
+        speed.value = checkNumVal8(speedNumVal, speed.value);
         segstate.speed = speed.value;
         // Send Speed
         clearTimeout(sendIt);
@@ -1665,7 +1665,7 @@ function readSettings() {
     document.getElementById("percentage-done").setAttribute("stroke-dasharray", "25,100");
     document.getElementById("modal-content").innerHTML = language.en.loadSettings;
     xhttp("http://" + host + "/uistate.json", false, function(e) {
-        //console.log("readSettings()", e);
+        console.log("Read Settings: ", e);
         tmpsettings = (e && e.substring(0,6) !== "ERROR!") ? JSON.parse(e) : {};
         // Replace default settings with saved ones
         for (var set in settings) {
@@ -1826,9 +1826,6 @@ function initSettings() {
             option.setAttribute("value", i);
             option.innerHTML = i;
             selsegment.appendChild(option);
-        }
-        if (state.segment > config.ws_seg - 1) {
-            state.segment = config.ws_seg - 1;
         }
         selsegment.value = state.segment;
     });

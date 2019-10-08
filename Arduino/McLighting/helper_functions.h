@@ -1,24 +1,54 @@
 // Prototypes
-bool readSegmentStateFS(uint8_t seg);
+bool readSegmentStateFS(uint8_t _seg);
 // End Prototypes
 
-uint16_t convertSpeed(uint16_t _mcl_speed) {
-  uint16_t _fx_speed = 61760 * (exp(0.0002336 * _mcl_speed) - exp(-0.03181 * _mcl_speed));
-  _fx_speed = SPEED_MAX - _fx_speed;
-  _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX);
-  //return _fx_speed;
-  return _mcl_speed;
+// Call convertColors whenever main_color, back_color or xtra_color changes.
+void convertColors() {
+  hexcolors_trans[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
+  hexcolors_trans[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
+  hexcolors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
 }
 
-uint8_t unconvertSpeed(uint16_t ws2812_speed) {
-  //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 * mcl_speed) - (-0.03181 * mcl_speed);
-  //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 + 0.03181) * mcl_speed;
-  uint16_t  mcl_speed = (log((SPEED_MAX - ws2812_speed)/61760))/ (0.0002336 + 0.03181);
-  //uint16_t mcl_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
-  mcl_speed = 255 - mcl_speed;
-  mcl_speed = constrain(mcl_speed, 0, 255);
-  return mcl_speed;
+/*uint32_t* convertColors2(uint8_t _w, uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _w2, uint8_t _r2, uint8_t _g2, uint8_t _b2, uint8_t _w3, uint8_t _r3, uint8_t _g3, uint8_t _b3) {
+  uint32_t _hexcolors[3] = {};
+  _hexcolors[0] = (uint32_t)(_w  << 24) | (_r  << 16) | (_g  << 8) | _b;
+  _hexcolors[1] = (uint32_t)(_w2 << 24) | (_r2 << 16) | (_g2 << 8) | _b2;
+  _hexcolors[2] = (uint32_t)(_w3 << 24) | (_r3 << 16) | (_g3 << 8) | _b3;
+  return _hexcolors;
+}*/
+
+uint16_t convertSpeed(uint8_t _mcl_speed) {
+  uint16_t _fx_speed = 0;
+  if (_mcl_speed < 50) {
+    _fx_speed = 65535 - (_mcl_speed * 1000);
+  } else if (_mcl_speed < 100) {
+    _fx_speed = 16535 - ((_mcl_speed-49) * 250);
+  } else if (_mcl_speed < 150) {
+    _fx_speed = 4035 - ((_mcl_speed-99) * 50);
+  } else if (_mcl_speed < 200) {
+    _fx_speed = 1535 - ((_mcl_speed-149) * 25);
+  } else {
+    _fx_speed = 285 - ((_mcl_speed-199) * 5); 
+  }
+  _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX);
+  return _fx_speed;
 }
+
+/*uint8_t unconvertSpeed(uint16_t _fx_speed) {
+  uint16_t _mcl_speed = 0;
+  if (_fx_speed <= 285) {
+    _mcl_speed = ((285 - _fx_speed)/5) + 199;
+  } else if (_fx_speed < 1535) {
+    _mcl_speed = ((1535 - _fx_speed)/25) + 149;
+  } else if (_fx_speed < 4035) {
+    _mcl_speed = ((4035 - _fx_speed)/50) + 99;
+  } else if (_mcl_speed < 16535) {
+    _mcl_speed = ((16535 - _fx_speed)/250) + 49;
+  } else {
+    _mcl_speed = ((65535 - _fx_speed)/1000);
+  }
+  return _mcl_speed;
+}*/
 
 bool checkPin(uint8_t pin) { 
   #if defined(USE_WS2812FX_DMA)
@@ -32,8 +62,8 @@ bool checkPin(uint8_t pin) {
       pin = 2;
     #endif
   #endif
-  if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != FXSettings.pin)) {
-    FXSettings.pin = pin;
+  if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != Config.pin)) {
+    Config.pin = pin;
     return true;
   }
   return false;
@@ -105,22 +135,22 @@ neoPixelType checkRGBOrder(char rgbOrder[5]) {
     returnOrder = NEO_BGRW;
   } else {
     DBG_OUTPUT_PORT.print("invalid input!");
-    uint16_t check = checkRGBOrder(FXSettings.RGBOrder);
+    uint16_t check = checkRGBOrder(Config.RGBOrder);
     if (check != 0) {
       returnOrder = static_cast<neoPixelType>(check);
-      strcpy(rgbOrder, FXSettings.RGBOrder);
+      strcpy(rgbOrder, Config.RGBOrder);
     } else {
       returnOrder = static_cast<neoPixelType>(checkRGBOrder(RGBORDER));
       strcpy(rgbOrder, RGBORDER);
     }
   }
   DBG_OUTPUT_PORT.println("success!");
-  strcpy(FXSettings.RGBOrder, rgbOrder);
+  strcpy(Config.RGBOrder, rgbOrder);
   return returnOrder;
 }
 
 // function to Initialize the strip
-void initStrip(uint16_t _stripSize = FXSettings.stripSize, char _RGBOrder[5] = FXSettings.RGBOrder, uint8_t _pin = FXSettings.pin){
+void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = Config.segments, char _RGBOrder[5] = Config.RGBOrder, uint8_t _pin = Config.pin){
   DBG_OUTPUT_PORT.println("Initializing strip!");
 /*#if defined(USE_WS2812FX_DMA)
   if (dma != NULL) {
@@ -134,15 +164,15 @@ void initStrip(uint16_t _stripSize = FXSettings.stripSize, char _RGBOrder[5] = F
     strip->resetSegments();
     strip->resetSegmentRuntimes();
     delete(strip);
-    FXSettings.stripSize = _stripSize;
-    strcpy(FXSettings.RGBOrder, _RGBOrder);
-    FXSettings.pin = _pin;
+    Config.stripSize = _stripSize;
+    strcpy(Config.RGBOrder, _RGBOrder);
+    Config.pin = _pin;
   }
  
   if (ledstates != NULL) {
     delete(ledstates);
   } 
-  ledstates = new uint8_t [FXSettings.stripSize];
+  ledstates = new uint8_t [_stripSize];
 
 #if !defined(LED_TYPE_WS2811)
   strip = new WS2812FX(_stripSize, _pin, checkRGBOrder(_RGBOrder) + NEO_KHZ800);
@@ -167,19 +197,23 @@ void initStrip(uint16_t _stripSize = FXSettings.stripSize, char _RGBOrder[5] = F
     strip->setCustomShow(DMA_Show);
   #endif
   //parameters: index, start, stop, mode, color, speed, options
-  for (uint8_t seg=0; seg < num_segments; seg++) {
-    if (seg != FXSettings.segment) {  // Read actual segment last
-      (readSegmentStateFS(seg)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
-      strip->setSegment(seg,  seg_start,  seg_stop, fx_mode, hex_colors_trans, convertSpeed(fx_speed), fx_options);
+  for (uint8_t _seg=0; _seg < Config.segments; _seg++) {
+    if (_seg != State.segment) {  // Read actual segment last
+      (readSegmentStateFS(_seg)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
+      memcpy(segState.colors[_seg], hexcolors_trans, sizeof(hexcolors_trans));
+      strip->setSegment(_seg,  segState.start,  segState.stop, segState.mode[_seg], segState.colors[_seg], convertSpeed(segState.speed[_seg]), segState.options);
     }
   }
   //read actual segment last to set all vars correctly
-  (readSegmentStateFS(FXSettings.segment)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
-  strip->setSegment(FXSettings.segment,  seg_start,  seg_stop , 0, hex_colors_trans, convertSpeed(fx_speed), fx_options);
-  strip->setMode(FXSettings.segment, fx_mode);
-  fx_speed_actual = fx_speed;
+  (readSegmentStateFS(State.segment)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
+  memcpy(segState.colors[State.segment], hexcolors_trans, sizeof(hexcolors_trans));
+  strip->setSegment(State.segment,  segState.start,  segState.stop , segState.mode[State.segment], hexcolors_trans, convertSpeed(segState.speed[State.segment]), segState.options);
+  fx_speed_actual = segState.speed[State.segment];
+  fx_mode = segState.mode[State.segment];
+  prevsegment = State.segment;
   strip->setCustomMode(0, F("Autoplay"), handleAuto);
   strip->setCustomMode(1, F("Custom WS"), handleCustomWS);
+  strip->setCustomMode(9, F("Segment OFF"), handleSegmentOFF);
   #if defined(CUSTOM_WS2812FX_ANIMATIONS)
     strip->setCustomMode(2, F("TV"), handleTV);
     strip->setCustomMode(3, F("E1.31"),  handleE131);
@@ -191,7 +225,7 @@ void initStrip(uint16_t _stripSize = FXSettings.stripSize, char _RGBOrder[5] = F
     if (e131 != NULL) { delete(e131); }
     e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
     float universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
-    if (strstr(FXSettings.RGBOrder, "W") != NULL) {
+    if (strstr(Config.RGBOrder, "W") != NULL) {
       //universe_leds = 128.0;
     }
     float float_enduni = _stripSize/universe_leds; 
@@ -209,41 +243,25 @@ void initStrip(uint16_t _stripSize = FXSettings.stripSize, char _RGBOrder[5] = F
   #endif
 }
 
-
-// Call convertColors whenever main_color, back_color or xtra_color changes.
-void convertColors() {
-  hex_colors_trans[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
-  hex_colors_trans[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
-  hex_colors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
-}
-
-uint32_t* convertColors2(uint8_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t w2, uint8_t r2, uint8_t g2, uint8_t b2, uint8_t w3, uint8_t r3, uint8_t g3, uint8_t b3) {
-  uint32_t hexcolors[3] = {};
-  hexcolors[0] = (uint32_t)(w  << 24) | (r  << 16) | (g  << 8) | b;
-  hexcolors[1] = (uint32_t)(w2 << 24) | (r2 << 16) | (g2 << 8) | b2;
-  hexcolors[2] = (uint32_t)(w3 << 24) | (r3 << 16) | (g3 << 8) | b3;
-  return hexcolors;
-}
-
 void getSegmentParams(uint8_t _seg) {
-  seg_start        = strip->getSegment(_seg)->start;;
-  seg_stop         = strip->getSegment(_seg)->stop;;
-  fx_mode          = strip->getMode(_seg);
-  fx_speed         = strip->getSpeed(_seg);
-  fx_speed_actual  = fx_speed;
-  main_color.white = ((strip->getColors(_seg)[0] >> 24) & 0xFF);
-  main_color.red   = ((strip->getColors(_seg)[0] >> 16) & 0xFF);
-  main_color.green = ((strip->getColors(_seg)[0] >>  8) & 0xFF);
-  main_color.blue  = ((strip->getColors(_seg)[0])  & 0xFF);
-  back_color.white = ((strip->getColors(_seg)[1] >> 24) & 0xFF);
-  back_color.red   = ((strip->getColors(_seg)[1] >> 16) & 0xFF);
-  back_color.green = ((strip->getColors(_seg)[1] >>  8) & 0xFF);
-  back_color.blue  = ((strip->getColors(_seg)[1]) & 0xFF);
-  xtra_color.white = ((strip->getColors(_seg)[2] >> 24) & 0xFF);
-  xtra_color.red   = ((strip->getColors(_seg)[2] >> 16) & 0xFF);
-  xtra_color.green = ((strip->getColors(_seg)[2] >>  8) & 0xFF);
-  xtra_color.blue  = ((strip->getColors(_seg)[2] >>  0) & 0xFF);
-  fx_options = strip->getOptions(_seg);
+  segState.start        = strip->getSegment(_seg)->start;;
+  segState.stop         = strip->getSegment(_seg)->stop;;
+  //segState.mode[_seg]     = strip->getMode(_seg);
+  //segState.speed[_seg]    = unconvertSpeed(strip->getSpeed(_seg));
+  fx_speed_actual  = segState.speed[_seg];
+  main_color.white = ((segState.colors[_seg][0] >> 24) & 0xFF);
+  main_color.red   = ((segState.colors[_seg][0] >> 16) & 0xFF);
+  main_color.green = ((segState.colors[_seg][0] >>  8) & 0xFF);
+  main_color.blue  = ((segState.colors[_seg][0])  & 0xFF);
+  back_color.white = ((segState.colors[_seg][1] >> 24) & 0xFF);
+  back_color.red   = ((segState.colors[_seg][1] >> 16) & 0xFF);
+  back_color.green = ((segState.colors[_seg][1] >>  8) & 0xFF);
+  back_color.blue  = ((segState.colors[_seg][1]) & 0xFF);
+  xtra_color.white = ((segState.colors[_seg][2] >> 24) & 0xFF);
+  xtra_color.red   = ((segState.colors[_seg][2] >> 16) & 0xFF);
+  xtra_color.green = ((segState.colors[_seg][2] >>  8) & 0xFF);
+  xtra_color.blue  = ((segState.colors[_seg][2] >>  0) & 0xFF);
+  segState.options = strip->getOptions(_seg);
 }
 
 void setSegmentSize() {
@@ -251,30 +269,33 @@ void setSegmentSize() {
   delay(10);
   if(strip->isRunning()) strip->stop();
   strip->resetSegmentRuntimes();
-  strip->setSegment(FXSettings.segment,  seg_start,  seg_stop , fx_mode, hex_colors_trans, convertSpeed(fx_speed), fx_options);
+  strip->setSegment(State.segment,  segState.start,  segState.stop , segState.mode[State.segment], hexcolors_trans, convertSpeed(segState.speed[State.segment]), segState.options);
 }
 
-void calculateColorTransitionSteps() {
+uint8_t calculateColorTransitionSteps(uint8_t _seg) {
   //compare all colors and calculate steps
-  trans_cnt_max = 0;
-  int     calculate_max[4] = {};
+  int     _trans_cnt_max = 0;
+  int     _calculate_max[4] = {};
   for (uint8_t i=0; i<3; i++){
     for (uint8_t j=0; j<4; j++) {
-      calculate_max[j] = ((hex_colors[i] >> ((3-j)*8)) & 0xFF) - ((hex_colors_trans[i] >> ((3-j)*8)) & 0xFF);
-      calculate_max[j] = abs(calculate_max[j]);
-      trans_cnt_max = max(trans_cnt_max, calculate_max[j]);
+      _calculate_max[j] = ((strip->getColors(_seg)[i] >> ((3-j)*8)) & 0xFF) - ((hexcolors_trans[i] >> ((3-j)*8)) & 0xFF);
+      _calculate_max[j] = abs(_calculate_max[j]);
+      _trans_cnt_max = max(_trans_cnt_max, _calculate_max[j]);
     }
   }
+  return _trans_cnt_max;
 }
 
-void convertColorsFade() {
-  if (FXSettings.transEffect) {
+uint8_t convertColorsFade(uint8_t _seg) {
+  if (Config.transEffect) {
       if (trans_cnt > 1) {
-        memcpy(hex_colors, strip->getColors(FXSettings.segment), sizeof(hex_colors));
+        //memcpy(segState.colors[_seg], strip->getColors(_seg), sizeof(segState.colors[_seg]));
         DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
         trans_cnt = 1;
       }
-    calculateColorTransitionSteps();
+    return calculateColorTransitionSteps(_seg);  
+  } else {
+    return 0;
   }
 }
 

@@ -182,7 +182,9 @@
         var mkfile = document.createElement("button");
         mkfile.innerHTML = 'MkFile';
         document.getElementById(element).appendChild(mkfile);
-  
+        var para = document.createElement("text");
+        para.innerHTML = "  Press Ctrl-S for save, Ctrl-Z for undo, Ctrl-Shift-Z for redo";
+        document.getElementById(element).appendChild(para);
         function httpPostProcessRequest(){
           if (xmlHttp.readyState == 4){
             if(xmlHttp.status != 200) alert("ERROR["+xmlHttp.status+"]: "+xmlHttp.responseText);

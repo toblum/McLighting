@@ -369,16 +369,16 @@ void setup() {
     WiFiManagerParameter custom_mqtt_user("user", "MQTT user", mqtt_user, 32, " maxlength=32");
     WiFiManagerParameter custom_mqtt_pass("pass", "MQTT pass", mqtt_pass, 32, " maxlength=32 type=\"password\"");
   #endif
-  sprintf(_stripSize, "%d", FXSettings.stripSize);
+  sprintf(_stripSize, "%d", Config.stripSize);
   WiFiManagerParameter custom_strip_size("strip_size", "Number of LEDs", _stripSize, 4, " maxlength=4 type=\"number\"");
   #if !defined(USE_WS2812FX_DMA)
     char tmp_led_pin[3];
-    sprintf(tmp_led_pin, "%d", FXSettings.pin);
+    sprintf(tmp_led_pin, "%d", Config.pin);
     WiFiManagerParameter custom_led_pin("led_pin", "LED GPIO", tmp_led_pin, 2, " maxlength=2 type=\"number\"");
   #endif
-  sprintf(_rgbOrder, "%s", FXSettings.RGBOrder);
+  sprintf(_rgbOrder, "%s", Config.RGBOrder);
   WiFiManagerParameter custom_rgbOrder("rgbOrder", "RGBOrder", _rgbOrder, 4, " maxlength=4");
-  sprintf(_fx_options, "%d", fx_options);
+  sprintf(_fx_options, "%d", segState.options);
   WiFiManagerParameter custom_fxoptions("fxoptions", "fxOptions", _fx_options, 3, " maxlength=3");
 #endif
 
@@ -444,13 +444,13 @@ void setup() {
       strcpy(mqtt_pass, custom_mqtt_pass.getValue());
     #endif
     strcpy(_stripSize, custom_strip_size.getValue());
-    FXSettings.stripSize = constrain(atoi(custom_strip_size.getValue()), 1, MAXLEDS);
+    Config.stripSize = constrain(atoi(custom_strip_size.getValue()), 1, MAXLEDS);
     #if !defined(USE_WS2812FX_DMA)
       checkPin(atoi(custom_led_pin.getValue()));
     #endif
     strcpy(_rgbOrder, custom_rgbOrder.getValue());
     checkRGBOrder(_rgbOrder);
-    fx_options = atoi(custom_fxoptions.getValue());
+    segState.options = atoi(custom_fxoptions.getValue());
     if (updateConfig) {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
     }
@@ -561,9 +561,8 @@ void setup() {
   #if defined(ENABLE_REMOTE)
     irrecv.enableIRIn();  // Start the receiver
   #endif
-  fx_speed_actual = fx_speed;
-  brightness_trans = brightness;
-  memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
+  fx_speed_actual = segState.speed[State.segment];
+  brightness_trans = State.brightness;
   initStrip();
   strip->setBrightness(0);
   DBG_OUTPUT_PORT.println("finished Main Setup!");
@@ -625,91 +624,100 @@ void loop() {
   // Simple statemachine that handles the different modes
   // *************************************************************************** 
 
-  if ((mode == OFF) && ((strip->getBrightness() == 0) || !FXSettings.transEffect)) {
+  if ((State.mode == OFF) && ((strip->getBrightness() == 0) || !Config.transEffect)) {
     if(strip->isRunning()) {
       strip->strip_off();        // Workaround: to be shure,
       delay(10);                 // that strip is really off. Sometimes strip->stop isn't enought
       strip->stop();             // should clear memory
-      autoCount = 0;
-      autoDelay = 0;
+      for (uint8_t i = 0; i < Config.segments; i++) {
+        autoCount[i] = 0;
+        autoDelay[i] = 0;
+      }
     } else {
-      if (prevmode != mode) {    // Start temporarily to clear strip
+      if (prevmode != State.mode) {    // Start temporarily to clear strip
         strip->start();
         strip->strip_off();      // Workaround: to be shure,
         delay(10);               // that strip is really off. Sometimes strip->stop isn't enought
         strip->stop();           // should clear memory
-        autoCount = 0;
-        autoDelay = 0;
+        for (uint8_t i = 0; i < Config.segments; i++) {
+          autoCount[i] = 0;
+          autoDelay[i] = 0;
+        }
       }
     }
   }
         
-  if (mode == OFF) {
-    if (prevmode != mode) {
+  if (State.mode == OFF) {
+    if (prevmode != State.mode) {
       #if defined(ENABLE_MQTT)
          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", "");
       #endif
-      if (FXSettings.transEffect) { 
+      if (Config.transEffect) { 
         brightness_trans   = 0;
       } 
     }
   }
   
-  if (mode == SET) {
-    mode = HOLD;
+  if (State.mode == SET) {
+    State.mode = HOLD;
     // Segment
-    if (prevsegment != FXSettings.segment) {
+    if (prevsegment != State.segment) {
       #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", FXSettings.segment);
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", State.segment);
       #endif
-      prevsegment = FXSettings.segment;
+      prevsegment = State.segment;
     }    
     // Mode
-    if (fx_mode !=  strip->getMode(FXSettings.segment)) {
+    if (segState.mode[State.segment] != fx_mode) {
+      segState.mode[State.segment] = fx_mode;
       #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", fx_mode);
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
       #endif
       strip->strip_off();
-      autoCount = 0;
-      autoDelay = 0;
-      strip->setMode(FXSettings.segment, fx_mode);
+      autoCount[State.segment] = 0;
+      autoDelay[State.segment] = 0;
+      //strip->setSpeed(State.segment, segState.speed[State.segment]);
+      //strip->setColors(State.segment, segState.colors[State.segment]);
+      strip->setMode(State.segment, segState.mode[State.segment]);
     }
     //Color
-    /*if (memcmp(hex_colors_trans, strip->getColors(selected_segment), sizeof(hex_colors_trans)) != 0) {
-     
+    /*if (memcmp(segmentState.colors[State.segment)], strip->getColors(State.segment), sizeof(segmentState.colors[State.segment)])) != 0) {
+     convertColors();
     }*/
     // Brightness
-    if (strip->getBrightness() != brightness) {
+    if (strip->getBrightness() != State.brightness) {
       #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", brightness);
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", State.brightness);
       #endif
-      brightness_trans = brightness;
+      brightness_trans = State.brightness;
     }
     // Speed
-    if (fx_speed_actual != fx_speed) {
+    if (fx_speed_actual != segState.speed[State.segment]) {
       #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", fx_speed);
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", segState.speed[State.segment]);
       #endif
     }
     prevmode = SET;
-    strip->trigger();
+    //strip->trigger();
   }
     
-  if ((mode == HOLD) || ((mode == OFF) && (strip->getBrightness() > 0) && FXSettings.transEffect)) { 
-    if (fx_mode == FX_MODE_CUSTOM_0) {
-      handleAutoPlay();
-    }
+  if ((State.mode == HOLD) || ((State.mode == OFF) && (strip->getBrightness() > 0) && Config.transEffect)) { 
     if(!strip->isRunning()) strip->start();
     strip->service();
+    for (uint8_t i = 0; i < Config.segments; i++) {
+      if (segState.mode[i] == FX_MODE_CUSTOM_0) { handleAutoPlay(i); };
+    }
   }
    
-  if (prevmode != mode) {
+  if (prevmode != State.mode) {
     convertColors();
-    if (memcmp(hex_colors_trans, strip->getColors(FXSettings.segment), sizeof(hex_colors_trans)) != 0) {
-      convertColorsFade();
+    if (memcmp(hexcolors_trans, strip->getColors(prevsegment), sizeof(hexcolors_trans)) != 0) {
+      DBG_OUTPUT_PORT.println("Color changed!");
+      trans_cnt_max = convertColorsFade(prevsegment);
       trans_cnt = 1;
+      memcpy(segState.colors[prevsegment], hexcolors_trans, sizeof(hexcolors_trans));
     }
-    strip->setSpeed(FXSettings.segment, convertSpeed(fx_speed_actual));
+    strip->setSpeed(State.segment, convertSpeed(fx_speed_actual));
     //strip->setBrightness(brightness_actual);       
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
@@ -724,14 +732,14 @@ void loop() {
     #endif
   }
   
-  prevmode = mode;
+  prevmode = State.mode;
   
   #if defined(ENABLE_STATE_SAVE)
     if (updateState){
       (writeStateFS(updateState)) ? DBG_OUTPUT_PORT.println("State FS Save Success!") : DBG_OUTPUT_PORT.println("State FS Save failure!");
     }
     if (updateSegState) {
-      (writeSegmentStateFS(updateSegState, FXSettings.segment)) ? DBG_OUTPUT_PORT.println("Segment State FS Save Success!") : DBG_OUTPUT_PORT.println("Segment State FS Save failure!");
+      (writeSegmentStateFS(updateSegState, State.segment)) ? DBG_OUTPUT_PORT.println("Segment State FS Save Success!") : DBG_OUTPUT_PORT.println("Segment State FS Save failure!");
     }
     if (updateConfig) {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
@@ -739,62 +747,57 @@ void loop() {
   #endif
   
   // Async color transition
-  if (memcmp(hex_colors_trans, strip->getColors(FXSettings.segment), sizeof(hex_colors_trans)) != 0) {
-    if (FXSettings.transEffect) {
+  if ((segState.mode[prevsegment] != FX_MODE_CUSTOM_0) && (memcmp(hexcolors_trans, strip->getColors(prevsegment), sizeof(hexcolors_trans)) != 0)) {
+    if (Config.transEffect) {
       if ((trans_cnt > 0) && (trans_cnt < trans_cnt_max)) {
         if (colorFadeDelay <= millis()) {
-          uint32_t hex_colors_actual[3] = {};
-          hex_colors_actual[0] = trans(hex_colors_trans[0], hex_colors[0], trans_cnt, trans_cnt_max);
-          hex_colors_actual[1] = trans(hex_colors_trans[1], hex_colors[1], trans_cnt, trans_cnt_max);
-          hex_colors_actual[2] = trans(hex_colors_trans[2], hex_colors[2], trans_cnt, trans_cnt_max);
-          strip->setColors(prevsegment, hex_colors_actual);
+          uint32_t _hexcolors_new[3] = {};
+          _hexcolors_new[0] = trans(hexcolors_trans[0], strip->getColors(prevsegment)[0], trans_cnt, trans_cnt_max);
+          _hexcolors_new[1] = trans(hexcolors_trans[1], strip->getColors(prevsegment)[1], trans_cnt, trans_cnt_max);
+          _hexcolors_new[2] = trans(hexcolors_trans[2], strip->getColors(prevsegment)[2], trans_cnt, trans_cnt_max);
+          strip->setColors(prevsegment, _hexcolors_new);
           trans_cnt++;
           colorFadeDelay = millis() + TRANS_COLOR_DELAY;
-          if (mode == HOLD) strip->trigger();
+          if (State.mode == HOLD) strip->trigger();
         }
       } else if (trans_cnt >= trans_cnt_max) {
-        memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
-        strip->setColors(prevsegment, hex_colors);
-        if (mode == HOLD) strip->trigger();
-        trans_cnt = 0;
+        strip->setColors(prevsegment, hexcolors_trans);
+        if (State.mode == HOLD) strip->trigger();
         DBG_OUTPUT_PORT.println("Color transition finished!");
+        trans_cnt = 0;
       }
     } else {
-      memcpy(hex_colors, hex_colors_trans, sizeof(hex_colors_trans));
-      strip->setColors(prevsegment, hex_colors);
-      if (mode == HOLD) strip->trigger();
-      trans_cnt = 0;
+      strip->setColors(prevsegment, hexcolors_trans);
+      if (State.mode == HOLD) strip->trigger();
     }
   }
   // Async speed transition
-  if (fx_speed_actual != fx_speed) {
-    //if (FXSettings.transEffect) {
-    if (true == false) {  
+  if ((segState.mode[prevsegment] != FX_MODE_CUSTOM_0) && (fx_speed_actual != segState.speed[prevsegment])) {
+    //if (Config.transEffect) {
+    if (true == false) {  // disabled for the moment
       if (speedFadeDelay <= millis()) {
         DBG_OUTPUT_PORT.println("Speed actual: ");
         DBG_OUTPUT_PORT.println(fx_speed_actual);
-        DBG_OUTPUT_PORT.println(convertSpeed(fx_speed_actual));
-        DBG_OUTPUT_PORT.println(unconvertSpeed(convertSpeed(fx_speed_actual)));
-        if (fx_speed_actual < fx_speed) {
+        if (fx_speed_actual < segState.speed[prevsegment]) {
           fx_speed_actual++;     
         }
-        if (fx_speed_actual > fx_speed) {
+        if (fx_speed_actual > segState.speed[prevsegment]) {
           fx_speed_actual--;     
         }
         speedFadeDelay = millis() + TRANS_DELAY;
         strip->setSpeed(prevsegment, convertSpeed(fx_speed_actual));
-        if (mode == HOLD) strip->trigger();
+        if (State.mode == HOLD) strip->trigger();
       }
     } else {
-       fx_speed_actual = fx_speed;
+       fx_speed_actual = segState.speed[State.segment];
        strip->setSpeed(prevsegment, convertSpeed(fx_speed_actual));
-       if (mode == HOLD) strip->trigger();
+       if (State.mode == HOLD) strip->trigger();
     }
   }
   
   // Async brightness transition
   if (strip->getBrightness() != brightness_trans) {
-    if (FXSettings.transEffect) {
+    if (Config.transEffect) {
       if(brightnessFadeDelay <= millis()) {
         if (strip->getBrightness() < brightness_trans) {
           strip->increaseBrightness(1);    
@@ -803,20 +806,20 @@ void loop() {
           strip->decreaseBrightness(1); 
         }
         brightnessFadeDelay = millis() + TRANS_DELAY;
-        //if (mode == HOLD) strip->trigger();
+        //if (State.mode == HOLD) strip->trigger();
         strip->trigger();
       }
     } else {
-       brightness_trans = brightness;
+       brightness_trans = State.brightness;
        strip->setBrightness(brightness_trans);
-       if (mode == HOLD) strip->trigger();
+       if (State.mode == HOLD) strip->trigger();
     }
   }
 
 /*  // Segment change only if color and speed transitions are finished, because they are segment specific
-  if (prevsegment != FXSettings.segment) {
-    if ((memcmp(hex_colors_trans, strip->getColors(FXSettings.segment), sizeof(hex_colors_trans)) == 0) && (fx_speed_actual == fx_speed)) {
-      FXSettings.segment = prevsegment;
+  if (prevsegment != State.segment) {
+    if ((memcmp(hexcolors_trans, strip->getColors(State.segment), sizeof(hexcolors_trans)) == 0) && (fx_speed_actual == segState.speed[State.segment])) {
+      State.segment = prevsegment;
     }
   }
 */

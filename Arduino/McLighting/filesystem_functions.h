@@ -77,14 +77,14 @@
           strcpy(mqtt_user, root["mqtt_user"]);
           strcpy(mqtt_pass, root["mqtt_pass"]);
         #endif
-          num_segments = constrain(root["ws_seg"].as<uint8_t>(), 1, MAX_NUM_SEGMENTS - 1);
-          FXSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
+          Config.segments = constrain(root["ws_seg"].as<uint8_t>(), 1, MAX_NUM_SEGMENTS - 1);
+          Config.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
           char _rgbOrder[5];
           strcpy(_rgbOrder, root["ws_rgbo"]);
           checkRGBOrder(_rgbOrder);
           uint8_t temp_pin;
           checkPin((uint8_t) root["ws_pin"]);
-          FXSettings.transEffect = root["ws_trans"].as<bool>();
+          Config.transEffect = root["ws_trans"].as<bool>();
           jsonBuffer.clear();
           return true;
         } else {
@@ -151,9 +151,9 @@
           JsonObject root = jsonBuffer.as<JsonObject>();
           serializeJson(root, DBG_OUTPUT_PORT);
           DBG_OUTPUT_PORT.println("");
-          FXSettings.segment = root["segment"];
-          mode = static_cast<MODE>(root["mode"].as<uint8_t>());
-          brightness =  root["brightness"];
+          State.segment = root["segment"];
+          State.mode = static_cast<MODE>(root["mode"].as<uint8_t>());
+          State.brightness =  root["brightness"];
           jsonBuffer.clear();
           return true;
         } else {
@@ -199,10 +199,10 @@
     }
   }
  
-  bool readSegmentStateFS(uint8_t seg) {
+  bool readSegmentStateFS(uint8_t _seg) {
     //read strip state from FS JSON
     char filename[28];
-    snprintf(filename, 28, "/stripstate_segment_%02i.json", seg);
+    snprintf(filename, 28, "/stripstate_segment_%02i.json", _seg);
     filename[27] = 0x00;
     if (SPIFFS.exists(filename)) {
       //file exists, reading and loading
@@ -224,23 +224,23 @@
           JsonObject root = jsonBuffer.as<JsonObject>();
           serializeJson(root, DBG_OUTPUT_PORT);
           DBG_OUTPUT_PORT.println("");
-          seg_start = constrain(root["start"].as<uint16_t>(), 0, FXSettings.stripSize - 1) ;
-          seg_stop  = constrain(root["stop"].as<uint16_t>(), 0, FXSettings.stripSize - 1);
-          fx_mode = root["fx_mode"].as<uint8_t>();
-          fx_speed = root["speed"].as<uint8_t>();
-          main_color.white = root["color"][0].as<uint8_t>();
-          main_color.red =  root["color"][1].as<uint8_t>();
-          main_color.green = root["color"][2].as<uint8_t>();
-          main_color.blue =  root["color"][3].as<uint8_t>();
-          back_color.white = root["color"][4].as<uint8_t>();
-          back_color.red =  root["color"][5].as<uint8_t>();
-          back_color.green =  root["color"][6].as<uint8_t>();
-          back_color.blue =  root["color"][7].as<uint8_t>();
-          xtra_color.white = root["color"][8].as<uint8_t>();
-          xtra_color.red = root["color"][9].as<uint8_t>();
-          xtra_color.green =  root["color"][10].as<uint8_t>();
-          xtra_color.blue = root["color"][11].as<uint8_t>();
-          fx_options = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
+          segState.start = constrain(root["start"].as<uint16_t>(), 0, Config.stripSize - 1) ;
+          segState.stop  = constrain(root["stop"].as<uint16_t>(), 0, Config.stripSize - 1);
+          segState.mode[_seg]  = root["fx_mode"].as<uint8_t>();
+          segState.speed[_seg] = root["speed"].as<uint8_t>();
+          main_color.white     = root["color"][0].as<uint8_t>();
+          main_color.red       = root["color"][1].as<uint8_t>();
+          main_color.green     = root["color"][2].as<uint8_t>();
+          main_color.blue      = root["color"][3].as<uint8_t>();
+          back_color.white     = root["color"][4].as<uint8_t>();
+          back_color.red       = root["color"][5].as<uint8_t>();
+          back_color.green     = root["color"][6].as<uint8_t>();
+          back_color.blue      = root["color"][7].as<uint8_t>();
+          xtra_color.white     = root["color"][8].as<uint8_t>();
+          xtra_color.red       = root["color"][9].as<uint8_t>();
+          xtra_color.green     = root["color"][10].as<uint8_t>();
+          xtra_color.blue      = root["color"][11].as<uint8_t>();
+          segState.options = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
           convertColors();
           jsonBuffer.clear();
           return true;
@@ -254,7 +254,7 @@
       }
     } else {
       DBG_OUTPUT_PORT.printf("Couldn't find \"/%s\"", filename);
-      writeSegmentStateFS(true, seg);
+      writeSegmentStateFS(true, _seg);
     }
     //end read
     return false;

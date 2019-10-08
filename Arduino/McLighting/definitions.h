@@ -26,12 +26,12 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
 #endif
-#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
+//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
 
 #define ENABLE_STATE_SAVE             // If defined, load saved state on reboot and save state on SPIFFS 
 
 #define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h" 
-//#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
+#define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
 
 #define TRANS_COLOR_DELAY 5            // Delay for color transition
 #define TRANS_DELAY 10                 // Delay for brightness and speed transition
@@ -50,7 +50,6 @@ unsigned long speedFadeDelay      = 0;
       uint8_t END_UNIVERSE = START_UNIVERSE; // Total number of Universes to listen for, starting at UNIVERSE
 
 #endif
-uint8_t  num_segments       = 1;
 uint8_t  prevsegment        = 0;
 
 #if defined(ENABLE_REMOTE)
@@ -95,9 +94,9 @@ uint8_t  prevsegment        = 0;
 // parameters for automatically cycling favorite patterns
 uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mode, duration (milliseconds)
   {0x00ff0000, 0x0000ff00, 0x00000000, 200,  1,  5000}, // blink red/geen for 5 seconds
-  {0x0000ff00, 0x000000ff, 0x00000000, 200,  3, 10000}, // wipe green/blue for 10 seconds
-  {0x000000ff, 0x00ff0000, 0x00000000,  60, 14, 10000}, // dual scan blue on red for 10 seconds
-  {0x000000ff, 0x00ff0000, 0x00000000,  40, 45, 15000}, // fireworks blue/red for 15 seconds
+  {0x0000ff00, 0x000000ff, 0x00000000, 180,  3, 10000}, // wipe green/blue for 10 seconds
+  {0x000000ff, 0x00ff0000, 0x00000000, 100, 14, 10000}, // dual scan blue on red for 10 seconds
+  {0x000000ff, 0x00ff0000, 0x00000000, 100, 45, 15000}, // fireworks blue/red for 15 seconds
   {0x00ff0000, 0x0000ff00, 0x000000ff,  40, 54, 15000}  // tricolor chase red/green/blue for 15 seconds
 };
 
@@ -143,26 +142,51 @@ uint32_t autoParams[][6] = {   // main_color, back_color, xtra_color, speed, mod
 // ***************************************************************************
 #define DBG_OUTPUT_PORT Serial  // Set debug output port
 
+uint8_t       autoCount[10] = {};    // Global variable for storing the counter for automated playback for each segment
+unsigned long autoDelay[10] = {};    // Global variable for storing the time to next auto effect for each segment
+struct {
+  uint16_t   start            = 0;
+  uint16_t   stop             = NUMLEDS - 1;
+  uint8_t    mode[10]         = {};  // Global variable for storing the WS2812FX mode to set for each segment
+  uint8_t    speed[10]        = {};  // Global variable for storing the speed for effects --> smaller == slower
+  uint32_t   colors[10][3]    = {};  // 2 dim. Color array for setting colors of WS2812FX
+  uint8_t    options          = FX_OPTIONS; 
+} segState;
+
 // List of all color modes
 enum MODE {OFF, HOLD, SET};
-MODE mode = SET;           // Standard mode that is active when software starts
-MODE prevmode = HOLD;          // Do not change
+MODE prevmode = HOLD;                 // Do not change
 
-uint8_t autoCount             = 0;    // Global variable for storing the counter for automated playback
-long    autoDelay             = 0;    // Global variable for storing the time to next auto effect
-
-  uint16_t seg_start          = 0;
-  uint16_t seg_stop           = NUMLEDS - 1;
-  uint16_t fx_speed           = 1000;  // Global variable for storing the speed for effects --> smaller == slower
+struct {
+  uint8_t  segment            = 0;    // Actual selected segment
+  MODE     mode               = SET;  // Standard mode that is active when software starts
   uint8_t  brightness         = 196;  // Global variable for storing the brightness (255 == 100%)
-  uint8_t  fx_mode            = 0;    // Global variable for storing the WS2812FX mode to set
-  uint32_t hex_colors[3]      = {};   // Color array for setting colors of WS2812FX
-  uint8_t  fx_options         = FX_OPTIONS; 
+} State;
 
+struct {
+  uint8_t  segments = 1;
+  uint16_t stripSize = NUMLEDS;
+  char     RGBOrder[5]   = RGBORDER;
+  #if defined(USE_WS2812FX_DMA)
+    #if USE_WS2812FX_DMA == 0
+      uint8_t pin = 3;
+    #endif
+    #if USE_WS2812FX_DMA == 1
+      uint8_t pin = 2;
+    #endif
+    #if USE_WS2812FX_DMA == 2
+      uint8_t pin = 1;
+    #endif
+  #else
+    uint8_t pin = LED_PIN;
+  #endif
+  bool    transEffect = false;
+} Config;
   
-uint16_t fx_speed_actual      = 1000;  // Global variable for storing the speed for effects while fading --> smaller == slower
+uint8_t  fx_speed_actual      = 196;  // Global variable for storing the speed for effects while fading --> smaller == slower
+uint8_t  fx_mode              = 0;
 uint8_t  brightness_trans     = 0;    // Global variable for storing the brightness before change
-uint32_t hex_colors_trans[3]  = {};   // Color array of colors of WS2812FX before fading 
+uint32_t hexcolors_trans[3]   = {};   // Color array of colors of WS2812FX before fading 
 struct ledstate                       // Data structure to store a state of a single led
 {
   uint8_t red;
@@ -202,23 +226,3 @@ bool updateConfig = false;  // For WiFiManger custom config and config
   byte KeyPressCount_gy33 = 0;
   byte prevKeyState_gy33 = HIGH;             // button is active low
 #endif
-  
-struct {
-  uint8_t  segment   = 0;
-  uint16_t stripSize = NUMLEDS;
-  char RGBOrder[5]   = RGBORDER;
-  #if defined(USE_WS2812FX_DMA)
-    #if USE_WS2812FX_DMA == 0
-      uint8_t pin = 3;
-    #endif
-    #if USE_WS2812FX_DMA == 1
-      uint8_t pin = 2;
-    #endif
-    #if USE_WS2812FX_DMA == 2
-      uint8_t pin = 1;
-    #endif
-  #else
-    uint8_t pin = LED_PIN;
-  #endif
-  bool transEffect = false;
-} FXSettings;
