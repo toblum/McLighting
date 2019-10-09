@@ -427,6 +427,10 @@ void setup() {
   }
 #endif
 
+#if defined(POWER_SUPPLY)
+  pinMode(POWER_SUPPLY, OUTPUT); // output to control external power supply 
+#endif
+
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
@@ -776,8 +780,17 @@ void loop() {
     #if defined(ENABLE_MQTT)
       if (prevmode != mode) { snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", ""); }
     #endif
+    #if defined(POWER_SUPPLY)
+      if (prevmode != mode) {digitalWrite(POWER_SUPPLY, LOW); } // power off -> external power supply
+    #endif
   }
   
+#if defined(POWER_SUPPLY)
+  if (mode != OFF) {
+    if (prevmode != mode) {digitalWrite(POWER_SUPPLY, HIGH); } // power on -> external power supply
+  }
+#endif
+
   if (mode == AUTO) {
     if (prevmode != mode) {
       handleAutoStart();

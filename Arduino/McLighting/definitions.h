@@ -12,6 +12,7 @@
 #define FX_OPTIONS 48      // ws2812fx Options 48 = SIZE_SMALL + FADE_MEDIUM  is configurable just for the start; for WS2812FX setSegment OPTIONS, see: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 #define LED_BUILTIN 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
+#define POWER_SUPPLY 12    // PIN (12 / D6) If defined, enable output to control external power supply 
 
 char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just for the start. Hostname should not contain spaces as this can break Home Assistant discovery if used.
 
