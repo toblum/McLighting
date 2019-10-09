@@ -165,4 +165,7 @@
  * adressed issue: #31
  * adressed issue: #32 
  * 
+ * 09 Oktober 2019
+ * Version Bump to 2.2.7 rgbw 3colors 
+ * added output to control external power supply
  */
