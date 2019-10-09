@@ -306,12 +306,13 @@ server.on("/set", []() {
   boolean _updateState = false;
   boolean _updateSegState = false;
   // Segment
-  if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <= MAX_NUM_SEGMENTS)) { 
-      State.segment = server.arg("seg").toInt();  
-      if (prevsegment != State.segment) {
+  if ((server.arg("seg") != "") && (server.arg("seg").toInt() >= 0) && (server.arg("seg").toInt() <  Config.segments)) { 
+      uint8_t _seg = server.arg("seg").toInt();
+      if (prevsegment != _seg) {
         prevsegment = State.segment;
+        State.segment = _seg;
         getSegmentParams(State.segment);
-        memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
+        //memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));     
         State.mode = SET;
         _updateState = true;
       }      
@@ -350,18 +351,23 @@ server.on("/set", []() {
     main_color.red = ((rgb >> 16) & 0xFF);
     main_color.green = ((rgb >> 8) & 0xFF);
     main_color.blue = ((rgb >> 0) & 0xFF);
+    _updateSegState = true;
   } else {
     if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
       main_color.red = server.arg("r").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
       main_color.green = server.arg("g").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
       main_color.blue = server.arg("b").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
       main_color.white = server.arg("w").toInt();
+      _updateSegState = true;
     }
   } 
   if (server.arg("rgb2") != "") {
@@ -370,18 +376,23 @@ server.on("/set", []() {
     back_color.red = ((rgb2 >> 16) & 0xFF);
     back_color.green = ((rgb2 >> 8) & 0xFF);
     back_color.blue = ((rgb2 >> 0) & 0xFF);
+    _updateSegState = true;
   } else {
     if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
       back_color.red = server.arg("r2").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
       back_color.green = server.arg("g2").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("b2") != "") && (server.arg("b2").toInt() >= 0) && (server.arg("b2").toInt() <= 255)) {
       back_color.blue = server.arg("b2").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("w2") != "") && (server.arg("w2").toInt() >= 0) && (server.arg("w2").toInt() <= 255)){
       back_color.white = server.arg("w2").toInt();
+      _updateSegState = true;
     }
   }
   if (server.arg("rgb3") != "") {
@@ -390,18 +401,23 @@ server.on("/set", []() {
     xtra_color.red = ((rgb3 >> 16) & 0xFF);
     xtra_color.green = ((rgb3 >> 8) & 0xFF);
     xtra_color.blue = ((rgb3 >> 0) & 0xFF);
+    _updateSegState = true;
   } else {
     if ((server.arg("r3") != "") && (server.arg("r3").toInt() >= 0) && (server.arg("r3").toInt() <= 255)) { 
       xtra_color.red = server.arg("r3").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("g3") != "") && (server.arg("g3").toInt() >= 0) && (server.arg("g3").toInt() <= 255)) {
       xtra_color.green = server.arg("g3").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("b3") != "") && (server.arg("b3").toInt() >= 0) && (server.arg("b3").toInt() <= 255)) {
       xtra_color.blue = server.arg("b3").toInt();
+      _updateSegState = true;
     }
     if ((server.arg("w3") != "") && (server.arg("w3").toInt() >= 0) && (server.arg("w3").toInt() <= 255)){
       xtra_color.white = server.arg("w3").toInt();
+      _updateSegState = true;
     }
   }
   main_color.red = constrain(main_color.red, 0, 255);
@@ -421,14 +437,12 @@ server.on("/set", []() {
   // Speed
   if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
     segState.speed[State.segment] = constrain(server.arg("s").toInt(), 0, 255);
-    State.mode = SET;
     _updateSegState = true;
   }
   //Mode
   if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
     fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     if (fx_mode !=  segState.mode[State.segment]) {
-      State.mode = SET;
       _updateSegState = true;
     }
   }
@@ -453,6 +467,7 @@ server.on("/set", []() {
   }
   if (_updateSegState) {
     DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+    State.mode = SET;
     if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
   }
 #endif

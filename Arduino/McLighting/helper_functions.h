@@ -208,8 +208,9 @@ void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = C
   (readSegmentStateFS(State.segment)) ? DBG_OUTPUT_PORT.println("Segment state config FS read Success!") : DBG_OUTPUT_PORT.println("Segment state config FS read failure!");
   memcpy(segState.colors[State.segment], hexcolors_trans, sizeof(hexcolors_trans));
   strip->setSegment(State.segment,  segState.start,  segState.stop , segState.mode[State.segment], hexcolors_trans, convertSpeed(segState.speed[State.segment]), segState.options);
-  fx_speed_actual = segState.speed[State.segment];
+  fx_speed = segState.speed[State.segment];
   fx_mode = segState.mode[State.segment];
+  brightness_trans = State.brightness;
   prevsegment = State.segment;
   strip->setCustomMode(0, F("Autoplay"), handleAuto);
   strip->setCustomMode(1, F("Custom WS"), handleCustomWS);
@@ -244,11 +245,12 @@ void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = C
 }
 
 void getSegmentParams(uint8_t _seg) {
-  segState.start        = strip->getSegment(_seg)->start;;
-  segState.stop         = strip->getSegment(_seg)->stop;;
+  segState.start   = strip->getSegment(_seg)->start;;
+  segState.stop    = strip->getSegment(_seg)->stop;;
   //segState.mode[_seg]     = strip->getMode(_seg);
   //segState.speed[_seg]    = unconvertSpeed(strip->getSpeed(_seg));
-  fx_speed_actual  = segState.speed[_seg];
+  //fx_mode          = segState.mode[_seg];
+  //fx_speed         = segState.speed[_seg];
   main_color.white = ((segState.colors[_seg][0] >> 24) & 0xFF);
   main_color.red   = ((segState.colors[_seg][0] >> 16) & 0xFF);
   main_color.green = ((segState.colors[_seg][0] >>  8) & 0xFF);

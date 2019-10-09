@@ -267,14 +267,13 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   // / ==> Set active segment
   if (_payload[0] == 'S') {
     if (_payload[1] == 's') {
-      uint8_t seg = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
-      State.segment = constrain(seg, 0, Config.segments - 1);
-      if (prevsegment != State.segment) {
+      uint8_t _seg = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
+      _seg = constrain(_seg, 0, Config.segments - 1);
+      if (prevsegment != _seg) {
         prevsegment = State.segment;
+        State.segment = _seg;
         getSegmentParams(State.segment);
-        //convertColors();
-        //memcpy(segState.colors[State.segment], hexcolors_trans, sizeof(hexcolors_trans));
-        memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
+        //memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
         _updateState = true;
         Dbg_Prefix(mqtt, num);
         DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", State.segment);
@@ -283,7 +282,6 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     // / ==> Set segment first LED
     if (_payload[1] == '[') {
       uint16_t _seg_start = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
-      //getSegmentParams(State.segment);
       _seg_start = constrain(_seg_start, 0, Config.stripSize - 1);
       if (_seg_start != segState.start) {
         segState.start = _seg_start;
@@ -296,7 +294,6 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     // / ==> Set segment last LED
     if (_payload[1] == ']') {
       uint16_t _seg_stop = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
-      //getSegmentParams(State.segment);
       _seg_stop = constrain(_seg_stop, segState.start, Config.stripSize - 1);
       if (_seg_stop != segState.stop) {
         segState.stop = _seg_stop;
@@ -439,6 +436,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     if(!save_state.active()) save_state.once(3, tickerSaveState);
   }
   if (_updateSegState) {
+    State.mode = SET;
     DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
     if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
     
@@ -761,6 +759,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
 
     bool processJson(char* message) {
+      bool _updateState    = false;
+      bool _updateSegState = false;
       const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(12) + 500;
       DynamicJsonDocument jsonBuffer(bufferSize);
       DeserializationError error = deserializeJson(jsonBuffer, message);
@@ -777,14 +777,25 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0) {
           State.mode = SET;
+          _updateState = true;
         }
         else if (strcmp(state_in, off_cmd) == 0) {
           State.mode = OFF;
+          _updateState = true;
           jsonBuffer.clear();
           return true;
         }
       }
-
+      if (root.containsKey("segment")) {
+        uint8_t json_segment = constrain((uint8_t) root["segment"], 0, Config.segments - 1);
+        if (prevsegment != json_segment) {
+          prevsegment = State.segment;
+          State.segment = json_segment;
+          getSegmentParams(State.segment);   
+          State.mode = SET;
+          _updateState = true;
+        }      
+      }
       if (root.containsKey("color")) {
         JsonObject color = root["color"];
         main_color.red = (uint8_t) color["r"];
@@ -799,14 +810,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         xtra_color.green = (uint8_t) color["g3"];
         xtra_color.blue = (uint8_t) color["b3"];
         xtra_color.white = (uint8_t) color["w3"];
-        State.mode = SET;
+        _updateSegState = true;
       }
       
       if (root.containsKey("white_value")) {
         uint8_t json_white_value = constrain((uint8_t) root["white_value"], 0, 255);
         if (json_white_value != main_color.white) {
           main_color.white = json_white_value;
-          State.mode = SET;
+          _updateSegState = true;
         }
       }
       
@@ -814,7 +825,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint8_t _fx_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (_fx_speed != segState.speed[State.segment]) {
           segState.speed[State.segment] = _fx_speed;
-          State.mode = SET;
+          _updateSegState = true;
         }
       }
 
@@ -823,7 +834,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         color_temp = (uint16_t) root["color_temp"];
         uint16_t kelvin  = 1000000 / color_temp;
         main_color = temp2rgb(kelvin);
-        State.mode = SET;
+        _updateSegState = true;
       }
 
       if (root.containsKey("brightness")) {
@@ -831,6 +842,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (json_brightness != State.brightness) {
           State.brightness = json_brightness;
           State.mode = SET;
+          _updateState = true;
         }
       }
 
@@ -839,16 +851,32 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         #if defined(ENABLE_HOMEASSISTANT)
           if(effectString == "OFF"){
             State.mode = OFF;
+            _updateState = true;
           }
         #endif
         for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           if(String(strip->getModeName(i)) == effectString) {
             State.mode = SET;
             fx_mode = i;
+            _updateState = true;
+            _updateSegState = true;
             break;
           }
         }
       }
+      #if defined(ENABLE_STATE_SAVE)
+        if (_updateState) {
+          DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+          if(!save_state.active()) save_state.once(3, tickerSaveState);
+        }
+        if (_updateSegState) {
+          State.mode = SET;
+          DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+          if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+        }
+      #endif
+        _updateState = false;
+        _updateSegState = false;
       jsonBuffer.clear();
       return true;
     }
@@ -1196,6 +1224,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 // ***************************************************************************
 void handleRemote() {
     uint8_t chng = 1;
+    bool _updateState = false;
+    bool _updateSegState = false;
     if (irrecv.decode(&results)) {
       DBG_OUTPUT_PORT.print("IR Code: 0x");
       DBG_OUTPUT_PORT.print(uint64ToString(results.value, HEX));
@@ -1208,8 +1238,10 @@ void handleRemote() {
         last_remote_cmd = 0;
         if (State.mode == OFF) {
           State.mode = SET;
+          _updateState = true;
         } else {
           State.mode = OFF;
+          _updateState = true;;
         }
       }
       if (State.mode == HOLD) {
@@ -1217,14 +1249,14 @@ void handleRemote() {
           last_remote_cmd = results.value;
           if (State.brightness + chng <= 255) {
             State.brightness = State.brightness + chng;
-            State.mode = SET;
+            _updateState = true;
           }
         }
         if (results.value == rmt_commands[BRIGHTNESS_DOWN]) { //Brightness down
           last_remote_cmd = results.value;
           if (State.brightness - chng >= 0) {
             State.brightness = State.brightness - chng;
-            State.mode = SET;
+            _updateState = true;
           }
         }
         if ((segState.mode[State.segment] < FX_MODE_CUSTOM_0) || (segState.mode[State.segment] > FX_MODE_CUSTOM_1)) {
@@ -1232,14 +1264,14 @@ void handleRemote() {
             last_remote_cmd = results.value;
             if (segState.speed[State.segment] + chng <= 65535) {
               segState.speed[State.segment] = segState.speed[State.segment] + chng;
-              State.mode = SET;
+              _updateSegState = true;
             }
           }
           if (results.value == rmt_commands[SPEED_DOWN]) { //Speed down
             last_remote_cmd = results.value;
             if (segState.speed[State.segment] - chng >= 0) {
               segState.speed[State.segment] = segState.speed[State.segment] - chng;
-              State.mode = SET;
+              _updateSegState = true;
             }
           }
         }
@@ -1249,19 +1281,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.red + chng <= 255) {
                 main_color.red = main_color.red + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.red + chng <= 255) {
                 back_color.red = back_color.red + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.red + chng <= 255) {
                 xtra_color.red = xtra_color.red + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1270,19 +1302,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.red - chng >= 0) {
                 main_color.red = main_color.red - chng;
-                State.mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.red - chng >= 0) {
                 back_color.red = back_color.red - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.red - chng >= 0) {
                 xtra_color.red = xtra_color.red - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1291,19 +1323,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.green + chng <= 255) {
                 main_color.green = main_color.green + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.green + chng <= 255) {
                 back_color.green = back_color.green + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.green + chng <= 255) {
                 xtra_color.green = xtra_color.green + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1312,19 +1344,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.green - chng >= 0) {
                 main_color.green = main_color.green - chng;;
-                State.mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.green - chng >= 0) {
                 back_color.green = back_color.green - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.green - chng >= 0) {
                 xtra_color.green = xtra_color.green - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1333,19 +1365,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.blue + chng <= 255) {
                 main_color.blue = main_color.blue + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.blue + chng <= 255) {
                 back_color.blue = back_color.blue + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.blue + chng <= 255) {
                 xtra_color.blue = xtra_color.blue + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1354,19 +1386,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.blue - chng >= 0) {
                 main_color.blue = main_color.blue - chng;
-                State.mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.blue - chng >= 0) {
                 back_color.blue = back_color.blue - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.blue - chng >= 0) {
                 xtra_color.blue = xtra_color.blue - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1375,19 +1407,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.white + chng <= 255) {
                 main_color.white = main_color.white + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.white + chng <= 255) {
                 back_color.white = back_color.white + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.white + chng <= 255) {
                 xtra_color.white = xtra_color.white + chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1396,19 +1428,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.white - chng >= 0) {
                 main_color.white = main_color.white - chng;
-                State.mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.white - chng >= 0) {
                 back_color.white = back_color.white - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.white - chng >= 0) {
                 xtra_color.white = xtra_color.white - chng;
-                State.mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1431,48 +1463,61 @@ void handleRemote() {
         if ((segState.mode[State.segment] < strip->getModeCount()-1) && (State.mode == HOLD)) {
           fx_mode = segState.mode[State.segment] + 1;
         }
-        State.mode = SET;
+        _updateSegState = true;
       }
       if (results.value == rmt_commands[MODE_DOWN]) { //Mode down
         last_remote_cmd = results.value;
         if ((segState.mode[State.segment] > 0) && (State.mode == HOLD)) {
           fx_mode = segState.mode[State.segment] - 1;
         }
-        State.mode = SET;
+        _updateSegState = true;
       }
       if (results.value == rmt_commands[AUTOMODE]) { // Toggle Automode
         last_remote_cmd = 0;
         fx_mode = 56;
-        State.mode = SET;
+        _updateSegState = true;
       }
     #if defined(CUSTOM_WS2812FX_ANIMATIONS)
       if (results.value == rmt_commands[CUST_1]) { // Select TV Mode
         last_remote_cmd = 0;
         fx_mode = 57;
-        State.mode = SET;
+        _updateSegState = true;
       }
     #endif 
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
         fx_mode = 12;
-        State.mode = SET;
+        _updateSegState = true;
       } 
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
         fx_mode = 48;
-        State.mode = SET;
+        _updateSegState = true;
       } 
       if (results.value == rmt_commands[CUST_4]) { // Select Custom Mode 4
         last_remote_cmd = 0;
         fx_mode = 21;
-        State.mode = SET; 
+        _updateSegState = true; 
       }
       if (results.value == rmt_commands[CUST_5]) { // Select Custom Mode 5
         last_remote_cmd = 0;
         fx_mode = 46;
-        State.mode = SET;
+        _updateSegState = true;
       } 
       irrecv.resume();  // Receive the next value
     }
+    #if defined(ENABLE_STATE_SAVE)
+      if (_updateState) {
+        DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+        if(!save_state.active()) save_state.once(3, tickerSaveState);
+      }
+      if (_updateSegState) {
+        State.mode = SET;
+        DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+        if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+      }
+    #endif
+      _updateState = false;
+      _updateSegState = false;
   }
 #endif

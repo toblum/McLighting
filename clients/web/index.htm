@@ -1929,9 +1929,9 @@ function initSettings() {
         redrawColorPicker();
     });
     var settransitionEffects = document.getElementById("set-transitionEffects");
-    settransitionEffects.checked = config.transitionEffects;
+    settransitionEffects.checked = config.ws_trans;
     settransitionEffects.addEventListener('change', ()=>{
-        config.transitionEffects = settransitionEffects.checked;
+        config.ws_trans = settransitionEffects.checked;
         if (settransitionEffects.checked) {
             document.getElementById("settransitionEffectsbgcolor").style.backgroundColor = settings.theme_btn;
             ws_send("Ce1");                                                                                         

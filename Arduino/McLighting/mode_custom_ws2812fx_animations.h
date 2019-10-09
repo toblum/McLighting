@@ -9,14 +9,14 @@ as a custom effect
 More info on how to create custom aniamtions for WS2812FX: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md#custom-effects
 */
 
-// ***************************************************************************
-// Functions and variables for automatic cycling
-// ***************************************************************************
 uint16_t handleSegmentOFF(void) {
   WS2812FX::Segment* _seg = strip->getSegment();
   return _seg->speed;
 }
 
+// ***************************************************************************
+// Function for automatic cycling
+// ***************************************************************************
 void handleAutoPlay(uint8_t _seg) {
   //WS2812FX::Segment* _seg = strip->getSegment();
   if (autoDelay[_seg] <= millis()) {   
@@ -37,21 +37,28 @@ void handleAutoPlay(uint8_t _seg) {
   }
 }
 
+uint16_t handleAuto() {
+  WS2812FX::Segment* _seg = strip->getSegment();
+  return _seg->speed;
+}
+
+uint16_t handleCustomWS(void) {
+  WS2812FX::Segment* _seg = strip->getSegment();
+  return _seg->speed;
+}
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   // ***************************************************************************
-  // TV mode
+  // TV mode to be reviewed
   // ***************************************************************************
-  uint8_t  dipInterval = 10;
-  uint16_t darkTime = 250;
-  unsigned long currentDipTime;
-  unsigned long dipStartTime;
-  unsigned long currentMillis;
-  uint8_t  ledState = LOW;
-  unsigned long previousMillis = 0; 
-  uint16_t interv = 2000;
-  uint8_t  twitch = 50;
-  uint8_t  dipCount = 0;
-  boolean  timeToDip = false;
+  uint16_t darkTime[10] = {250,250,250,250,250,250,250,250,250,250};
+  uint8_t  dipInterval[10] = {10,10,10,10,10,10,10,10,10,10};
+  unsigned long dipStartTime[10] = {};
+  uint8_t  ledState[10] = {LOW,LOW,LOW,LOW,LOW,LOW,LOW,LOW,LOW,LOW};
+  unsigned long previousMillis[10]= {0,0,0,0,0,0,0,0,0,0};
+  uint16_t interv[10] = {2000,2000,2000,2000,2000,2000,2000,2000,2000,2000};
+  uint8_t  twitch[10]= {50,50,50,50,50,50,50,50,50,50};
+  uint8_t  dipCount[10] = {0,0,0,0,0,0,0,0,0,0};
+  bool     timeToDip[10] = {false,false,false,false,false,false,false,false,false,false};
   
   
   void hsb2rgbAN1(uint16_t index, uint8_t sat, uint8_t bright, uint16_t led) {
@@ -61,6 +68,95 @@ void handleAutoPlay(uint8_t _seg) {
     temp[1] = temp[4] = (uint8_t)((((( (index & 255)        * sat) / 255) + (sat ^ 255)) * bright) / 255);
     temp[2] =           (uint8_t)(((((((index & 255) ^ 255) * sat) / 255) + (sat ^ 255)) * bright) / 255);
     strip->setPixelColor(led, temp[n + 2], temp[n + 1], temp[n], 0);
+  }
+  
+
+  uint16_t handleTV(void) {
+    WS2812FX::Segment* _seg = strip->getSegment();
+    uint8_t _seg_num = strip->getSegmentIndex();
+    if (timeToDip[_seg_num] == false) {
+      if((millis() - previousMillis[_seg_num]) > interv[_seg_num]) {
+        DBG_OUTPUT_PORT.println("Segment:");
+        DBG_OUTPUT_PORT.println(_seg_num);
+        previousMillis[_seg_num] = millis();
+        //interv = random(750,4001);//Adjusts the interval for more/less frequent random light changes
+        interv[_seg_num] = random(800-(512 - (_seg->speed/64)),6001-(2731 - (_seg->speed/24)));
+        twitch[_seg_num] = random(40,100);// Twitch provides motion effect but can be a bit much if too high
+        dipCount[_seg_num]++;
+      }
+      if((millis() - previousMillis[_seg_num]) < twitch[_seg_num]) {
+        uint16_t led=random(_seg->start, _seg->stop);
+        ledState[_seg_num] = ledState[_seg_num] == LOW ? HIGH : LOW; // if the LED is off turn it on and vice-versa:      
+        ledstates[led] = ((ledState[_seg_num]) ? 255 : 0);
+        for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
+          uint16_t index = (j%3 == 0) ? 400 : random(0,767);
+          hsb2rgbAN1(index, 200, ledstates[j], j);
+        }
+        if (dipCount[_seg_num] > dipInterval[_seg_num]) { 
+          timeToDip[_seg_num] = true;
+          dipCount[_seg_num] = 0;
+          dipStartTime[_seg_num] = millis();
+          darkTime[_seg_num] = random(50,150);
+          dipInterval[_seg_num] = random(5,250);// cycles of flicker
+        }
+      } 
+    } else {
+      DBG_OUTPUT_PORT.println("Dip Time");
+      if (millis() - dipStartTime[_seg_num] < darkTime[_seg_num]) {
+        for (uint16_t i=(_seg->start + 3); i<= _seg->stop; i++) {            
+          ledstates[i] = 0;
+          for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
+            uint16_t index = (j%3 == 0) ? 400 : random(0,767);
+            hsb2rgbAN1(index, 200, ledstates[j], j);
+          }     
+        }
+      } else {
+        timeToDip[_seg_num] = false;
+      }
+    }
+    return _seg->speed;
+  }
+  // ***************************************************************************
+  // TV mode
+  // *************************************************************************** 
+  uint16_t handleE131(void) {
+    WS2812FX::Segment* _seg = strip->getSegment();
+    if (!e131->isEmpty()) {
+      e131_packet_t packet;
+      e131->pull(&packet); // Pull packet from ring buffer
+  
+      uint16_t universe = htons(packet.universe);
+      uint8_t *data = packet.property_values + 1;
+  
+      if (universe < START_UNIVERSE || universe > END_UNIVERSE) return _seg->speed; //async will take care about filling the buffer
+  
+      // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
+      //               htons(packet.universe),                 // The Universe for this packet
+      //               htons(packet.property_value_count) - 1, // Start code is ignored, we're interested in dimmer data
+      //               e131.stats.num_packets,                 // Packet counter
+      //               e131.stats.packet_errors,               // Packet error counter
+      //               packet.property_values[1]);             // Dimmer data for Channel 1
+  /*  #if defined(RGBW)
+      uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
+      if (NUMLEDS <= multipacketOffset) return;
+      uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
+    #else*/
+      uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
+      if (Config.stripSize <= multipacketOffset) return _seg->speed;
+      uint16_t len = (170 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 170;
+  /*  #endif */
+      for (uint16_t i = 0; i < len; i++){
+        if ((i >= _seg->start) && (i <= _seg->stop)) {
+          uint16_t j = i * 3;
+    /*  #if defined(RGBW)
+          strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
+      #else */
+          strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
+    /*  #endif */
+        }
+      }
+    }
+    return _seg->speed;
   }
   
   /*
@@ -106,152 +202,52 @@ void handleAutoPlay(uint8_t _seg) {
   // Default 120, suggested range 50-200.
   #define SPARKING 120
   
-#endif
-
-uint16_t handleAuto() {
-  WS2812FX::Segment* _seg = strip->getSegment();
-  return _seg->speed;
-}
-
-uint16_t handleCustomWS(void) {
-  WS2812FX::Segment* _seg = strip->getSegment();
-  return _seg->speed;
-}
-#if defined(CUSTOM_WS2812FX_ANIMATIONS)
-uint16_t handleTV(void) {
-  WS2812FX::Segment* _seg = strip->getSegment();
-  if (timeToDip == false) {
-    currentMillis = millis();
-    if(currentMillis-previousMillis > interv) {
-      previousMillis = currentMillis;
-      //interv = random(750,4001);//Adjusts the interval for more/less frequent random light changes
-      interv = random(1000-(_seg->speed/128),5001-(_seg->speed/32));
-      twitch = random(40,100);// Twitch provides motion effect but can be a bit much if too high
-      dipCount = dipCount++;
+  uint16_t handleFire2012(void) {
+  // Array of temperature readings at each simulation cell
+    WS2812FX::Segment* _seg = strip->getSegment();
+     
+    // Step 1.  Cool down every cell a little
+    for( uint16_t i = _seg->start; i <= _seg->stop; i++) {
+      ledstates[i] = qsub8(ledstates[i],  random8(0, ((COOLING * 10) / (_seg->stop - _seg->start)+1) + 2));
     }
-    if(currentMillis-previousMillis<twitch) {
-      uint16_t led=random(_seg->start, _seg->stop);
-      ledState = ledState == LOW ? HIGH : LOW; // if the LED is off turn it on and vice-versa:      
-      ledstates[led] = ((ledState) ? 255 : 0);
-      for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
-        uint16_t index = (j%3 == 0) ? 400 : random(0,767);
-        hsb2rgbAN1(index, 200, ledstates[j], j);
-      }
-      if (dipCount > dipInterval) { 
-        DBG_OUTPUT_PORT.println("dip");
-        timeToDip = true;
-        dipCount = 0;
-        dipStartTime = millis();
-        darkTime = random(50,150);
-        dipInterval = random(5,250);// cycles of flicker
-      }
-    } 
-  } else {
-    DBG_OUTPUT_PORT.println("Dip Time");
-    currentDipTime = millis();
-    if (currentDipTime - dipStartTime < darkTime) {
-      for (uint16_t i=(_seg->start + 3); i<= _seg->stop; i++) {
-        ledstates[i] = State.brightness;
-        for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
-          uint16_t index = (j%3 == 0) ? 400 : random(0,767);
-          hsb2rgbAN1(index, 200, ledstates[j], j);
-        }     
-      }
-    } else {
-      timeToDip = false;
-    }
-  }
-  return _seg->speed;
-}
-
-uint16_t handleE131(void) {
-  WS2812FX::Segment* _seg = strip->getSegment();
-  if (!e131->isEmpty()) {
-    e131_packet_t packet;
-    e131->pull(&packet); // Pull packet from ring buffer
-
-    uint16_t universe = htons(packet.universe);
-    uint8_t *data = packet.property_values + 1;
-
-    if (universe < START_UNIVERSE || universe > END_UNIVERSE) return _seg->speed; //async will take care about filling the buffer
-
-    // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
-    //               htons(packet.universe),                 // The Universe for this packet
-    //               htons(packet.property_value_count) - 1, // Start code is ignored, we're interested in dimmer data
-    //               e131.stats.num_packets,                 // Packet counter
-    //               e131.stats.packet_errors,               // Packet error counter
-    //               packet.property_values[1]);             // Dimmer data for Channel 1
-/*  #if defined(RGBW)
-    uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
-    if (NUMLEDS <= multipacketOffset) return;
-    uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
-  #else*/
-    uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-    if (Config.stripSize <= multipacketOffset) return _seg->speed;
-    uint16_t len = (170 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 170;
-/*  #endif */
-    for (uint16_t i = 0; i < len; i++){
-      if ((i >= _seg->start) && (i <= _seg->stop)) {
-        uint16_t j = i * 3;
-  /*  #if defined(RGBW)
-        strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
-    #else */
-        strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
-  /*  #endif */
-      }
-    }
-  }
-  return _seg->speed;
-}
-
-uint16_t handleFire2012(void) {
-// Array of temperature readings at each simulation cell
-  WS2812FX::Segment* _seg = strip->getSegment();
-    
-  // Step 1.  Cool down every cell a little
-  for( uint16_t i = _seg->start; i <= _seg->stop; i++) {
-    ledstates[i] = qsub8(ledstates[i],  random8(0, ((COOLING * 10) / (_seg->stop - _seg->start)+1) + 2));
-  }
-
-  // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-  for( uint16_t k= _seg->stop; k >= (_seg->start + 2); k--) {
-    ledstates[k] = (ledstates[k - 1] + ledstates[k - 2] + ledstates[k - 2]) / 3;
-  }
-
-  // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
-  if( random8() < SPARKING ) {
-    uint8_t y = random8(7) + _seg->start;
-    ledstates[y] = qadd8(ledstates[y], random8(160,255) );
-  }
-
-  // Step 4.  Map from heat cells to LED colors
   
-  //                    98                143
-  for( uint16_t j = _seg->start; j <= _seg->stop; j++) {
-    CRGB color = HeatColor(ledstates[j]);
-    uint16_t pixel;
-    if ((_seg->options & 128) > 0) {
-      pixel = _seg->stop + (_seg->start - j);
-    } else {
-      pixel = j;
+    // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+    for( uint16_t k= _seg->stop; k >= (_seg->start + 2); k--) {
+      ledstates[k] = (ledstates[k - 1] + ledstates[k - 2] + ledstates[k - 2]) / 3;
     }
-    strip->setPixelColor(pixel, color.red, color.green, color.blue, 0);
-  }
-  return _seg->speed;
-}
-
-uint16_t handleGradient() {
-  WS2812FX::Segment* _seg = strip->getSegment();
-  for(uint16_t j = 0; j <= (_seg->stop - _seg->start); j++) {
-    uint16_t pixel;
-    if ((_seg->options & 128) > 0) {
-      pixel = _seg->stop - j;
-    } else {
-      pixel = _seg->start + j;
+  
+    // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+    if( random8() < SPARKING ) {
+      uint8_t y = random8(7) + _seg->start;
+      ledstates[y] = qadd8(ledstates[y], random8(160,255) );
     }
-    uint32_t color = trans(_seg->colors[1], _seg->colors[0], j, (_seg->stop - _seg->start));
-    strip->setPixelColor(pixel, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
+  
+    // Step 4.  Map from heat cells to LED colors
+    for( uint16_t j = _seg->start; j <= _seg->stop; j++) {
+      CRGB color = HeatColor(ledstates[j]);
+      uint16_t pixel;
+      if ((_seg->options & 128) > 0) {
+        pixel = _seg->stop + (_seg->start - j);
+      } else {
+        pixel = j;
+      }
+      strip->setPixelColor(pixel, color.red, color.green, color.blue, 0);
+    }
+    return _seg->speed;
   }
-  return _seg->speed;
-}
+  
+  uint16_t handleGradient() {
+    WS2812FX::Segment* _seg = strip->getSegment();
+    for(uint16_t j = 0; j <= (_seg->stop - _seg->start); j++) {
+      uint16_t pixel;
+      if ((_seg->options & 128) > 0) {
+        pixel = _seg->stop - j;
+      } else {
+        pixel = _seg->start + j;
+      }
+      uint32_t color = trans(_seg->colors[1], _seg->colors[0], j, (_seg->stop - _seg->start));
+      strip->setPixelColor(pixel, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
+    }
+    return _seg->speed;
+  }
 #endif
