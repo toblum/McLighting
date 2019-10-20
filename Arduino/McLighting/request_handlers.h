@@ -1,199 +1,61 @@
 // ***************************************************************************
 // Request handlers
 // ***************************************************************************
-
-// Prototypes
-char * listStatusJSON();
-#if defined(ENABLE_STATE_SAVE)
-  bool   writeConfigFS(bool);
-  void   tickerSaveConfig();
-#endif
-
-// Call convertColors whenever main_color, back_color or xtra_color changes.
-
-void convertColors() {
-  hex_colors_trans[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
-  hex_colors_trans[1] = (uint32_t)(back_color.white << 24) | (back_color.red << 16) | (back_color.green << 8) | back_color.blue;
-  hex_colors_trans[2] = (uint32_t)(xtra_color.white << 24) | (xtra_color.red << 16) | (xtra_color.green << 8) | xtra_color.blue;
-}
-
-void calculateColorTransitionSteps() {
-  //compare all colors and calculate steps
-  trans_cnt_max = 0;
-  int     calculate_max[4] = {};
-  for (uint8_t i=0; i<3; i++){
-    for (uint8_t j=0; j<4; j++) {
-      calculate_max[j] = ((hex_colors[i] >> ((3-j)*8)) & 0xFF) - ((hex_colors_trans[i] >> ((3-j)*8)) & 0xFF);
-      calculate_max[j] = abs(calculate_max[j]);
-      trans_cnt_max = max(trans_cnt_max, calculate_max[j]);
-    }
-  }
-}
-
-void convertColorsFade() {
-  if (transEffect) {
-      if (trans_cnt > 1) {
-        memcpy(hex_colors, strip->getColors(selected_segment), sizeof(hex_colors));
-        DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
-        trans_cnt = 1;
-      }
-    calculateColorTransitionSteps();
-  }
-}
-
-void getArgs() {
-  if (mode == SET) {
-    //color wrgb
-    if (server.arg("rgb") != "") {
-      uint32_t rgb = (uint32_t) strtoul(server.arg("rgb").c_str(), NULL, 16);
-      main_color.white = ((rgb >> 24) & 0xFF);
-      main_color.red = ((rgb >> 16) & 0xFF);
-      main_color.green = ((rgb >> 8) & 0xFF);
-      main_color.blue = ((rgb >> 0) & 0xFF);
-    } else {
-      if ((server.arg("r") != "") && (server.arg("r").toInt() >= 0) && (server.arg("r").toInt() <= 255)) { 
-        main_color.red = server.arg("r").toInt();
-      }
-      if ((server.arg("g") != "") && (server.arg("g").toInt() >= 0) && (server.arg("g").toInt() <= 255)) {
-        main_color.green = server.arg("g").toInt();
-      }
-      if ((server.arg("b") != "") && (server.arg("b").toInt() >= 0) && (server.arg("b").toInt() <= 255)) {
-        main_color.blue = server.arg("b").toInt();
-      }
-      if ((server.arg("w") != "") && (server.arg("w").toInt() >= 0) && (server.arg("w").toInt() <= 255)){
-        main_color.white = server.arg("w").toInt();
-      }
-    }
-    if (server.arg("rgb2") != "") {
-      uint32_t rgb2 = (uint32_t) strtoul(server.arg("rgb2").c_str(), NULL, 16);
-      back_color.white = ((rgb2 >> 24) & 0xFF);
-      back_color.red = ((rgb2 >> 16) & 0xFF);
-      back_color.green = ((rgb2 >> 8) & 0xFF);
-      back_color.blue = ((rgb2 >> 0) & 0xFF);
-    } else {
-      if ((server.arg("r2") != "") && (server.arg("r2").toInt() >= 0) && (server.arg("r2").toInt() <= 255)) { 
-        back_color.red = server.arg("r2").toInt();
-      }
-      if ((server.arg("g2") != "") && (server.arg("g2").toInt() >= 0) && (server.arg("g2").toInt() <= 255)) {
-        back_color.green = server.arg("g2").toInt();
-      }
-      if ((server.arg("b2") != "") && (server.arg("b2").toInt() >= 0) && (server.arg("b2").toInt() <= 255)) {
-        back_color.blue = server.arg("b2").toInt();
-      }
-      if ((server.arg("w2") != "") && (server.arg("w2").toInt() >= 0) && (server.arg("w2").toInt() <= 255)){
-        back_color.white = server.arg("w2").toInt();
-      }
-    }
-    if (server.arg("rgb3") != "") {
-      uint32_t rgb3 = (uint32_t) strtoul(server.arg("rgb3").c_str(), NULL, 16);
-      xtra_color.white = ((rgb3 >> 24) & 0xFF);
-      xtra_color.red = ((rgb3 >> 16) & 0xFF);
-      xtra_color.green = ((rgb3 >> 8) & 0xFF);
-      xtra_color.blue = ((rgb3 >> 0) & 0xFF);
-    } else {
-      if ((server.arg("r3") != "") && (server.arg("r3").toInt() >= 0) && (server.arg("r3").toInt() <= 255)) { 
-        xtra_color.red = server.arg("r3").toInt();
-      }
-      if ((server.arg("g3") != "") && (server.arg("g3").toInt() >= 0) && (server.arg("g3").toInt() <= 255)) {
-        xtra_color.green = server.arg("g3").toInt();
-      }
-      if ((server.arg("b3") != "") && (server.arg("b3").toInt() >= 0) && (server.arg("b3").toInt() <= 255)) {
-        xtra_color.blue = server.arg("b3").toInt();
-      }
-      if ((server.arg("w3") != "") && (server.arg("w3").toInt() >= 0) && (server.arg("w3").toInt() <= 255)){
-        xtra_color.white = server.arg("w3").toInt();
-      }
-    }
-    main_color.red = constrain(main_color.red, 0, 255);
-    main_color.green = constrain(main_color.green, 0, 255);
-    main_color.blue = constrain(main_color.blue, 0, 255);
-    main_color.white = constrain(main_color.white, 0, 255);
-    back_color.red = constrain(back_color.red, 0, 255);
-    back_color.green = constrain(back_color.green, 0, 255);
-    back_color.blue = constrain(back_color.blue, 0, 255);
-    back_color.white = constrain(back_color.white, 0, 255);
-    xtra_color.red = constrain(xtra_color.red, 0, 255);
-    xtra_color.green = constrain(xtra_color.green, 0, 255);
-    xtra_color.blue = constrain(xtra_color.blue, 0, 255);
-    xtra_color.white = constrain(xtra_color.white, 0, 255);
-    // Speed
-    if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
-      ws2812fx_speed = constrain(server.arg("s").toInt(), 0, 255);
-    }
-    //Mode
-    if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
-      ws2812fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
-    }
-    // Brightness
-    if ((server.arg("c") != "") && (server.arg("c").toInt() >= 0) && (server.arg("c").toInt() <= 100)) { 
-      brightness = constrain((int) server.arg("c").toInt() * 2.55, 0, 255);
-    } else if ((server.arg("p") != "") && (server.arg("p").toInt() >= 0) && (server.arg("p").toInt() <= 255)) {
-      brightness = constrain(server.arg("p").toInt(), 0, 255);
-    }
-  }
-  
-  DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStatusJSON());
-}
-
-uint16_t convertSpeed(uint8_t mcl_speed) {
-  uint16_t ws2812_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
-  ws2812_speed = SPEED_MAX - ws2812_speed;
-  ws2812_speed = constrain(ws2812_speed, SPEED_MIN, SPEED_MAX);
-  return ws2812_speed;
-}
-
-uint8_t unconvertSpeed(uint16_t ws2812_speed) {
-  //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 * mcl_speed) - (-0.03181 * mcl_speed);
-   //log((SPEED_MAX - ws2812_speed)/61760) = (0.0002336 + 0.03181) * mcl_speed;
-  uint16_t  mcl_speed = (log((SPEED_MAX - ws2812_speed)/61760))/ (0.0002336 + 0.03181);
-  //uint16_t mcl_speed = 61760 * (exp(0.0002336 * mcl_speed) - exp(-0.03181 * mcl_speed));
-  mcl_speed = 255 - mcl_speed;
-  mcl_speed = constrain(mcl_speed, 0, 255);
-  return mcl_speed;
-}
-
 // ***************************************************************************
 // Handler functions for WS and MQTT
 // ***************************************************************************
-void handleSetMainColor(uint8_t * mypayload) {
+bool handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  main_color.white = ((rgb >> 24) & 0xFF);
-  main_color.red = ((rgb >> 16) & 0xFF);
-  main_color.green = ((rgb >> 8) & 0xFF);
-  main_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET;
+  if (rgb != segState.colors[State.segment][0]) { 
+    main_color.white = ((rgb >> 24) & 0xFF);
+    main_color.red = ((rgb >> 16) & 0xFF);
+    main_color.green = ((rgb >> 8) & 0xFF);
+    main_color.blue = ((rgb >> 0) & 0xFF);
+    return true;
+  }
+  return false;
 }
 
-void handleSetBackColor(uint8_t * mypayload) {
+bool handleSetBackColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[2], NULL, 16);
-  back_color.white = ((rgb >> 24) & 0xFF);
-  back_color.red = ((rgb >> 16) & 0xFF);
-  back_color.green = ((rgb >> 8) & 0xFF);
-  back_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET;
+  if (rgb != segState.colors[State.segment][1]) { 
+    back_color.white = ((rgb >> 24) & 0xFF);
+    back_color.red = ((rgb >> 16) & 0xFF);
+    back_color.green = ((rgb >> 8) & 0xFF);
+    back_color.blue = ((rgb >> 0) & 0xFF);
+    return true;
+  }
+  return false;
 }
-void handleSetXtraColor(uint8_t * mypayload) {
+bool handleSetXtraColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[3], NULL, 16);
-  xtra_color.white = ((rgb >> 24) & 0xFF);
-  xtra_color.red = ((rgb >> 16) & 0xFF);
-  xtra_color.green = ((rgb >> 8) & 0xFF);
-  xtra_color.blue = ((rgb >> 0) & 0xFF);
-  mode = SET;
+  if (rgb != segState.colors[State.segment][2]) { 
+    xtra_color.white = ((rgb >> 24) & 0xFF);
+    xtra_color.red = ((rgb >> 16) & 0xFF);
+    xtra_color.green = ((rgb >> 8) & 0xFF);
+    xtra_color.blue = ((rgb >> 0) & 0xFF);
+    return true;
+  }
+  return false;
 }
 
-void handleSetAllMode(uint8_t * mypayload) {
+bool handleSetAllMode(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  main_color.white = ((rgb >> 24) & 0xFF);
-  main_color.red = ((rgb >> 16) & 0xFF);
-  main_color.green = ((rgb >> 8) & 0xFF);
-  main_color.blue = ((rgb >> 0) & 0xFF);
-  DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
-  ws2812fx_mode = FX_MODE_STATIC;
-  mode = SET;
+  if ((State.mode = OFF) || (segState.mode[State.segment] != strip->getMode(State.segment)) || (rgb != segState.colors[State.segment][0])) {
+    main_color.white = ((rgb >> 24) & 0xFF);
+    main_color.red = ((rgb >> 16) & 0xFF);
+    main_color.green = ((rgb >> 8) & 0xFF);
+    main_color.blue = ((rgb >> 0) & 0xFF);
+    DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
+    fx_mode = FX_MODE_STATIC;
+    State.mode = SET;
+    return true;
+  }
+  return false;
 }
 
 void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
@@ -203,8 +65,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
   templed[4] = 0x00;
   uint8_t led = atoi(templed);
 
-  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, WS2812FXStripSettings.stripSize, mypayload );
-  if (led <= WS2812FXStripSettings.stripSize) {
+  DBG_OUTPUT_PORT.printf("led value: [%i]. Entry threshold: <= [%i] (=> %s)\r\n", led, Config.stripSize, mypayload );
+  if (led <= Config.stripSize) {
     char redhex[3];
     char greenhex[3];
     char bluehex[3];
@@ -238,8 +100,8 @@ void handleSetSingleLED(uint8_t * mypayload, uint8_t firstChar = 0) {
     strip->setPixelColor(led, color.red, color.green, color.blue, color.white);
     strip->show();
   }
-  mode = HOLD;
-  ws2812fx_mode= FX_MODE_CUSTOM_1;
+  State.mode = HOLD;
+  fx_mode= FX_MODE_CUSTOM_1;
 }
 
 void handleSetDifferentColors(uint8_t * mypayload) {
@@ -285,142 +147,17 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
   }
 }
 
-bool checkPin(uint8_t pin) { 
-  #if defined(USE_WS2812FX_DMA)
-    #if USE_WS2812FX_DMA == 0
-      pin = 3;
-    #endif
-    #if USE_WS2812FX_DMA == 1
-      pin = 1;
-    #endif
-    #if USE_WS2812FX_DMA == 2
-      pin = 2;
-    #endif
-  #endif
-  if (((pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 16)) && (pin != WS2812FXStripSettings.pin)) {
-    WS2812FXStripSettings.pin = pin;
-    return true;
-  }
-  return false;
-}
-
-
-neoPixelType checkRGBOrder(char rgbOrder[5]) {
-  for( uint8_t i=0 ; i < sizeof(rgbOrder) ; ++i ) rgbOrder[i] = toupper(rgbOrder[i]) ;
-  DBG_OUTPUT_PORT.printf("Checking RGB Order: %s ...", rgbOrder);
-  neoPixelType returnOrder = 0;
-  if (strcmp(rgbOrder, "GRB") == 0)  {
-    returnOrder = NEO_GRB;
-  } else if (strcmp(rgbOrder, "GBR") == 0) {
-    returnOrder = NEO_GBR;
-  } else if (strcmp(rgbOrder, "RGB") == 0) {
-    returnOrder = NEO_RGB;
-  } else if (strcmp(rgbOrder, "RBG") == 0) {
-    returnOrder = NEO_RBG;
-  } else if (strcmp(rgbOrder, "BRG") == 0) {
-    returnOrder = NEO_BRG;
-  } else if (strcmp(rgbOrder, "BGR") == 0) {
-    returnOrder = NEO_BGR;
-  } else if (strcmp(rgbOrder, "WGRB") == 0) {
-    returnOrder = NEO_WGRB;
-  } else if (strcmp(rgbOrder, "WGBR") == 0) {
-    returnOrder = NEO_WGBR;
-  } else if (strcmp(rgbOrder, "WRGB") == 0) {
-    returnOrder = NEO_WRGB;
-  } else if (strcmp(rgbOrder, "WRBG") == 0) {
-    returnOrder = NEO_WRBG;
-  } else if (strcmp(rgbOrder, "WBRG") == 0) {
-    returnOrder = NEO_WBRG;
-  } else if (strcmp(rgbOrder, "WBGR") == 0) {
-    returnOrder = NEO_WBGR;
-  } else if (strcmp(rgbOrder, "GWRB") == 0) {
-    returnOrder = NEO_GWRB;
-  } else if (strcmp(rgbOrder, "GWBR") == 0) {
-    returnOrder = NEO_GWBR;
-  } else if (strcmp(rgbOrder, "RWGB") == 0) {
-    returnOrder = NEO_RWGB;
-  } else if (strcmp(rgbOrder, "RWBG") == 0) {
-    returnOrder = NEO_RWBG;
-  } else if (strcmp(rgbOrder, "BWRG") == 0) {
-    returnOrder = NEO_BWRG;
-  } else if (strcmp(rgbOrder, "BWGR") == 0) {
-    returnOrder = NEO_BWGR;
-  } else if (strcmp(rgbOrder, "GRWB") == 0) {
-    returnOrder = NEO_GRWB;
-  } else if (strcmp(rgbOrder, "GBWR") == 0) {
-    returnOrder = NEO_GBWR;
-  } else if (strcmp(rgbOrder, "RGWB") == 0) {
-    returnOrder = NEO_RGWB;
-  } else if (strcmp(rgbOrder, "RBWG") == 0) {
-    returnOrder = NEO_RBWG;
-  } else if (strcmp(rgbOrder, "BRWG") == 0){
-    returnOrder = NEO_BRWG;
-  } else if (strcmp(rgbOrder, "BGWR") == 0) {
-    returnOrder = NEO_GRBW;
-  } else if (strcmp(rgbOrder, "GRBW") == 0) {
-    returnOrder = NEO_GRBW;
-  } else if (strcmp(rgbOrder, "GBWR") == 0) {
-    returnOrder = NEO_GBRW;
-  } else if (strcmp(rgbOrder, "RGBW") == 0) {
-    returnOrder = NEO_RGBW;
-  } else if (strcmp(rgbOrder, "RBGW") == 0) {
-    returnOrder = NEO_RBGW;
-  } else if (strcmp(rgbOrder, "BRGW") == 0) {
-    returnOrder = NEO_BRGW;
-  } else if (strcmp(rgbOrder, "BGRW") == 0) {
-    returnOrder = NEO_BGRW;
-  } else {
-    DBG_OUTPUT_PORT.print("invalid input!");
-    uint16_t check = checkRGBOrder(WS2812FXStripSettings.RGBOrder);
-    if (check != 0) {
-      returnOrder = static_cast<neoPixelType>(check);
-      strcpy(rgbOrder, WS2812FXStripSettings.RGBOrder);
-    } else {
-      returnOrder = static_cast<neoPixelType>(checkRGBOrder(RGBORDER));
-      strcpy(rgbOrder, RGBORDER);
-    }
-  }
-  DBG_OUTPUT_PORT.println("success!");
-  strcpy(WS2812FXStripSettings.RGBOrder, rgbOrder);
-  return returnOrder;
-}
-
-bool setConfByConfString(String saved_conf_string) {
-  if (getValue(saved_conf_string, '|', 0) == "CNF") {
-    DBG_OUTPUT_PORT.printf("Parsed conf: %s\r\n", saved_conf_string.c_str());
-    getValue(saved_conf_string, '|', 1).toCharArray(HOSTNAME, 64);
-  #if defined(ENABLE_MQTT)
-    getValue(saved_conf_string, '|', 2).toCharArray(mqtt_host, 64);
-    mqtt_port = getValue(saved_conf_string, '|', 3).toInt();
-    getValue(saved_conf_string, '|', 4).toCharArray(mqtt_user, 32);
-    getValue(saved_conf_string, '|', 5).toCharArray(mqtt_pass, 32);
-  #endif
-    WS2812FXStripSettings.stripSize = constrain(getValue(saved_conf_string, '|', 6).toInt(), 1, MAXLEDS);
-    checkPin(getValue(saved_conf_string, '|', 7).toInt());
-    char tmp_rgbOrder[5];
-    getValue(saved_conf_string, '|', 8).toCharArray(tmp_rgbOrder, 4);
-    checkRGBOrder(tmp_rgbOrder);
-    WS2812FXStripSettings.fxoptions = constrain(((getValue(saved_conf_string, '|', 9).toInt()>>1)<<1), 0, 255);
-    transEffect = getValue(saved_conf_string, '|', 10).toInt();
-    return true;
-  } else {
-    DBG_OUTPUT_PORT.println("Saved conf not found!");
-    return false;
-  }
-  return false;
-}
-
 bool setModeByStateString(String saved_state_string) {
   if (getValue(saved_state_string, '|', 0) == "STA") {
     DBG_OUTPUT_PORT.printf("Parsed state: %s\r\n", saved_state_string.c_str());
     String str_mode = getValue(saved_state_string, '|', 1);
-    mode = static_cast<MODE>(str_mode.toInt());
-    String str_ws2812fx_mode = getValue(saved_state_string, '|', 2);
-    ws2812fx_mode = str_ws2812fx_mode.toInt();
-    String str_ws2812fx_speed = getValue(saved_state_string, '|', 3);
-    ws2812fx_speed = str_ws2812fx_speed.toInt();
+    State.mode = static_cast<MODE>(str_mode.toInt());
+    String str_fx_mode = getValue(saved_state_string, '|', 2);
+    fx_mode = str_fx_mode.toInt();
+    String str_fx_speed = getValue(saved_state_string, '|', 3);
+    segState.speed[State.segment] = str_fx_speed.toInt();
     String str_brightness = getValue(saved_state_string, '|', 4);
-    brightness = str_brightness.toInt();
+    State.brightness = str_brightness.toInt();
     String str_red = getValue(saved_state_string, '|', 5);
     main_color.red = str_red.toInt();
     String str_green = getValue(saved_state_string, '|', 6);
@@ -446,9 +183,9 @@ bool setModeByStateString(String saved_state_string) {
     str_white = getValue(saved_state_string, '|', 16);
     xtra_color.white = str_white.toInt();
     DBG_OUTPUT_PORT.print("Set to state: ");
-    DBG_OUTPUT_PORT.println(listStatusJSON());
+    DBG_OUTPUT_PORT.println(listStateJSON());
     //prevmode=mode;
-    //mode = SET;
+    //State.mode = SET;
     return true;
   } else {
     DBG_OUTPUT_PORT.println("Saved state not found!");
@@ -459,115 +196,17 @@ bool setModeByStateString(String saved_state_string) {
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   if (isDigit(mypayload[1])) {
-    ws2812fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
-    ws2812fx_mode = constrain(ws2812fx_mode, 0, strip->getModeCount() - 1);
-    mode = SET;
+    fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
+    fx_mode = constrain(fx_mode, 0, strip->getModeCount() - 1);
+    State.mode = SET;
   } else  {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
-      mode = OFF;
+      if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
     }
     if (strcmp((char *) &mypayload[1], "on") == 0) {
-      mode = SET;
+      State.mode = SET;
     }
   }    
-}
-
-char * listStatusJSON() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(12) + JSON_OBJECT_SIZE(6) + 500;
-  DynamicJsonDocument jsonBuffer(bufferSize);
-  JsonObject root = jsonBuffer.to<JsonObject>();
-  root["mode"] = (uint8_t) mode;
-  root["ws2812fx_mode"] = ws2812fx_mode;
-  root["ws2812fx_mode_name"] = strip->getModeName(ws2812fx_mode);
-  //root["ws2812fx_mode"] = tmp_mode;
-  //root["ws2812fx_mode_name"] = strip->getModeName(tmp_mode);
-  root["speed"] = ws2812fx_speed;
-  root["brightness"] = brightness;
-  JsonArray color = root.createNestedArray("color");
-  color.add(main_color.white);
-  color.add(main_color.red);
-  color.add(main_color.green);
-  color.add(main_color.blue);
-  color.add(back_color.white);
-  color.add(back_color.red);
-  color.add(back_color.green);
-  color.add(back_color.blue);
-  color.add(xtra_color.white);
-  color.add(xtra_color.red);
-  color.add(xtra_color.green);
-  color.add(xtra_color.blue);
-  uint16_t msg_len = measureJson(root) + 1;
-  char * buffer = (char *) malloc(msg_len);
-  serializeJson(root, buffer, msg_len);
-  jsonBuffer.clear();
-  return buffer;
-}
-
-void getStatusJSON() {
-  char * buffer = listStatusJSON();
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", buffer);
-  free (buffer);
-}
-
-char * listConfigJSON() {
-  #if defined(ENABLE_MQTT)
-    const size_t bufferSize = JSON_OBJECT_SIZE(9) + 500;
-  #else
-    const size_t bufferSize = JSON_OBJECT_SIZE(5) + 150;
-  #endif
-  DynamicJsonDocument jsonBuffer(bufferSize);
-  JsonObject root = jsonBuffer.to<JsonObject>();
-  root["hostname"] = HOSTNAME;
-  #if defined(ENABLE_MQTT)
-    root["mqtt_host"] = mqtt_host;
-    root["mqtt_port"] = mqtt_port;
-    root["mqtt_user"] = mqtt_user;
-    root["mqtt_pass"] = mqtt_pass;
-  #endif
-  root["ws_cnt"]    = WS2812FXStripSettings.stripSize;
-  root["ws_rgbo"]   = WS2812FXStripSettings.RGBOrder;
-  root["ws_pin"]    = WS2812FXStripSettings.pin;
-  root["ws_fxopt"]  = WS2812FXStripSettings.fxoptions;
-  root["transEffect"] = transEffect;
-  uint16_t msg_len = measureJson(root) + 1;
-  char * buffer = (char *) malloc(msg_len);
-  serializeJson(root, buffer, msg_len);
-  jsonBuffer.clear();
-  return buffer;
-}
-
-void getConfigJSON() {
-  char * buffer = listConfigJSON();
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", buffer);
-  free (buffer);
-}
-
-char * listModesJSON() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 3)*JSON_OBJECT_SIZE(2) + 2000;
-  DynamicJsonDocument jsonBuffer(bufferSize);
-  JsonArray root = jsonBuffer.to<JsonArray>();
-  JsonObject objectoff = root.createNestedObject();
-  objectoff["mode"] = "off";
-  objectoff["name"] = "OFF";
-  for (uint8_t i = 0; i < strip->getModeCount(); i++) {
-    JsonObject object = root.createNestedObject();
-    object["mode"] = i;
-    object["name"] = strip->getModeName(i);
-  }
-  uint16_t msg_len = measureJson(root) + 1;
-  char * buffer = (char *) malloc(msg_len);
-  serializeJson(root, buffer, msg_len);
-  jsonBuffer.clear();
-  return buffer;
-}
-
-void getModesJSON() {
-  char * buffer = listModesJSON();
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send ( 200, "application/json", buffer);
-  free (buffer);
 }
 
 // ***************************************************************************
@@ -612,91 +251,71 @@ void handleNotFound() {
 // ***************************************************************************
 // Functions and variables 
 // ***************************************************************************
-void Dbg_Prefix(bool mqtt, uint8_t num) {
-  if (mqtt == true)  {
+void Dbg_Prefix(bool _mqtt, uint8_t _num) {
+  if (_mqtt == true)  {
     DBG_OUTPUT_PORT.print("MQTT: "); 
   } else {
     DBG_OUTPUT_PORT.print("WS: ");
-    webSocket.sendTXT(num, "OK");
+    webSocket.sendTXT(_num, "OK");
   }
 }
 
-void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
-  // # ==> Set main color - ## ==> Set 2nd color - ### ==> Set 3rd color
-  if (payload[0] == '#') {
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
-    #endif
-    if (payload[2] == '#') {
-      handleSetXtraColor(payload);
-      DBG_OUTPUT_PORT.printf("Set 3rd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
-    } else if (payload[1] == '#') {
-      handleSetBackColor(payload);
-      DBG_OUTPUT_PORT.printf("Set 2nd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  back_color.red, back_color.green, back_color.blue, back_color.white);
-    } else {
-      handleSetMainColor(payload);
-      DBG_OUTPUT_PORT.printf("Set main color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
+void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
+  // Select segment
+  boolean _updateState = false;
+  boolean _updateSegState = false;
+  // / ==> Set active segment
+  if (_payload[0] == 'S') {
+    if (_payload[1] == 's') {
+      uint8_t _seg = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
+      _seg = constrain(_seg, 0, Config.segments - 1);
+      if (prevsegment != _seg) {
+        prevsegment = State.segment;
+        State.segment = _seg;
+        getSegmentParams(State.segment);
+        //memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
+        _updateState = true;
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", State.segment);
+      }
     }
-  }
-
-  // ? ==> Set speed
-  if (payload[0] == '?') {
-    uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    ws2812fx_speed = constrain(d, 0, 255);
-    mode = SET;
-    Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", ws2812fx_speed);
-  }
-
-  // % ==> Set brightness
-  if (payload[0] == '%') {
-    uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-    brightness = constrain(b, 0, 255);
-    mode = SET;
-    Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", brightness);
-  }
-
-  // * ==> Set main color and light all LEDs (Shortcut)
-  if (payload[0] == '*') {
-    handleSetAllMode(payload);
-    Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\r\n", payload);
-  }
-
-  // ! ==> Set single LED in given color
-  if (payload[0] == '!') {
-    handleSetSingleLED(payload, 1);
-    Dbg_Prefix(mqtt, num);
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
-    #endif
-    DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\r\n", payload);
-  }
-
-  // + ==> Set multiple LED in the given colors
-  if (payload[0] == '+') {
-    handleSetDifferentColors(payload);
-    Dbg_Prefix(mqtt, num);
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
-    #endif
-    DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\r\n", payload);
-  }
-
-  // + ==> Set range of LEDs in the given color
-  if (payload[0] == 'R') {
-    handleRangeDifferentColors(payload);
-    Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\r\n", payload);
-    #if defined(ENABLE_MQTT)
-      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", payload);
-    #endif
-  }
-
-  // $ ==> Get status Info.
-  if (payload[0] == '$') {
-    char * buffer = listStatusJSON();
+    // / ==> Set segment first LED
+    if (_payload[1] == '[') {
+      uint16_t _seg_start = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
+      _seg_start = constrain(_seg_start, 0, Config.stripSize - 1);
+      if (_seg_start != segState.start) {
+        segState.start = _seg_start;
+        _updateSegState = true;
+        setSegmentSize();
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment start to: [%u]\r\n", _seg_start);
+      }
+    }
+    // / ==> Set segment last LED
+    if (_payload[1] == ']') {
+      uint16_t _seg_stop = (uint16_t) strtol((const char *) &_payload[2], NULL, 10);
+      _seg_stop = constrain(_seg_stop, segState.start, Config.stripSize - 1);
+      if (_seg_stop != segState.stop) {
+        segState.stop = _seg_stop;
+        _updateSegState = true;
+        setSegmentSize();
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment stop to: [%u]\r\n", _seg_stop);
+      }
+    }
+    if (_payload[1] == 'o') {
+      char _fx_options[4];
+      snprintf(_fx_options, sizeof(_fx_options), "%s", &_payload[2]);
+      _fx_options[3] = 0x00;
+      if (((constrain(atoi(_fx_options), 0, 255)>>1)<<1) != segState.options) {
+        segState.options= ((constrain(atoi(_fx_options), 0, 255)>>1)<<1);
+        _updateSegState = true;
+        strip->setOptions(State.segment, segState.options);
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set segment options to: [%u]\r\n", segState.options);
+      }
+    }    
+    char * buffer = listSegmentStateJSON(State.segment);
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
@@ -711,91 +330,205 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, buffer);
+    } 
+  }
+  // / ==> Set WS2812 mode.
+  if (_payload[0] == '/') {
+    handleSetWS2812FXMode(_payload);
+    if (fx_mode !=  strip->getMode(State.segment)) {
+      _updateSegState = true;
+      Dbg_Prefix(mqtt, num);
+      DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\r\n", _payload);
     }
-    DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
-    free (buffer);
+  }    
+  // # ==> Set main color - ## ==> Set 2nd color - ### ==> Set 3rd color
+  if (_payload[0] == '#') {
+    if (_payload[2] == '#') {
+      _updateSegState = handleSetXtraColor(_payload);
+      if (_updateSegState) {
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set 3rd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  xtra_color.red, xtra_color.green, xtra_color.blue, xtra_color.white);
+      }
+    } else if (_payload[1] == '#') {
+      _updateSegState = handleSetBackColor(_payload);
+      if (_updateSegState) {
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set 2nd color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n",  back_color.red, back_color.green, back_color.blue, back_color.white);
+      }
+    } else {
+      _updateSegState = handleSetMainColor(_payload);
+      if (_updateSegState) {
+        Dbg_Prefix(mqtt, num);
+        DBG_OUTPUT_PORT.printf("Set main color to: R: [%u] G: [%u] B: [%u] W: [%u]\r\n", main_color.red, main_color.green, main_color.blue, main_color.white);
+      }
+    }
+    if (_updateSegState) {
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", _payload);
+      #endif
+      State.mode = SET;
+    }
   }
 
+  // ? ==> Set speed
+  if (_payload[0] == '?') {
+    uint16_t _fx_speed = (uint16_t) strtol((const char *) &_payload[1], NULL, 10);
+    segState.speed[State.segment] = constrain(_fx_speed, SPEED_MIN, SPEED_MAX );
+    State.mode = SET;
+    _updateSegState = true;
+    Dbg_Prefix(mqtt, num);
+    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", segState.speed[State.segment]);
+  }
 
-    // $ ==> Get config Info.
-  if (payload[0] == 'C') {
-    bool updateStrip = false;
-    bool updateConf  = false;
-    if (payload[1] == 's') {
-      if (payload[2] == 'c') {
-        char tmp_count[6];
-        snprintf(tmp_count, sizeof(tmp_count), "%s", &payload[3]);
-        tmp_count[5] = 0x00;
-        WS2812FXStripSettings.stripSize = constrain(atoi(tmp_count), 1, MAXLEDS);
-        updateStrip = true;
+  // % ==> Set brightness
+  if (_payload[0] == '%') {
+    uint8_t b = (uint8_t) strtol((const char *) &_payload[1], NULL, 10);
+    State.brightness = constrain(b, 0, 255);
+    if (strip->getBrightness() != State.brightness) {
+      State.mode = SET;
+      Dbg_Prefix(mqtt, num);
+      DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", State.brightness);
+      _updateState = true;
+    }
+  }
+
+  // * ==> Set main color and light all LEDs (Shortcut)
+  if (_payload[0] == '*') {
+    _updateSegState = handleSetAllMode(_payload);
+    if (_updateSegState) {
+      Dbg_Prefix(mqtt, num);
+      DBG_OUTPUT_PORT.printf("Set main color and light all LEDs [%s]\r\n", _payload);
+    }
+  }
+
+  // ! ==> Set single LED in given color
+  if (_payload[0] == '!') {
+    handleSetSingleLED(_payload, 1);
+    Dbg_Prefix(mqtt, num);
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", _payload);
+    #endif
+    DBG_OUTPUT_PORT.printf("Set single LED in given color [%s]\r\n", _payload);
+  }
+
+  // + ==> Set multiple LED in the given colors
+  if (_payload[0] == '+') {
+    handleSetDifferentColors(_payload);
+    Dbg_Prefix(mqtt, num);
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", _payload);
+    #endif
+    DBG_OUTPUT_PORT.printf("Set multiple LEDs in given color [%s]\r\n", _payload);
+  }
+
+  // + ==> Set range of LEDs in the given color
+  if (_payload[0] == 'R') {
+    handleRangeDifferentColors(_payload);
+    Dbg_Prefix(mqtt, num);
+    DBG_OUTPUT_PORT.printf("Set range of LEDs in given color [%s]\r\n", _payload);
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %s", _payload);
+    #endif
+  }
+#if defined(ENABLE_STATE_SAVE)
+  if (_updateState) {
+    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+    if(!save_state.active()) save_state.once(3, tickerSaveState);
+  }
+  if (_updateSegState) {
+    State.mode = SET;
+    DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+    if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+    
+  }
+  _updateState = false;
+  _updateSegState = false;
+#endif
+
+  // $ ==> Get config Info.
+  if (_payload[0] == 'C') {
+    bool _updateStrip = false;
+    bool _updateConfig  = false;
+    bool _updateState = false;
+    if (_payload[1] == 's') {
+      if (_payload[2] == 's') {
+        char _num_segments[3];
+        snprintf(_num_segments, sizeof(_num_segments), "%s", &_payload[3]);
+        _num_segments[2] = 0x00;
+        Config.segments = constrain(atoi(_num_segments), 1, MAX_NUM_SEGMENTS - 1);
+        if (State.segment >=  Config.segments) {
+          State.segment = Config.segments - 1;
+          _updateState = true;
+        }
+        _updateStrip = true;
       }
-      if (payload[2] == 'r') {     
-        char tmp_rgbOrder[5];
-        snprintf(tmp_rgbOrder, sizeof(tmp_rgbOrder), "%s", &payload[3]);
-        tmp_rgbOrder[4] = 0x00;
-        checkRGBOrder(tmp_rgbOrder);
-        updateStrip=true;    
+      if (_payload[2] == 'c') {
+        char tmp_count[6];
+        snprintf(tmp_count, sizeof(tmp_count), "%s", &_payload[3]);
+        tmp_count[5] = 0x00;
+        Config.stripSize = constrain(atoi(tmp_count), 1, MAXLEDS);
+        _updateStrip = true;
+      }
+      if (_payload[2] == 'r') {     
+        char _rgbOrder[5];
+        snprintf(_rgbOrder, sizeof(_rgbOrder), "%s", &_payload[3]);
+        _rgbOrder[4] = 0x00;
+        checkRGBOrder(_rgbOrder);
+        _updateStrip=true;    
       }
     #if !defined(USE_WS2812FX_DMA)
-      if (payload[2] == 'p') {
+      if (_payload[2] == 'p') {
         char tmp_pin[3];
-        snprintf(tmp_pin, sizeof(tmp_pin), "%s", &payload[3]);
+        snprintf(tmp_pin, sizeof(tmp_pin), "%s", &_payload[3]);
         tmp_pin[2] = 0x00;
         checkPin(atoi(tmp_pin));
-        updateStrip = true;
+        _updateStrip = true;
       }
-    #endif
-      if (payload[2] == 'o') {
-         char tmp_fxoptions[4];
-         snprintf(tmp_fxoptions, sizeof(tmp_fxoptions), "%s", &payload[3]);
-         tmp_fxoptions[3] = 0x00;
-         WS2812FXStripSettings.fxoptions = ((constrain(atoi(tmp_fxoptions), 0, 255)>>1)<<1);
-         updateStrip = true;
-      }       
+    #endif   
     }
-    if (updateStrip){
-      mode = INIT_STRIP;   
+    if (_updateStrip){
+      initStrip();   
     }
-    if (payload[1] == 'h') {
-      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &payload[2]);
+    if (_payload[1] == 'h') {
+      snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &_payload[2]);
       HOSTNAME[sizeof(HOSTNAME) - 1] = 0x00;
-      updateConf = true;
+      _updateConfig = true;
     }
   #if defined(ENABLE_MQTT)
-    if (payload[1] == 'm') {
-      if (payload[2] == 'h') {
-        snprintf(mqtt_host, sizeof(mqtt_host), "%s", &payload[3]);
+    if (_payload[1] == 'm') {
+      if (_payload[2] == 'h') {
+        snprintf(mqtt_host, sizeof(mqtt_host), "%s", &_payload[3]);
         mqtt_host[sizeof(mqtt_host) - 1] = 0x00;
-        updateConf = true;
+        _updateConfig = true;
       }
-      if (payload[2] == 'p') {
+      if (_payload[2] == 'p') {
         char tmp_port[6];
-        snprintf(tmp_port, sizeof(tmp_port), "%s", &payload[3]);
+        snprintf(tmp_port, sizeof(tmp_port), "%s", &_payload[3]);
         tmp_port[sizeof(tmp_port) - 1] = 0x00;
         mqtt_port = constrain(atoi(tmp_port), 0, 65535);
-        updateConf = true;
+        _updateConfig = true;
       }
-      if (payload[2] == 'u') {
-        snprintf(mqtt_user, sizeof(mqtt_user), "%s", &payload[3]);
+      if (_payload[2] == 'u') {
+        snprintf(mqtt_user, sizeof(mqtt_user), "%s", &_payload[3]);
         mqtt_user[sizeof(mqtt_user) - 1] = 0x00;
-        updateConf = true;
+        _updateConfig = true;
       }
-      if (payload[2] == 'w') {
-        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &payload[3]);
+      if (_payload[2] == 'w') {
+        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &_payload[3]);
         mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
-        updateConf = true;
+        _updateConfig = true;
       }    
     }
-    if (updateConf) {
+    if (_updateConfig) {
       initMqtt();
     }    
   #endif   
-    if (payload[1] == 'e') {
-      char tmp_transEffect[2];
-      snprintf(tmp_transEffect, sizeof(tmp_transEffect), "%s", &payload[2]);
-      tmp_transEffect[sizeof(tmp_transEffect) - 1] = 0x00;
-      transEffect = atoi(tmp_transEffect);
-      updateConf = true;
+    if (_payload[1] == 'e') {
+      char _transEffect[2];
+      snprintf(_transEffect, sizeof(_transEffect), "%s", &_payload[2]);
+      _transEffect[sizeof(_transEffect) - 1] = 0x00;
+      Config.transEffect = atoi(_transEffect);
+      _updateConfig = true;
     }
     
     char * buffer = listConfigJSON();
@@ -815,19 +548,46 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
       webSocket.sendTXT(num, buffer);
     } 
 #if defined(ENABLE_STATE_SAVE)
-    if (updateStrip || updateConf) {
+    if (_updateStrip || _updateConfig) {
       DBG_OUTPUT_PORT.println("Saving config.json!");
-      if(!settings_save_conf.active()) settings_save_conf.once(3, tickerSaveConfig);
+      if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
+    }
+    if (_updateState) {
+      DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+      if(!save_state.active()) save_state.once(3, tickerSaveState);
     }
 #endif
-    updateStrip = false;
-    updateConf  = false;
+    _updateStrip = false;
+    _updateConfig  = false;
+    _updateState = false;
     DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
     free (buffer);
   }
-
+  
+  // $ ==> Get status Info.
+  if (_payload[0] == '$') {
+    char * buffer = listStateJSONfull();
+    if (mqtt == true)  {
+      DBG_OUTPUT_PORT.print("MQTT: ");
+      #if defined(ENABLE_MQTT)
+        #if ENABLE_MQTT == 0
+          mqtt_client->publish(mqtt_outtopic, buffer);
+        #endif
+        #if ENABLE_MQTT == 1
+          mqtt_client->publish(mqtt_outtopic, qospub, false, buffer);
+        #endif
+      #endif
+    } else {
+      DBG_OUTPUT_PORT.print("WS: ");
+      webSocket.sendTXT(num, "OK");
+      webSocket.sendTXT(num, buffer);
+    }
+    DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
+    free (buffer);
+  }
+  
   // ~ ==> Get WS2812 modes.
-  if (payload[0] == '~') {
+  if (_payload[0] == '~') {
     char * buffer  = listModesJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: "); 
@@ -850,13 +610,6 @@ void checkpayload(uint8_t * payload, bool mqtt = false, uint8_t num = 0) {
     DBG_OUTPUT_PORT.println("Get WS2812 modes.");
     DBG_OUTPUT_PORT.println(buffer);
     free (buffer);
-  }
-
-  // / ==> Set WS2812 mode.
-  if (payload[0] == '/') {
-    handleSetWS2812FXMode(payload);
-    Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\r\n", payload);
   }
 }
 
@@ -957,7 +710,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        const size_t bufferSize = JSON_OBJECT_SIZE(6) + JSON_OBJECT_SIZE(12) + 1000;
        DynamicJsonDocument jsonBuffer(bufferSize);
        JsonObject root = jsonBuffer.to<JsonObject>();
-       root["state"] = (mode != OFF) ? on_cmd : off_cmd;
+       root["state"] = (State.mode != OFF) ? on_cmd : off_cmd;
+       #if defined(ENABLE_MQTT_INCLUDE_IP) 
+         root["ip"] = WiFi.localIP().toString();
+       #endif
+       root["segment"] = State.segment;
        JsonObject color = root.createNestedObject("color");
        color["r"] = main_color.red;
        color["g"] = main_color.green;
@@ -971,16 +728,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        color["g3"] = xtra_color.green;
        color["b3"] = xtra_color.blue;
        color["w3"] = xtra_color.white;
-       if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+       if (strstr(Config.RGBOrder, "W") != NULL) {
          root["white_value"]= main_color.white;
        }
-       root["brightness"] = brightness;
+       root["brightness"] = State.brightness;
        root["color_temp"] = color_temp;
-       root["speed"] = ws2812fx_speed;
+       root["speed"] = segState.speed[State.segment];
        //char modeName[30];
        //strncpy_P(modeName, (PGM_P)strip->getModeName(strip->getMode()), sizeof(modeName)); // copy from progmem
        #if defined(ENABLE_HOMEASSISTANT)
-       if (mode == OFF){
+       if (State.mode == OFF){
          root["effect"] = "OFF";
        } else {
          root["effect"] = strip->getModeName(strip->getMode());
@@ -1003,6 +760,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
 
     bool processJson(char* message) {
+      bool _updateState    = false;
+      bool _updateSegState = false;
       const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(12) + 500;
       DynamicJsonDocument jsonBuffer(bufferSize);
       DeserializationError error = deserializeJson(jsonBuffer, message);
@@ -1018,15 +777,26 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (root.containsKey("state")) {
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0) {
-          mode = SET;
+          State.mode = SET;
+          _updateState = true;
         }
         else if (strcmp(state_in, off_cmd) == 0) {
-          mode = OFF;
+          State.mode = OFF;
+          _updateState = true;
           jsonBuffer.clear();
           return true;
         }
       }
-
+      if (root.containsKey("segment")) {
+        uint8_t json_segment = constrain((uint8_t) root["segment"], 0, Config.segments - 1);
+        if (prevsegment != json_segment) {
+          prevsegment = State.segment;
+          State.segment = json_segment;
+          getSegmentParams(State.segment);   
+          State.mode = SET;
+          _updateState = true;
+        }      
+      }
       if (root.containsKey("color")) {
         JsonObject color = root["color"];
         main_color.red = (uint8_t) color["r"];
@@ -1041,22 +811,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         xtra_color.green = (uint8_t) color["g3"];
         xtra_color.blue = (uint8_t) color["b3"];
         xtra_color.white = (uint8_t) color["w3"];
-        mode = SET;
+        _updateSegState = true;
       }
       
       if (root.containsKey("white_value")) {
         uint8_t json_white_value = constrain((uint8_t) root["white_value"], 0, 255);
         if (json_white_value != main_color.white) {
           main_color.white = json_white_value;
-          mode = SET;
+          _updateSegState = true;
         }
       }
       
       if (root.containsKey("speed")) {
-        uint8_t json_speed = constrain((uint8_t) root["speed"], 0, 255);
-        if (json_speed != ws2812fx_speed) {
-          ws2812fx_speed = json_speed;
-          mode = SET;
+        uint8_t _fx_speed = constrain((uint8_t) root["speed"], 0, 255);
+        if (_fx_speed != segState.speed[State.segment]) {
+          segState.speed[State.segment] = _fx_speed;
+          _updateSegState = true;
         }
       }
 
@@ -1065,14 +835,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         color_temp = (uint16_t) root["color_temp"];
         uint16_t kelvin  = 1000000 / color_temp;
         main_color = temp2rgb(kelvin);
-        mode = SET;
+        _updateSegState = true;
       }
 
       if (root.containsKey("brightness")) {
         uint8_t json_brightness = constrain((uint8_t) root["brightness"], 0, 255); //fix #224
-        if (json_brightness != brightness) {
-          brightness = json_brightness;
-          mode = SET;
+        if (json_brightness != State.brightness) {
+          State.brightness = json_brightness;
+          State.mode = SET;
+          _updateState = true;
         }
       }
 
@@ -1080,17 +851,33 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         String effectString = root["effect"].as<String>();
         #if defined(ENABLE_HOMEASSISTANT)
           if(effectString == "OFF"){
-            mode = OFF;
+            State.mode = OFF;
+            _updateState = true;
           }
         #endif
         for (uint8_t i = 0; i < strip->getModeCount(); i++) {
           if(String(strip->getModeName(i)) == effectString) {
-            mode = SET;
-            ws2812fx_mode = i;
+            State.mode = SET;
+            fx_mode = i;
+            _updateState = true;
+            _updateSegState = true;
             break;
           }
         }
       }
+      #if defined(ENABLE_STATE_SAVE)
+        if (_updateState) {
+          DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+          if(!save_state.active()) save_state.once(3, tickerSaveState);
+        }
+        if (_updateSegState) {
+          State.mode = SET;
+          DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+          if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+        }
+      #endif
+        _updateState = false;
+        _updateSegState = false;
       jsonBuffer.clear();
       return true;
     }
@@ -1166,7 +953,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             #endif
             root["brightness"] = "true";
             root["rgb"] = "true";
-            if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+            if (strstr(Config.RGBOrder, "W") != NULL) {
               root["white_value"]= "true";
             }
             root["optimistic"] = "false";
@@ -1271,7 +1058,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           #endif
           root["brightness"] = "true";
           root["rgb"] = "true";
-          if (strstr(WS2812FXStripSettings.RGBOrder, "W") != NULL) {
+          if (strstr(Config.RGBOrder, "W") != NULL) {
             root["white_value"]= "true";
           }
           root["optimistic"] = "false";
@@ -1322,12 +1109,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 #if defined(ENABLE_BUTTON)
   void shortKeyPress() {
     DBG_OUTPUT_PORT.printf("Short button press\r\n");
-    if (mode == OFF) {
+    if (State.mode == OFF) {
       setModeByStateString(BTN_MODE_SHORT);
-      prevmode = mode;
-      mode = SET;
+      prevmode = State.mode;
+      State.mode = SET;
     } else {
-      mode = OFF;
+      State.mode = OFF;
     }
   }
 
@@ -1335,16 +1122,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   void mediumKeyPress() {
     DBG_OUTPUT_PORT.printf("Medium button press\r\n");
     setModeByStateString(BTN_MODE_MEDIUM);
-    prevmode = mode;
-    mode = SET;
+    prevmode = State.mode;
+    State.mode = SET;
   }
 
   // called when button is kept pressed for 2 seconds or more
   void longKeyPress() {
     DBG_OUTPUT_PORT.printf("Long button press\r\n");
     setModeByStateString(BTN_MODE_LONG);
-    prevmode = mode;
-    mode = SET;
+    prevmode = State.mode;
+    State.mode = SET;
   }
 
   void button() {
@@ -1388,7 +1175,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
     main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0; 
-    mode = SET;
+    State.mode = SET;
   }
 
   // called when button is kept pressed for less than 2 seconds
@@ -1432,218 +1219,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 #endif
 
-#if defined(ENABLE_STATE_SAVE)
-  void tickerSaveState(){
-    updateState = true;
-  }
-
-  void tickerSaveConfig(){
-    updateConfig = true;
-  }
-  
-  #if ENABLE_STATE_SAVE == 0 
-    // ***************************************************************************
-    // EEPROM helper
-    // ***************************************************************************
-    String readEEPROM(uint16_t offset, uint16_t len) {
-      String res = "";
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        res += char(EEPROM.read(i + offset));
-        //DBG_OUTPUT_PORT.println(char(EEPROM.read(i + offset)));
-      }
-      DBG_OUTPUT_PORT.printf("readEEPROM(): %s\r\n", res.c_str());
-      return res;
-    }
-    
-    void writeEEPROM(uint16_t offset, uint16_t len, String value) {
-      DBG_OUTPUT_PORT.printf("writeEEPROM(): %s\r\n", value.c_str());
-      for (uint16_t i = 0; i < len; ++i)
-      {
-        if (i < value.length()) {
-          EEPROM.write(i + offset, value[i]);
-        } else {
-          EEPROM.write(i + offset, 0);
-        }
-      }
-    } 
-  #endif
-  #if ENABLE_STATE_SAVE == 1  
-    // Write configuration to FS JSON
-    bool writeConfigFS(bool saveConfig){
-      if (saveConfig) {
-        //FS save
-        DBG_OUTPUT_PORT.println("Saving config: ");    
-        File configFile = SPIFFS.open("/config.json", "w");
-        if (!configFile) {
-          DBG_OUTPUT_PORT.println("Failed!");
-          settings_save_conf.detach();
-          updateConfig = false;
-          return false;
-        }
-        DBG_OUTPUT_PORT.println(listConfigJSON());
-        configFile.print(listConfigJSON());
-        configFile.close();
-        settings_save_conf.detach();
-        updateConfig = false;
-        return true;
-        //end save
-      } else {
-        DBG_OUTPUT_PORT.println("SaveConfig is false!");
-        return false;
-      }
-    }
-      
-    // Read search_str to FS
-    bool readConfigFS() {
-      //read configuration from FS JSON
-      if (SPIFFS.exists("/config.json")) {
-        //file exists, reading and loading
-        DBG_OUTPUT_PORT.print("Reading config file... ");
-        File configFile = SPIFFS.open("/config.json", "r");
-        if (configFile) {
-          DBG_OUTPUT_PORT.println("Opened!");
-          size_t size = configFile.size();
-          std::unique_ptr<char[]> buf(new char[size]);
-          configFile.readBytes(buf.get(), size);
-          configFile.close();
-       #if defined(ENABLE_MQTT)
-          const size_t bufferSize = JSON_OBJECT_SIZE(5) + 500;
-       #else
-          const size_t bufferSize = JSON_OBJECT_SIZE(1) + 150;
-       #endif
-          DynamicJsonDocument jsonBuffer(bufferSize);
-          DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-          DBG_OUTPUT_PORT.print("Config: ");
-          if (!error) {
-            DBG_OUTPUT_PORT.println("Parsed!");
-            JsonObject root = jsonBuffer.as<JsonObject>();
-            serializeJson(root, DBG_OUTPUT_PORT);
-            DBG_OUTPUT_PORT.println("");
-            strcpy(HOSTNAME, root["hostname"]);
-          #if defined(ENABLE_MQTT)
-            strcpy(mqtt_host, root["mqtt_host"]);
-            mqtt_port = root["mqtt_port"].as<uint16_t>();
-            strcpy(mqtt_user, root["mqtt_user"]);
-            strcpy(mqtt_pass, root["mqtt_pass"]);
-          #endif
-            WS2812FXStripSettings.stripSize = constrain(root["ws_cnt"].as<uint16_t>(), 1, MAXLEDS);
-            char tmp_rgbOrder[5];
-            strcpy(tmp_rgbOrder, root["ws_rgbo"]);
-            checkRGBOrder(tmp_rgbOrder);
-            uint8_t temp_pin;
-            checkPin((uint8_t) root["ws_pin"]);
-            WS2812FXStripSettings.fxoptions = constrain(root["ws_fxopt"].as<uint8_t>(), 0, 255) & 0xFE;
-            transEffect = root["transEffect"].as<bool>();
-            jsonBuffer.clear();
-            return true;
-          } else {
-            DBG_OUTPUT_PORT.print("Failed to load json config: ");
-            DBG_OUTPUT_PORT.println(error.c_str());
-            jsonBuffer.clear();
-          }
-        } else {
-          DBG_OUTPUT_PORT.println("Failed to open /config.json");
-        }
-      } else {
-        DBG_OUTPUT_PORT.println("Coudnt find config.json");
-        writeConfigFS(true);
-      }
-      //end read
-      return false;
-    }
-  
-    bool writeStateFS(bool saveConfig){
-      if (saveConfig) {
-        //save the strip state to FS JSON
-        DBG_OUTPUT_PORT.print("Saving state: ");
-        //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-        File configFile = SPIFFS.open("/stripstate.json", "w");
-        if (!configFile) {
-          DBG_OUTPUT_PORT.println("Failed!");
-          settings_save_state.detach();
-          updateState = false;
-          return false;
-        }
-        DBG_OUTPUT_PORT.println(listStatusJSON());
-        configFile.print(listStatusJSON());
-        configFile.close();
-        settings_save_state.detach();
-        updateState = false;
-        return true;
-        //end save
-      } else {
-        DBG_OUTPUT_PORT.println("SaveStateConfig is false!");
-        return false;
-      }
-    }
-    
-    bool readStateFS() {
-      //read strip state from FS JSON
-      //if (resetsettings) { SPIFFS.begin(); SPIFFS.remove("/config.json"); SPIFFS.format(); delay(1000);}
-      if (SPIFFS.exists("/stripstate.json")) {
-        //file exists, reading and loading
-        DBG_OUTPUT_PORT.print("Reading state file... ");
-        File configFile = SPIFFS.open("/stripstate.json", "r");
-        if (configFile) {
-          DBG_OUTPUT_PORT.println("Opened!");
-          size_t size = configFile.size();
-          // Allocate a buffer to store contents of the file.
-          std::unique_ptr<char[]> buf(new char[size]);
-          configFile.readBytes(buf.get(), size);
-          configFile.close();
-          const size_t bufferSize = JSON_OBJECT_SIZE(5) + JSON_ARRAY_SIZE(12) + 500;
-          DynamicJsonDocument jsonBuffer(bufferSize);
-          DeserializationError error = deserializeJson(jsonBuffer, buf.get());
-          DBG_OUTPUT_PORT.print("Config: ");
-          if (!error) {
-            DBG_OUTPUT_PORT.print("Parsed");
-            JsonObject root = jsonBuffer.as<JsonObject>();
-            serializeJson(root, DBG_OUTPUT_PORT);
-            DBG_OUTPUT_PORT.println("");
-            mode = static_cast<MODE>(root["mode"].as<uint8_t>());
-            ws2812fx_mode = root["ws2812fx_mode"].as<uint8_t>();
-            ws2812fx_speed = root["speed"].as<uint8_t>();
-            brightness =  root["brightness"];
-            main_color.white = root["color"][0].as<uint8_t>();
-            main_color.red =  root["color"][1].as<uint8_t>();
-            main_color.green = root["color"][2].as<uint8_t>();
-            main_color.blue =  root["color"][3].as<uint8_t>();
-            back_color.white = root["color"][4].as<uint8_t>();
-            back_color.red =  root["color"][5].as<uint8_t>();
-            back_color.green =  root["color"][6].as<uint8_t>();
-            back_color.blue =  root["color"][7].as<uint8_t>();
-            xtra_color.white = root["color"][8].as<uint8_t>();
-            xtra_color.red = root["color"][9].as<uint8_t>();
-            xtra_color.green =  root["color"][10].as<uint8_t>();
-            xtra_color.blue = root["color"][11].as<uint8_t>();
-            convertColors();
-            jsonBuffer.clear();
-            return true;
-          } else {
-            DBG_OUTPUT_PORT.print("Failed to load json config: ");
-            DBG_OUTPUT_PORT.println(error.c_str());
-            jsonBuffer.clear();
-          }
-        } else {
-          DBG_OUTPUT_PORT.println("Failed to open \"/stripstate.json\"");
-        }
-      } else {
-        DBG_OUTPUT_PORT.println("Couldn't find \"/stripstate.json\"");
-        writeStateFS(true);
-      }
-      //end read
-      return false;
-    }
-  #endif
-#endif
-
 #if defined(ENABLE_REMOTE)
 // ***************************************************************************
 // Request handler for IR remote support
 // ***************************************************************************
 void handleRemote() {
     uint8_t chng = 1;
+    bool _updateState = false;
+    bool _updateSegState = false;
     if (irrecv.decode(&results)) {
       DBG_OUTPUT_PORT.print("IR Code: 0x");
       DBG_OUTPUT_PORT.print(uint64ToString(results.value, HEX));
@@ -1654,62 +1237,64 @@ void handleRemote() {
       }
       if (results.value == rmt_commands[ON_OFF]) {   // ON/OFF TOGGLE
         last_remote_cmd = 0;
-        if (mode == OFF) {
-          mode = SET;
+        if (State.mode == OFF) {
+          State.mode = SET;
+          _updateState = true;
         } else {
-          mode = OFF;
+          State.mode = OFF;
+          _updateState = true;;
         }
       }
-      if (mode == HOLD) {
+      if (State.mode == HOLD) {
         if (results.value == rmt_commands[BRIGHTNESS_UP]) { //Brightness Up
           last_remote_cmd = results.value;
-          if (brightness + chng <= 255) {
-            brightness = brightness + chng;
-            mode = SET;
+          if (State.brightness + chng <= 255) {
+            State.brightness = State.brightness + chng;
+            _updateState = true;
           }
         }
         if (results.value == rmt_commands[BRIGHTNESS_DOWN]) { //Brightness down
           last_remote_cmd = results.value;
-          if (brightness - chng >= 0) {
-            brightness = brightness - chng;
-            mode = SET;
+          if (State.brightness - chng >= 0) {
+            State.brightness = State.brightness - chng;
+            _updateState = true;
           }
         }
-        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 57)) {
+        if ((segState.mode[State.segment] < FX_MODE_CUSTOM_0) || (segState.mode[State.segment] > FX_MODE_CUSTOM_1)) {
           if (results.value == rmt_commands[SPEED_UP]) { //Speed Up
             last_remote_cmd = results.value;
-            if (ws2812fx_speed + chng <= 255) {
-              ws2812fx_speed = ws2812fx_speed + chng;
-              mode = SET;
+            if (segState.speed[State.segment] + chng <= 65535) {
+              segState.speed[State.segment] = segState.speed[State.segment] + chng;
+              _updateSegState = true;
             }
           }
           if (results.value == rmt_commands[SPEED_DOWN]) { //Speed down
             last_remote_cmd = results.value;
-            if (ws2812fx_speed - chng >= 0) {
-              ws2812fx_speed = ws2812fx_speed - chng;
-              mode = SET;
+            if (segState.speed[State.segment] - chng >= 0) {
+              segState.speed[State.segment] = segState.speed[State.segment] - chng;
+              _updateSegState = true;
             }
           }
         }
-        if ((ws2812fx_mode < 56) || (ws2812fx_mode > 60)) {        
+        if ((segState.mode[State.segment] < FX_MODE_CUSTOM_0) || (segState.mode[State.segment] > FX_MODE_CUSTOM_4)) {        
           if (results.value == rmt_commands[RED_UP]) { //Red Up
             last_remote_cmd = results.value;
             if (selected_color == 1) {
               if (main_color.red + chng <= 255) {
                 main_color.red = main_color.red + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.red + chng <= 255) {
                 back_color.red = back_color.red + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.red + chng <= 255) {
                 xtra_color.red = xtra_color.red + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1718,19 +1303,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.red - chng >= 0) {
                 main_color.red = main_color.red - chng;
-                mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.red - chng >= 0) {
                 back_color.red = back_color.red - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.red - chng >= 0) {
                 xtra_color.red = xtra_color.red - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1739,19 +1324,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.green + chng <= 255) {
                 main_color.green = main_color.green + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.green + chng <= 255) {
                 back_color.green = back_color.green + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.green + chng <= 255) {
                 xtra_color.green = xtra_color.green + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1760,19 +1345,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.green - chng >= 0) {
                 main_color.green = main_color.green - chng;;
-                mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.green - chng >= 0) {
                 back_color.green = back_color.green - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.green - chng >= 0) {
                 xtra_color.green = xtra_color.green - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1781,19 +1366,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.blue + chng <= 255) {
                 main_color.blue = main_color.blue + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.blue + chng <= 255) {
                 back_color.blue = back_color.blue + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.blue + chng <= 255) {
                 xtra_color.blue = xtra_color.blue + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1802,19 +1387,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.blue - chng >= 0) {
                 main_color.blue = main_color.blue - chng;
-                mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.blue - chng >= 0) {
                 back_color.blue = back_color.blue - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.blue - chng >= 0) {
                 xtra_color.blue = xtra_color.blue - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1823,19 +1408,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.white + chng <= 255) {
                 main_color.white = main_color.white + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
               if (back_color.white + chng <= 255) {
                 back_color.white = back_color.white + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.white + chng <= 255) {
                 xtra_color.white = xtra_color.white + chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1844,19 +1429,19 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.white - chng >= 0) {
                 main_color.white = main_color.white - chng;
-                mode = SET; 
+                _updateSegState = true; 
               }
             }
             if (selected_color == 2) {
               if (back_color.white - chng >= 0) {
                 back_color.white = back_color.white - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
             if (selected_color == 3) {
               if (xtra_color.white - chng >= 0) {
                 xtra_color.white = xtra_color.white - chng;
-                mode = SET;
+                _updateSegState = true;
               }
             }
           }
@@ -1876,66 +1461,64 @@ void handleRemote() {
       } // end of if HOLD
       if (results.value == rmt_commands[MODE_UP]) { //Mode Up
         last_remote_cmd = results.value;
-        if ((ws2812fx_mode < strip->getModeCount()-1) && (mode == HOLD)) {
-          ws2812fx_mode = ws2812fx_mode + 1;
+        if ((segState.mode[State.segment] < strip->getModeCount()-1) && (State.mode == HOLD)) {
+          fx_mode = segState.mode[State.segment] + 1;
         }
-        mode = SET;
+        _updateSegState = true;
       }
       if (results.value == rmt_commands[MODE_DOWN]) { //Mode down
         last_remote_cmd = results.value;
-        if ((ws2812fx_mode > 0) && (mode == HOLD)) {
-          ws2812fx_mode = ws2812fx_mode - 1;
+        if ((segState.mode[State.segment] > 0) && (State.mode == HOLD)) {
+          fx_mode = segState.mode[State.segment] - 1;
         }
-        mode = SET;
+        _updateSegState = true;
       }
       if (results.value == rmt_commands[AUTOMODE]) { // Toggle Automode
         last_remote_cmd = 0;
-        ws2812fx_mode = 56;
-        mode = SET;
+        fx_mode = 56;
+        _updateSegState = true;
       }
     #if defined(CUSTOM_WS2812FX_ANIMATIONS)
       if (results.value == rmt_commands[CUST_1]) { // Select TV Mode
         last_remote_cmd = 0;
-        ws2812fx_mode = 57;
-        mode = SET;
+        fx_mode = 57;
+        _updateSegState = true;
       }
     #endif 
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
-        ws2812fx_mode = 12;
-        mode = SET;
+        fx_mode = 12;
+        _updateSegState = true;
       } 
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
-        ws2812fx_mode = 48;
-        mode = SET;
+        fx_mode = 48;
+        _updateSegState = true;
       } 
       if (results.value == rmt_commands[CUST_4]) { // Select Custom Mode 4
         last_remote_cmd = 0;
-        ws2812fx_mode = 21;
-        mode = SET; 
+        fx_mode = 21;
+        _updateSegState = true; 
       }
       if (results.value == rmt_commands[CUST_5]) { // Select Custom Mode 5
         last_remote_cmd = 0;
-        ws2812fx_mode = 46;
-        mode = SET;
+        fx_mode = 46;
+        _updateSegState = true;
       } 
       irrecv.resume();  // Receive the next value
     }
+    #if defined(ENABLE_STATE_SAVE)
+      if (_updateState) {
+        DBG_OUTPUT_PORT.println("Saving stripstate.json!");
+        if(!save_state.active()) save_state.once(3, tickerSaveState);
+      }
+      if (_updateSegState) {
+        State.mode = SET;
+        DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
+        if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+      }
+    #endif
+      _updateState = false;
+      _updateSegState = false;
   }
 #endif
-
-uint32_t scale_wrgb(uint32_t wrgb, uint8_t level) {
-    uint8_t w = ((wrgb >> 24) & 0xFF) * level / 255;
-    uint8_t r = ((wrgb >> 16) & 0xFF) * level / 255;
-    uint8_t g = ((wrgb >>  8) & 0xFF) * level / 255;
-    uint8_t b = ((wrgb) & 0xFF)       * level / 255;
-    return (w << 24) | (r << 16) | (g << 8) | b;
-}
-
-uint32_t trans(uint32_t newcolor, uint32_t oldcolor, uint8_t level) {
-  level = (level * (255/trans_cnt_max));
-  newcolor = scale_wrgb(newcolor, level);
-  oldcolor = scale_wrgb(oldcolor, 255-level);
-  return newcolor + oldcolor;
-}

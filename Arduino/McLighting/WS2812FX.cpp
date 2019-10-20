@@ -340,6 +340,10 @@ uint32_t* WS2812FX::getColors(uint8_t seg) {
   return _segments[seg].colors;
 }
 
+uint8_t WS2812FX::getSegmentIndex(void) {
+  return _segment_index;
+}
+
 WS2812FX::Segment* WS2812FX::getSegment(void) {
   return &_segments[_segment_index];
 }

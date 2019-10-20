@@ -188,4 +188,38 @@
  * Version Bump to 3.0.0.BETA1
  * further code changes
  * bugfixes
+ *
+ * 30 September 2019
+ * Version Bump to 3.1.0.ALPHA1
+ * further code changes
+ * removal of saving to EEPROM
+ * first integration of multi segments
+ *
+ * 3 October 2019
+ * Version Bump to 3.1.0.ALPHA2
+ * further code changes
+ * further integration of multi segments
+ * integration of multi segments to GUI
+ *
+ * 5 October 2019
+ * Version Bump to 3.1.0.ALPHA2
+ * further code changes
+ * further integration of multi segments
+ * known problem: as always: AUTOPLAY (as it is not multi segment capable yet)
+ * 
+ * 07 October 
+ * Version Bump to 3.1.0.BETA1
+ * bugfixes
+ * adressed issue: #39 uncooment //#define ENABLE_MQTT_INCLUDE_IP in defninitions.h
+ * 
+ * 09 October 
+ * Version Bump to 3.1.0.BETA2
+ * bugfixes
+ * implemented https://github.com/FabLab-Luenen/McLighting/commit/589806d0fda737011426754a6d84c88535ded688
+ * 
+ * 20 October
+ * Version Bump to 3.1.0.BETA3
+ * Bugfixes
+ * adresse issue: #39
+ * 
  */
