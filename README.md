@@ -1,6 +1,6 @@
 # McLighting v3 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.0.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.1.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
 
 McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
@@ -68,13 +68,13 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 ## Todos
 - [ ] Redesign of Code and bump to V3
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
-- [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Additional clients
 - [ ] If no wifi, at least enable button mode.
 - [ ] Also enable McLighting in Wifi AP mode.
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [x] Remove old / wrong EEPROM settings completely [Issue] EEPROM saving discarded
 - [x] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
 - [x] Support for up to ten segments
 - [x] Removal of LEGACY_ANIMATIONS
