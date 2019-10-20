@@ -712,8 +712,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        JsonObject root = jsonBuffer.to<JsonObject>();
        root["state"] = (State.mode != OFF) ? on_cmd : off_cmd;
        #if defined(ENABLE_MQTT_INCLUDE_IP) 
-         root["ip"] = WiFi.localIP();
+         root["ip"] = WiFi.localIP().toString();
        #endif
+       root["segment"] = State.segment;
        JsonObject color = root.createNestedObject("color");
        color["r"] = main_color.red;
        color["g"] = main_color.green;

@@ -535,11 +535,11 @@ void setup() {
   DBG_OUTPUT_PORT.print("Use http://");
   DBG_OUTPUT_PORT.print(HOSTNAME);
   DBG_OUTPUT_PORT.println(".local/ when you have Bonjour installed.");
-
+#if !defined(USE_HTML_MIN_GZ)
   DBG_OUTPUT_PORT.print("New users: Open http://");
   DBG_OUTPUT_PORT.print(WiFi.localIP());
   DBG_OUTPUT_PORT.println("/upload to upload the webpages first.");
-
+#endif
   DBG_OUTPUT_PORT.println("");
 
   // ***************************************************************************

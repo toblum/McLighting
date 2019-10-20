@@ -216,4 +216,10 @@
  * Version Bump to 3.1.0.BETA2
  * bugfixes
  * implemented https://github.com/FabLab-Luenen/McLighting/commit/589806d0fda737011426754a6d84c88535ded688
+ * 
+ * 20 October
+ * Version Bump to 3.1.0.BETA3
+ * Bugfixes
+ * adresse issue: #39
+ * 
  */
