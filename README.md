@@ -67,8 +67,6 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 ## Todos
 - [ ] Redesign of Code and bump to V3
-- [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Support for up to ten segments
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Additional clients
@@ -77,6 +75,8 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [x] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
+- [x] Support for up to ten segments
 - [x] Removal of LEGACY_ANIMATIONS
 - [x] Include ws2812fx library to code due to modifications in library 
 - [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
