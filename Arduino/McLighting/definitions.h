@@ -61,7 +61,7 @@ uint8_t  prevsegment        = 0;
   // Change your IR Commands here. You can see them in console, after you pressed a button on the remote
   uint64_t rmt_commands[BTN_CNT] = {0xF7C03F, 0xF7708F,  0xF7F00F, 0xF720DF, 0xF710EF, 0xF7A05F,   0xF7906F, 0xF7609F,  0xF750AF, 0xF7E01F,   0xF7D02F,      0xF730CF,        0xF7B04F, 0xF748B7,   0xF7C837, 0xF700FF, 0xF7807F, 0xF740BF, 0xF708F7,  0xF78877, 0xF728D7,  0xF7A857, 0xF76897, 0xF7E817, 0xFFFFFFFFFFFFFFFF};
 #endif
-//#define WIFIMGR_PORTAL_TIMEOUT 180
+#define WIFIMGR_PORTAL_TIMEOUT 180
 //#define WIFIMGR_SET_MANUAL_IP
 
 #if defined(WIFIMGR_SET_MANUAL_IP)

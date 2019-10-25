@@ -16,7 +16,6 @@
 #include <WiFiManager.h>           //https://github.com/tzapu/WiFiManager
 #include <FS.h>
   
-#include <WiFiClient.h>
 #include <ESP8266mDNS.h>
 #include <WebSockets.h>            //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
@@ -35,6 +34,7 @@
 // ***************************************************************************
 // Load libraries for PubSubClient
 // ***************************************************************************
+    #include <WiFiClient.h>
     #include <PubSubClient.h>
     WiFiClient espClient;
     PubSubClient * mqtt_client;
@@ -77,7 +77,8 @@
 
 #if defined(USE_HTML_MIN_GZ)
 #include "htm_index_gz.h" 
-#include "htm_edit_gz.h" 
+#include "htm_edit_gz.h"
+#include "html_material_icons.h"
 #endif
 
 
@@ -433,8 +434,8 @@ void setup() {
   if (!wifiManager.autoConnect(HOSTNAME)) {
     DBG_OUTPUT_PORT.println("failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
-    ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
-    delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
+    //ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
+    //delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
   
   //save the custom parameters to FS/EEPROM
@@ -717,7 +718,12 @@ void loop() {
     if(!strip->isRunning()) strip->start();
     strip->service();
     for (uint8_t i = 0; i < Config.segments; i++) {
-      if (segState.mode[i] == FX_MODE_CUSTOM_0) { handleAutoPlay(i); };
+      if (segState.mode[i] == FX_MODE_CUSTOM_0) { handleAutoPlay(i); }
+      if (segState.mode[i] == FX_MODE_CUSTOM_3) { 
+        if (strip->getSpeed(i) > SPEED_MIN) {
+          strip->setSpeed(i, SPEED_MIN);
+        }
+      }
     }
   }
    
@@ -786,7 +792,7 @@ void loop() {
     }
   }
   // Async speed transition
-  if ((segState.mode[prevsegment] != FX_MODE_CUSTOM_0) && (fx_speed != segState.speed[prevsegment])) {
+  if ((segState.mode[prevsegment] != FX_MODE_CUSTOM_0) && (segState.mode[prevsegment] != FX_MODE_CUSTOM_3) && (fx_speed != segState.speed[prevsegment])) {
     if (Config.transEffect) {
     //if (true == false) {  // disabled for the moment
       if (speedFadeDelay <= millis()) {
@@ -833,7 +839,9 @@ void loop() {
   // Segment change only if color and speed transitions are finished, because they are segment specific
   if (prevsegment != State.segment) {
     DBG_OUTPUT_PORT.println("Segment not equal");
-    if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[State.segment] == FX_MODE_CUSTOM_2) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
+    //if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[State.segment] == FX_MODE_CUSTOM_2) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
+    if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
+    }
       fx_speed  = segState.speed[State.segment];
       DBG_OUTPUT_PORT.printf("Switched segment from: %i to %i", prevsegment, State.segment);
       prevsegment = State.segment;   

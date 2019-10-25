@@ -11,7 +11,7 @@ More info on how to create custom aniamtions for WS2812FX: https://github.com/ki
 
 uint16_t handleSegmentOFF(void) {
   WS2812FX::Segment* _seg = strip->getSegment();
-  return _seg->speed;
+  return _seg->speed/(_seg->stop - _seg->start);
 }
 
 // ***************************************************************************
@@ -37,15 +37,16 @@ void handleAutoPlay(uint8_t _seg) {
   }
 }
 
-uint16_t handleAuto() {
+uint16_t handleAuto(void) {
   WS2812FX::Segment* _seg = strip->getSegment();
-  return _seg->speed;
+  return _seg->speed/(_seg->stop - _seg->start);
 }
 
 uint16_t handleCustomWS(void) {
   WS2812FX::Segment* _seg = strip->getSegment();
-  return _seg->speed;
+  return _seg->speed/(_seg->stop - _seg->start);
 }
+
 #if defined(CUSTOM_WS2812FX_ANIMATIONS)
   // ***************************************************************************
   // TV mode to be reviewed
@@ -76,8 +77,6 @@ uint16_t handleCustomWS(void) {
     uint8_t _seg_num = strip->getSegmentIndex();
     if (timeToDip[_seg_num] == false) {
       if((millis() - previousMillis[_seg_num]) > interv[_seg_num]) {
-        DBG_OUTPUT_PORT.println("Segment:");
-        DBG_OUTPUT_PORT.println(_seg_num);
         previousMillis[_seg_num] = millis();
         //interv = random(750,4001);//Adjusts the interval for more/less frequent random light changes
         interv[_seg_num] = random(800-(512 - (_seg->speed/64)),6001-(2731 - (_seg->speed/24)));
@@ -101,7 +100,6 @@ uint16_t handleCustomWS(void) {
         }
       } 
     } else {
-      DBG_OUTPUT_PORT.println("Dip Time");
       if (millis() - dipStartTime[_seg_num] < darkTime[_seg_num]) {
         for (uint16_t i=(_seg->start + 3); i<= _seg->stop; i++) {            
           ledstates[i] = 0;
@@ -114,10 +112,10 @@ uint16_t handleCustomWS(void) {
         timeToDip[_seg_num] = false;
       }
     }
-    return _seg->speed;
+    return _seg->speed/(_seg->stop - _seg->start);
   }
   // ***************************************************************************
-  // TV mode
+  // E1.31 mode
   // *************************************************************************** 
   uint16_t handleE131(void) {
     WS2812FX::Segment* _seg = strip->getSegment();
@@ -128,7 +126,7 @@ uint16_t handleCustomWS(void) {
       uint16_t universe = htons(packet.universe);
       uint8_t *data = packet.property_values + 1;
   
-      if (universe < START_UNIVERSE || universe > END_UNIVERSE) return _seg->speed; //async will take care about filling the buffer
+      if (universe < START_UNIVERSE || universe > END_UNIVERSE) return _seg->speed/(_seg->stop - _seg->start); //async will take care about filling the buffer
   
       // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
       //               htons(packet.universe),                 // The Universe for this packet
@@ -142,7 +140,7 @@ uint16_t handleCustomWS(void) {
       uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
     #else*/
       uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-      if (Config.stripSize <= multipacketOffset) return _seg->speed;
+      if (Config.stripSize <= multipacketOffset) return _seg->speed/(_seg->stop - _seg->start);
       uint16_t len = (170 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 170;
   /*  #endif */
       for (uint16_t i = 0; i < len; i++){
@@ -156,7 +154,7 @@ uint16_t handleCustomWS(void) {
         }
       }
     }
-    return _seg->speed;
+    return _seg->speed/(_seg->stop - _seg->start);
   }
   
   /*
@@ -233,10 +231,10 @@ uint16_t handleCustomWS(void) {
       }
       strip->setPixelColor(pixel, color.red, color.green, color.blue, 0);
     }
-    return _seg->speed;
+    return _seg->speed/(_seg->stop - _seg->start);
   }
   
-  uint16_t handleGradient() {
+  uint16_t handleGradient(void) {
     WS2812FX::Segment* _seg = strip->getSegment();
     for(uint16_t j = 0; j <= (_seg->stop - _seg->start); j++) {
       uint16_t pixel;
@@ -248,6 +246,6 @@ uint16_t handleCustomWS(void) {
       uint32_t color = trans(_seg->colors[1], _seg->colors[0], j, (_seg->stop - _seg->start));
       strip->setPixelColor(pixel, ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), ((color >> 24) & 0xFF));
     }
-    return _seg->speed;
+    return _seg->speed/(_seg->stop - _seg->start);
   }
 #endif

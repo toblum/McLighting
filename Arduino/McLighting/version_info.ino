@@ -220,6 +220,14 @@
  * 20 October
  * Version Bump to 3.1.0.BETA3
  * Bugfixes
- * adresse issue: #39
+ * adressed issue: #39
+ * 
+ * 25 October
+ * Version Bump to 3.1.0.BETA4
+ * Bugfixes
+ * Made GUI fully offline compatible (included material icons, etc.)
+ * After Timeout (#define WIFIMGR_PORTAL_TIMEOUT 180) in definitions.h Config Portal is closed and MCL is usable over own AP @192.168.4.1
+ * adressed issue: #48
+ * known problems: E1.31 is only working for one segment at the moment
  * 
  */
