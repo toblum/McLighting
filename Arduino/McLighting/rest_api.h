@@ -28,6 +28,34 @@ server.on("/", HTTP_GET, [&](){
   #endif
 });
 
+server.on("/material.woff2", HTTP_GET, [&](){
+  #if defined(USE_HTML_MIN_GZ)
+    server.send_P(200, PSTR("text/plain"), material_icons_woff2, material_icons_woff2_len);
+  #else
+    if (!handleFileRead(server.uri()))
+      handleNotFound();
+  #endif
+});
+
+server.on("/favicon.ico", HTTP_GET, [&](){
+  #if defined(USE_HTML_MIN_GZ)
+    server.sendHeader("Content-Encoding", "gzip", true);
+    server.send_P(200, PSTR("text/plain"), fav_icon, fav_icon_len);
+  #else
+    if (!handleFileRead(server.uri()))
+      handleNotFound();
+  #endif
+});
+
+server.on("/apple-touch-icon.png", HTTP_GET, [&](){
+  #if defined(USE_HTML_MIN_GZ)
+    server.send_P(200, PSTR("text/plain"), apple_touch_icon_png, apple_touch_icon_png_len);
+  #else
+    if (!handleFileRead(server.uri()))
+      handleNotFound();
+  #endif
+});
+
 server.on("/edit", HTTP_GET, [&](){
   #if defined(USE_HTML_MIN_GZ)
     server.sendHeader("Content-Encoding", "gzip", true);
@@ -78,6 +106,7 @@ server.on("/start_config_ap", []() {
 
 server.on("/format_spiffs", []() {
   DBG_OUTPUT_PORT.printf("/format_spiffs\r\n");
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", "Formatting SPIFFS ..." );
   SPIFFS.format();
 });

@@ -5,10 +5,35 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="mobile-web-app-capable" content="yes">
-        <link rel="shortcut icon" href="https://raw.githubusercontent.com/FabLab-Luenen/McLighting/master/Arduino/McLighting/data/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/FabLab-Luenen/McLighting/master/Arduino/McLighting/apple-touch-icon.png">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <style>
+        
+        
+        
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(/material.woff2) format('woff2');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 * {
   background-repeat: no-repeat;
   padding: 0;
@@ -2305,7 +2330,9 @@ function ws_connect() {
 function ws_send(message) {
     console.log("WS send: ", message);
     data.connection.send(message);
-    if (message!="$") {
+    if ((message!="$") && (message!="~")
+    && (message!="C") && (message.indexOf("Ch") == -1) && (message.indexOf("Csc") == -1) && (message.indexOf("Csp") == -1) && (message.indexOf("Csr") == -1)
+    && (message.indexOf("S[") == -1) && (message.indexOf("S]") == -1)) {
         data.additional_connections.forEach((conn) => {
             console.log("WS send additional to: ", conn.url);
             conn.send(message);
