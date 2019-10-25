@@ -64,8 +64,9 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 - [ ] Remove old / wrong EEPROM settings completely [Issue]
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
-- [ ] If no wifi, at least enable button mode.
-- [ ] Also enable McLighting in Wifi AP mode.
+- [x] If no wifi, at least enable button mode.
+- [x] Also enable McLighting in Wifi AP mode.
+- [ ] Search an non blocking alternative for WifiManager
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
