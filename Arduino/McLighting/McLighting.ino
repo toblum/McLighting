@@ -839,9 +839,8 @@ void loop() {
   // Segment change only if color and speed transitions are finished, because they are segment specific
   if (prevsegment != State.segment) {
     DBG_OUTPUT_PORT.println("Segment not equal");
-    //if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[State.segment] == FX_MODE_CUSTOM_2) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
+    //if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[State.segment] == FX_MODE_CUSTOM_2) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {
     if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
-    }
       fx_speed  = segState.speed[State.segment];
       DBG_OUTPUT_PORT.printf("Switched segment from: %i to %i", prevsegment, State.segment);
       prevsegment = State.segment;   
