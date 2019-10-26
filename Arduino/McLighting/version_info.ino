@@ -230,4 +230,11 @@
  * adressed issue: #48
  * known problems: E1.31 is only working for one segment at the moment
  * 
+ * 26 October
+ * Version Bump to 3.1.0.BETA5
+ * adressed issue: #44
+ * known problems:
+ * Homeassistant will allways use active segment
+ * E1.31 is only working for one segment at the moment
+ * 
  */
