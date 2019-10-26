@@ -799,18 +799,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
       if (root.containsKey("color")) {
         JsonObject color = root["color"];
-        main_color.red = (uint8_t) color["r"];
-        main_color.green = (uint8_t) color["g"];
-        main_color.blue = (uint8_t) color["b"];
-        main_color.white = (uint8_t) color["w"];
-        back_color.red = (uint8_t) color["r2"];
-        back_color.green = (uint8_t) color["g2"];
-        back_color.blue = (uint8_t) color["b2"];
-        back_color.white = (uint8_t) color["w2"];
-        xtra_color.red = (uint8_t) color["r3"];
-        xtra_color.green = (uint8_t) color["g3"];
-        xtra_color.blue = (uint8_t) color["b3"];
-        xtra_color.white = (uint8_t) color["w3"];
+        if (color.containsKey("r")) { main_color.red = (uint8_t) color["r"]; }
+        if (color.containsKey("g")) { main_color.green = (uint8_t) color["g"]; }
+        if (color.containsKey("b")) { main_color.blue = (uint8_t) color["b"]; }
+        if (color.containsKey("w")) { main_color.white = (uint8_t) color["w"]; }
+        if (color.containsKey("r2")) { back_color.red = (uint8_t) color["r2"]; }
+        if (color.containsKey("g2")) { back_color.green = (uint8_t) color["g2"]; }
+        if (color.containsKey("b2")) { back_color.blue = (uint8_t) color["b2"]; }
+        if (color.containsKey("w2")) { back_color.white = (uint8_t) color["w2"]; }
+        if (color.containsKey("r3")) { xtra_color.red = (uint8_t) color["r3"]; }
+        if (color.containsKey("g3")) { xtra_color.green = (uint8_t) color["g3"]; }
+        if (color.containsKey("b3")) { xtra_color.blue = (uint8_t) color["b3"]; }
+        if (color.containsKey("w3")) { xtra_color.white = (uint8_t) color["w3"]; }
         _updateSegState = true;
       }
       
