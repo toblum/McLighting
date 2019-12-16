@@ -1,1 +1,1 @@
-#define SKETCH_VERSION "2.2.7.RU1.rgbw.3c"
+#define SKETCH_VERSION "2.2.8.RU1.rgbw.3c"

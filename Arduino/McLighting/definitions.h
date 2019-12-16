@@ -171,10 +171,10 @@ bool updateState = false;
 // Button handling
 
 #if defined(ENABLE_BUTTON)
-//#define BTN_MODE_SHORT  "STA|mo|fxm|  h|  s| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
-  #define BTN_MODE_SHORT  "STA| 5|  0|255|196|  0|  0|  0|255|  0|  0|  0|  0|  0|  0|  0|  0"   // Static white
-  #define BTN_MODE_MEDIUM "STA| 5| 48|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fire flicker
-  #define BTN_MODE_LONG   "STA| 5| 46|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fireworks random
+//#define BTN_MODE_SHORT  "STA|mo|fxm|  s|  b| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
+  #define BTN_MODE_SHORT  "STA| 5|  0|196|255|  0|  0|  0|255|  0|  0|  0|  0|  0|  0|  0|  0"   // Static white
+  #define BTN_MODE_MEDIUM "STA| 5| 48|196|200|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fire flicker
+  #define BTN_MODE_LONG   "STA| 5| 46|196|200|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fireworks random
   unsigned long keyPrevMillis = 0;
   const unsigned long keySampleIntervalMs = 25;
   byte longKeyPressCountMax = 80;       // 80 * 25 = 2000 ms

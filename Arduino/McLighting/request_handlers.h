@@ -1395,6 +1395,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       DBG_OUTPUT_PORT.println("Re-connecting to Wi-Fi...");
       WiFi.setSleepMode(WIFI_NONE_SLEEP);
       WiFi.mode(WIFI_STA);
+      WiFi.hostname(HOSTNAME); 
       WiFi.begin();
     }
 

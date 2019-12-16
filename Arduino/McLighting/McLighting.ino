@@ -727,6 +727,7 @@ void loop() {
         WiFi.disconnect();
         WiFi.setSleepMode(WIFI_NONE_SLEEP);
         WiFi.mode(WIFI_STA);
+        WiFi.hostname(HOSTNAME); 
         WiFi.begin();
       } else {
         if ((strlen(mqtt_host) != 0) && (mqtt_port != 0) && (mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES)) {

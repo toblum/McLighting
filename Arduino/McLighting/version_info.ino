@@ -168,4 +168,9 @@
  * 09 Oktober 2019
  * Version Bump to 2.2.7 rgbw 3colors 
  * added output to control external power supply
+ * 
+ * 06 December 2019
+ * Version Bump to 2.2.8 rgbw 3colors 
+ * Bugfixes
+ * adressed issue #59
  */
