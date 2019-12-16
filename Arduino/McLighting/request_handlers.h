@@ -432,12 +432,10 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   }
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
-    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
     if(!save_state.active()) save_state.once(3, tickerSaveState);
   }
   if (_updateSegState) {
     State.mode = SET;
-    DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
     if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
     
   }
@@ -549,11 +547,9 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     } 
 #if defined(ENABLE_STATE_SAVE)
     if (_updateStrip || _updateConfig) {
-      DBG_OUTPUT_PORT.println("Saving config.json!");
       if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
     }
     if (_updateState) {
-      DBG_OUTPUT_PORT.println("Saving stripstate.json!");
       if(!save_state.active()) save_state.once(3, tickerSaveState);
     }
 #endif
@@ -867,12 +863,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
       #if defined(ENABLE_STATE_SAVE)
         if (_updateState) {
-          DBG_OUTPUT_PORT.println("Saving stripstate.json!");
           if(!save_state.active()) save_state.once(3, tickerSaveState);
         }
         if (_updateSegState) {
           State.mode = SET;
-          DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
           if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
         }
       #endif
@@ -1000,6 +994,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       DBG_OUTPUT_PORT.println("Re-connecting to Wi-Fi...");
       WiFi.setSleepMode(WIFI_NONE_SLEEP);
       WiFi.mode(WIFI_STA);
+      WiFi.hostname(HOSTNAME); 
       WiFi.begin();
     }
 
@@ -1189,7 +1184,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   }
 
   void button_gy33() {
-    if (millis() - keyPrevMillis_gy33 >= keySampleIntervalMs_gy33) {
+    if (millis() - keyPrevMillis_gy33 >= keySampleIntervalMs) {
       keyPrevMillis_gy33 = millis();
 
       byte currKeyState_gy33 = digitalRead(ENABLE_BUTTON_GY33);
@@ -1250,6 +1245,7 @@ void handleRemote() {
           last_remote_cmd = results.value;
           if (State.brightness + chng <= 255) {
             State.brightness = State.brightness + chng;
+            brightness_trans = State.brightness;
             _updateState = true;
           }
         }
@@ -1257,6 +1253,7 @@ void handleRemote() {
           last_remote_cmd = results.value;
           if (State.brightness - chng >= 0) {
             State.brightness = State.brightness - chng;
+            brightness_trans = State.brightness;
             _updateState = true;
           }
         }
@@ -1475,46 +1472,52 @@ void handleRemote() {
       }
       if (results.value == rmt_commands[AUTOMODE]) { // Toggle Automode
         last_remote_cmd = 0;
-        fx_mode = 56;
+        fx_mode = FX_MODE_CUSTOM_0;
         _updateSegState = true;
       }
     #if defined(CUSTOM_WS2812FX_ANIMATIONS)
       if (results.value == rmt_commands[CUST_1]) { // Select TV Mode
         last_remote_cmd = 0;
-        fx_mode = 57;
+        fx_mode = FX_MODE_CUSTOM_2;
         _updateSegState = true;
       }
     #endif 
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
-        fx_mode = 12;
+        fx_mode = FX_MODE_RAINBOW_CYCLE;
         _updateSegState = true;
       } 
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
-        fx_mode = 48;
+        fx_mode = FX_MODE_FIRE_FLICKER;
         _updateSegState = true;
       } 
-      if (results.value == rmt_commands[CUST_4]) { // Select Custom Mode 4
+      if (results.value == rmt_commands[SEG_UP]) { // Select segment up
         last_remote_cmd = 0;
-        fx_mode = 21;
+        if ((State.segment < Config.segments - 1) && (State.mode == HOLD)) {
+          prevsegment = State.segment;
+          State.segment = State.segment + 1;
+          getSegmentParams(State.segment);
+        }
         _updateSegState = true; 
       }
-      if (results.value == rmt_commands[CUST_5]) { // Select Custom Mode 5
+      if (results.value == rmt_commands[SEG_DOWN]) { // Select segment down
         last_remote_cmd = 0;
-        fx_mode = 46;
+        if ((State.segment > 0) && (State.mode == HOLD)) {
+          prevsegment = State.segment;
+          State.segment = State.segment - 1;
+          getSegmentParams(State.segment);
+        }
         _updateSegState = true;
       } 
       irrecv.resume();  // Receive the next value
     }
     #if defined(ENABLE_STATE_SAVE)
       if (_updateState) {
-        DBG_OUTPUT_PORT.println("Saving stripstate.json!");
         if(!save_state.active()) save_state.once(3, tickerSaveState);
       }
       if (_updateSegState) {
         State.mode = SET;
-        DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
         if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
       }
     #endif

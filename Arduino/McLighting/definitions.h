@@ -21,10 +21,13 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 
-#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
+//#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 //#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 //#define POWER_SUPPLY 12               // PIN (12 / D6) If defined, enable output to control external power supply
-//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
+#if defined(POWER_SUPPLY)
+  #define POWER_ON   HIGH           // Define the output state to turn on the power supply, either HIGH or LOW.  Opposite will be uses for power off.
+#endif 
+#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
 
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
@@ -57,7 +60,7 @@ uint8_t  prevsegment        = 0;
 #if defined(ENABLE_REMOTE)
   uint8_t  selected_color = 1;
   uint64_t last_remote_cmd;
-  enum                     RMT_BTN {ON_OFF,    MODE_UP, MODE_DOWN,   RED_UP, RED_DOWN, GREEN_UP, GREEN_DOWN,  BLUE_UP, BLUE_DOWN, WHITE_UP, WHITE_DOWN, BRIGHTNESS_UP, BRIGHTNESS_DOWN, SPEED_UP, SPEED_DOWN,    COL_M,    COL_B,    COL_X, AUTOMODE,    CUST_1,   CUST_2,    CUST_3,   CUST_4,   CUST_5,          REPEATCMD, BTN_CNT};
+  enum                     RMT_BTN {ON_OFF,    MODE_UP, MODE_DOWN,   RED_UP, RED_DOWN, GREEN_UP, GREEN_DOWN,  BLUE_UP, BLUE_DOWN, WHITE_UP, WHITE_DOWN, BRIGHTNESS_UP, BRIGHTNESS_DOWN, SPEED_UP, SPEED_DOWN,    COL_M,    COL_B,    COL_X, AUTOMODE,    CUST_1,   CUST_2,    CUST_3,   SEG_UP, SEG_DOWN,          REPEATCMD, BTN_CNT};
   // Change your IR Commands here. You can see them in console, after you pressed a button on the remote
   uint64_t rmt_commands[BTN_CNT] = {0xF7C03F, 0xF7708F,  0xF7F00F, 0xF720DF, 0xF710EF, 0xF7A05F,   0xF7906F, 0xF7609F,  0xF750AF, 0xF7E01F,   0xF7D02F,      0xF730CF,        0xF7B04F, 0xF748B7,   0xF7C837, 0xF700FF, 0xF7807F, 0xF740BF, 0xF708F7,  0xF78877, 0xF728D7,  0xF7A857, 0xF76897, 0xF7E817, 0xFFFFFFFFFFFFFFFF};
 #endif
@@ -207,13 +210,16 @@ bool updateConfig = false;  // For WiFiManger custom config and config
 
 // Button handling
 
-#if defined(ENABLE_BUTTON)
-//#define BTN_MODE_SHORT  "STA|mo|fxm|  b|  s| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
-  #define BTN_MODE_SHORT  "STA| 5|  0|255|196|  0|  0|  0|255|  0|  0|  0|  0|  0|  0|  0|  0"   // Static white
-  #define BTN_MODE_MEDIUM "STA| 5| 48|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fire flicker
-  #define BTN_MODE_LONG   "STA| 5| 46|200|196|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fireworks random
-  unsigned long keyPrevMillis = 0;
+#if defined(ENABLE_BUTTON) || defined(ENABLE_BUTTON_GY33)
   const unsigned long keySampleIntervalMs = 25;
+#endif
+
+#if defined(ENABLE_BUTTON)
+//#define BTN_MODE_SHORT  "STA|mo|fxm|  s|  b| r1| g1| b1| w1| r2| g2| b2| w2| r3| g3| b3| w3"   // Example
+  #define BTN_MODE_SHORT  "STA| 5|  0|196|255|  0|  0|  0|255|  0|  0|  0|  0|  0|  0|  0|  0"   // Static white
+  #define BTN_MODE_MEDIUM "STA| 5| 48|196|200|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fire flicker
+  #define BTN_MODE_LONG   "STA| 5| 46|196|200|255|102|  0|  0|  0|  0|  0|  0|  0|  0|  0|  0"   // Fireworks random
+  unsigned long keyPrevMillis = 0;
   byte longKeyPressCountMax = 80;       // 80 * 25 = 2000 ms
   byte mediumKeyPressCountMin = 20;     // 20 * 25 = 500 ms
   byte KeyPressCount = 0;
@@ -222,7 +228,6 @@ bool updateConfig = false;  // For WiFiManger custom config and config
 
 #if defined(ENABLE_BUTTON_GY33)
   unsigned long keyPrevMillis_gy33 = 0;
-  const unsigned long keySampleIntervalMs_gy33 = 25;
   byte longKeyPressCountMax_gy33 = 80;       // 80 * 25 = 2000 ms
   byte mediumKeyPressCountMin_gy33 = 20;     // 20 * 25 = 500 ms
   byte KeyPressCount_gy33 = 0;
