@@ -521,8 +521,8 @@ void handleSetNamedMode(uint8_t * mypayload) {
       ws2812fx_mode = FX_MODE_THEATER_CHASE_RAINBOW;
       mode = SET_MODE;
     }
-#endif
 }
+#endif
 
 void handleSetWS2812FXMode(uint8_t * mypayload) {
   if (isDigit(mypayload[1])) {
