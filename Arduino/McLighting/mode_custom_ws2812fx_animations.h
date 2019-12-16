@@ -136,7 +136,7 @@ uint16_t handleCustomWS(void) {
       //               packet.property_values[1]);             // Dimmer data for Channel 1
   /*  #if defined(RGBW)
       uint16_t multipacketOffset = (universe - START_UNIVERSE) * 128; //if more than 128 LEDs * 4 colors = 512 channels, client will send in next higher universe
-      if (NUMLEDS <= multipacketOffset) return;
+      if (Config.stripSize <= multipacketOffset) return _seg->speed/(_seg->stop - _seg->start);
       uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
     #else*/
       uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe

@@ -237,4 +237,14 @@
  * Homeassistant will allways use active segment
  * E1.31 is only working for one segment at the moment
  * 
+ * 09 December
+ * Version Bump to 3.1.0.BETA6
+ * bugfixes for IR remote control
+ * Implemented segments to IR Remote
+ * Power supply update
+ * bugfix for Button definitions as speed and brightness were interchanged
+ * adressed issue #59
+ * known problems:
+ * Homeassistant will allways use active segment
+ * E1.31 is only working for one segment at the moment
  */

@@ -22,13 +22,13 @@ uint16_t convertSpeed(uint8_t _mcl_speed) {
   if (_mcl_speed < 50) {
     _fx_speed = 65535 - (_mcl_speed * 1000);
   } else if (_mcl_speed < 100) {
-    _fx_speed = 16535 - ((_mcl_speed-49) * 250);
+    _fx_speed = 16675 - ((_mcl_speed-49) * 250);
   } else if (_mcl_speed < 150) {
-    _fx_speed = 4035 - ((_mcl_speed-99) * 50);
+    _fx_speed = 4075 - ((_mcl_speed-99) * 50);
   } else if (_mcl_speed < 200) {
-    _fx_speed = 1535 - ((_mcl_speed-149) * 25);
+    _fx_speed = 1550 - ((_mcl_speed-149) * 25);
   } else {
-    _fx_speed = 285 - ((_mcl_speed-199) * 5); 
+    _fx_speed = 280 - ((_mcl_speed-199) * 5); 
   }
   _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX);
   return _fx_speed;
@@ -36,14 +36,14 @@ uint16_t convertSpeed(uint8_t _mcl_speed) {
 
 /*uint8_t unconvertSpeed(uint16_t _fx_speed) {
   uint16_t _mcl_speed = 0;
-  if (_fx_speed <= 285) {
-    _mcl_speed = ((285 - _fx_speed)/5) + 199;
-  } else if (_fx_speed < 1535) {
-    _mcl_speed = ((1535 - _fx_speed)/25) + 149;
-  } else if (_fx_speed < 4035) {
-    _mcl_speed = ((4035 - _fx_speed)/50) + 99;
-  } else if (_mcl_speed < 16535) {
-    _mcl_speed = ((16535 - _fx_speed)/250) + 49;
+  if (_fx_speed <= 280) {
+    _mcl_speed = ((280 - _fx_speed)/5) + 199;
+  } else if (_fx_speed < 1550) {
+    _mcl_speed = ((1550 - _fx_speed)/25) + 149;
+  } else if (_fx_speed < 4075) {
+    _mcl_speed = ((4075 - _fx_speed)/50) + 99;
+  } else if (_mcl_speed < 16500) {
+    _mcl_speed = ((16675 - _fx_speed)/250) + 49;
   } else {
     _mcl_speed = ((65535 - _fx_speed)/1000);
   }

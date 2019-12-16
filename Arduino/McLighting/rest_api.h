@@ -294,11 +294,9 @@ server.on("/config", []() {
 
 #if defined(ENABLE_STATE_SAVE)
   if (_updateStrip || _updateConfig) {
-    DBG_OUTPUT_PORT.println("Saving config.json!");
     if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
   }
   if (_updateState) {
-    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
     if(!save_state.active()) save_state.once(3, tickerSaveState);
   }
 #endif
@@ -312,7 +310,6 @@ server.on("/off", []() {
   if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
   getStateJSON();
   #if defined(ENABLE_STATE_SAVE)
-    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
     if(!save_state.active()) save_state.once(3, tickerSaveState);
   #endif
 });
@@ -322,7 +319,6 @@ server.on("/on", []() {
     State.mode = SET;
     getStateJSON();
     #if defined(ENABLE_STATE_SAVE)
-      DBG_OUTPUT_PORT.println("Saving stripstate.json!");
       if(!save_state.active()) save_state.once(3, tickerSaveState);
     #endif
   } else {
@@ -491,11 +487,9 @@ server.on("/set", []() {
   
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
-    DBG_OUTPUT_PORT.println("Saving stripstate.json!");
     if(!save_state.active()) save_state.once(3, tickerSaveState);
   }
   if (_updateSegState) {
-    DBG_OUTPUT_PORT.println("Saving stripstate_segment.json!");
     State.mode = SET;
     if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
   }
