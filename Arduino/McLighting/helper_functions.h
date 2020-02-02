@@ -2,6 +2,11 @@
 bool readSegmentStateFS(uint8_t _seg);
 // End Prototypes
 
+void getACK(char *buffer) {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", buffer );
+}
+
 // Call convertColors whenever main_color, back_color or xtra_color changes.
 void convertColors() {
   hexcolors_trans[0] = (uint32_t)(main_color.white << 24) | (main_color.red << 16) | (main_color.green << 8) | main_color.blue;
@@ -28,7 +33,7 @@ uint16_t convertSpeed(uint8_t _mcl_speed) {
   } else if (_mcl_speed < 200) {
     _fx_speed = 1550 - ((_mcl_speed-149) * 25);
   } else {
-    _fx_speed = 280 - ((_mcl_speed-199) * 5); 
+    _fx_speed = 280 - ((_mcl_speed-199) * 5);
   }
   _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX);
   return _fx_speed;
@@ -50,7 +55,7 @@ uint16_t convertSpeed(uint8_t _mcl_speed) {
   return _mcl_speed;
 }*/
 
-bool checkPin(uint8_t pin) { 
+bool checkPin(uint8_t pin) {
   #if defined(USE_WS2812FX_DMA)
     #if USE_WS2812FX_DMA == 0
       pin = 3;
@@ -168,10 +173,10 @@ void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = C
     strcpy(Config.RGBOrder, _RGBOrder);
     Config.pin = _pin;
   }
- 
+
   if (ledstates != NULL) {
     delete(ledstates);
-  } 
+  }
   ledstates = new uint8_t [_stripSize];
 
 #if !defined(LED_TYPE_WS2811)
@@ -222,19 +227,19 @@ void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = C
     strip->setCustomMode(5, F("Gradient"),  handleGradient);
     DBG_OUTPUT_PORT.print("Number of Segments: ");
     DBG_OUTPUT_PORT.println(strip->getNumSegments());
-  
+
     if (e131 != NULL) { delete(e131); }
     e131 = new ESPAsyncE131(END_UNIVERSE - START_UNIVERSE + 1);
     float universe_leds = 170.0;  // a universe has only 512 (0..511) channels: 3*170 or 4*128 <= 512
     if (strstr(Config.RGBOrder, "W") != NULL) {
       //universe_leds = 128.0;
     }
-    float float_enduni = _stripSize/universe_leds; 
+    float float_enduni = _stripSize/universe_leds;
     uint8_t END_UNIVERSE = _stripSize/universe_leds;
     if (float_enduni > END_UNIVERSE) {
       END_UNIVERSE = END_UNIVERSE +1;
     }
-      
+
     // if (e131.begin(E131_UNICAST))                              // Listen via Unicast
     if (e131->begin(E131_MULTICAST, START_UNIVERSE, END_UNIVERSE)) {// Listen via Multicast
         DBG_OUTPUT_PORT.println(F("Listening for data..."));
@@ -295,7 +300,7 @@ uint8_t convertColorsFade(uint8_t _seg) {
         DBG_OUTPUT_PORT.println("Color transistion aborted. Restarting...!");
         trans_cnt = 1;
       }
-    return calculateColorTransitionSteps(_seg);  
+    return calculateColorTransitionSteps(_seg);
   } else {
     return 0;
   }

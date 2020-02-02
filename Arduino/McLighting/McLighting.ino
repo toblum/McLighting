@@ -15,11 +15,11 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>           //https://github.com/tzapu/WiFiManager
 #include <FS.h>
-  
+
 #include <ESP8266mDNS.h>
 #include <WebSockets.h>            //https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsServer.h>
-  
+
 #if defined(ENABLE_BUTTON_GY33)
 // ***************************************************************************
 // Load libraries for GY33 and initialize color sensor
@@ -39,7 +39,7 @@
     WiFiClient espClient;
     PubSubClient * mqtt_client;
   #endif
-  
+
   #if ENABLE_MQTT == 1
 // ***************************************************************************
 // Load libraries for Amqtt
@@ -76,7 +76,7 @@
 #endif
 
 #if defined(USE_HTML_MIN_GZ)
-#include "htm_index_gz.h" 
+#include "htm_index_gz.h"
 #include "htm_edit_gz.h"
 #include "html_material_icons.h"
 #endif
@@ -112,45 +112,45 @@ WS2812FX * strip = NULL;
   #include <NeoPixelBus.h>
 
   #if USE_WS2812FX_DMA == 0 // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811) 
+    #if !defined(LED_TYPE_WS2811)
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod> * dma = NULL ; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma400KbpsMethod> * dma = NULL;  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811) 
+    #if !defined(LED_TYPE_WS2811)
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0800KbpsMethod> * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0400KbpsMethod> * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811) 
+    #if !defined(LED_TYPE_WS2811)
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1800KbpsMethod> * dma = NULL; //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1400KbpsMethod> * dma = NULL; //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
-  
+
   void initDMA(uint16_t stripSize = NUMLEDS){
     if (dma != NULL) { delete(dma); }
   #if USE_WS2812FX_DMA == 0 // Uses GPIO3/RXD0/RX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811)  
+    #if !defined(LED_TYPE_WS2811)
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod>(stripSize);  //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma400KbpsMethod>(stripSize);  //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 1 // Uses UART1: GPIO1/TXD0/TX, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811) 
+    #if !defined(LED_TYPE_WS2811)
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0800KbpsMethod>(stripSize); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart0400KbpsMethod>(stripSize); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     #endif
   #endif
   #if USE_WS2812FX_DMA == 2 // Uses UART2: GPIO2/TXD1/D4, more info: https://github.com/Makuna/NeoPixelBus/wiki/ESP8266-NeoMethods
-    #if !defined(LED_TYPE_WS2811) 
+    #if !defined(LED_TYPE_WS2811)
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1800KbpsMethod>(stripSize); //800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
     #else
       dma = new NeoPixelBus<NeoRgbwFeature, NeoEsp8266Uart1400KbpsMethod>(stripSize); //400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -285,7 +285,7 @@ void initMqtt() {
       mqtt_client->setServer(mqtt_host, mqtt_port);
       mqtt_client->setCallback(onMqttMessage);
     #endif
-    #if ENABLE_MQTT == 1   
+    #if ENABLE_MQTT == 1
       DBG_OUTPUT_PORT.printf("AMQTT active: %s:%d\r\n", mqtt_host, mqtt_port);
       mqtt_client->onConnect(onMqttConnect);
       mqtt_client->onDisconnect(onMqttDisconnect);
@@ -329,7 +329,7 @@ void setup() {
 #endif
 
 #if defined(POWER_SUPPLY)
-  pinMode(POWER_SUPPLY, OUTPUT); // output to control external power supply 
+  pinMode(POWER_SUPPLY, OUTPUT); // output to control external power supply
 #endif
 
   // start ticker with 0.5 because we start in AP mode and try to connect
@@ -398,7 +398,7 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
-   
+
   wifiManager.addParameter(&custom_hostname);
   #if defined(ENABLE_MQTT)
     //add all your parameters here
@@ -413,16 +413,16 @@ void setup() {
   #endif
   wifiManager.addParameter(&custom_rgbOrder);
   wifiManager.addParameter(&custom_fxoptions);
-    
+
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  
+
   // Uncomment if you want to restart ESP8266 if it cannot connect to WiFi.
   // Value in brackets is in seconds that WiFiManger waits until restart
 #if defined(WIFIMGR_PORTAL_TIMEOUT)
   wifiManager.setConfigPortalTimeout(WIFIMGR_PORTAL_TIMEOUT);
 #endif
 
-  // Order is: IP, Gateway and Subnet 
+  // Order is: IP, Gateway and Subnet
 #if defined(WIFIMGR_SET_MANUAL_IP)
   wifiManager.setSTAStaticIPConfig(IPAddress(_ip[0], _ip[1], _ip[2], _ip[3]), IPAddress(_gw[0], _gw[1], _gw[2], _gw[3]), IPAddress(_sn[0], _sn[1], _sn[2], _sn[3]));
 #endif
@@ -437,7 +437,7 @@ void setup() {
     //ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
     //delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
-  
+
   //save the custom parameters to FS/EEPROM
   #if defined(ENABLE_STATE_SAVE)
     strcpy(HOSTNAME, custom_hostname.getValue());
@@ -460,7 +460,7 @@ void setup() {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("WiFiManager config FS Save success!"): DBG_OUTPUT_PORT.println("WiFiManager config FS Save failure!");
     }
   #endif
- 
+
   //if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
   ticker.detach();
@@ -484,11 +484,11 @@ void setup() {
 
     // No authentication by default
     // ArduinoOTA.setPassword("admin");
- 
+
     // Password can be set with it's md5 value as well
     // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
     // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
- 
+
     ArduinoOTA.onStart([]() {
       DBG_OUTPUT_PORT.println("Arduino OTA: Start updating");
     });
@@ -506,7 +506,7 @@ void setup() {
       else if (error == OTA_RECEIVE_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: Receive Failed");
       else if (error == OTA_END_ERROR) DBG_OUTPUT_PORT.println("Arduino OTA: End Failed");
     });
- 
+
     ArduinoOTA.begin();
     DBG_OUTPUT_PORT.println("");
   #endif
@@ -523,7 +523,7 @@ void setup() {
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 #endif
-  
+
   // ***************************************************************************
   // Setup: MDNS responder
   // ***************************************************************************
@@ -557,7 +557,7 @@ void setup() {
   if (mdns_result) {
     MDNS.addService("http", "tcp", 80);
   }
-  
+
   #if defined(ENABLE_BUTTON_GY33)
     tcs.setConfig(MCU_LED_06, MCU_WHITE_ON);
 //    delay(2000);
@@ -583,7 +583,7 @@ void loop() {
 
   #if defined(ENABLE_BUTTON_GY33)
     button_gy33();
-  #endif 
+  #endif
 
   server.handleClient();
   webSocket.loop();
@@ -604,7 +604,7 @@ void loop() {
         WiFi.disconnect();
         WiFi.setSleepMode(WIFI_NONE_SLEEP);
         WiFi.mode(WIFI_STA);
-        WiFi.hostname(HOSTNAME); 
+        WiFi.hostname(HOSTNAME);
         WiFi.begin();
       } else {
         if ((strlen(mqtt_host) != 0) && (mqtt_port != 0) && (mqtt_reconnect_retries < MQTT_MAX_RECONNECT_TRIES)) {
@@ -625,10 +625,10 @@ void loop() {
       if (new_ha_mqtt_msg) sendState();
     #endif
   #endif
-          
+
   // ***************************************************************************
   // Simple statemachine that handles the different modes
-  // *************************************************************************** 
+  // ***************************************************************************
 
   if ((State.mode == OFF) && ((strip->getBrightness() == 0) || !Config.transEffect)) {
     if(strip->isRunning()) {
@@ -652,7 +652,7 @@ void loop() {
       }
     }
   }
-        
+
   if (State.mode == OFF) {
     if (prevmode != State.mode) {
       #if defined(ENABLE_MQTT)
@@ -661,17 +661,17 @@ void loop() {
       #if defined(POWER_SUPPLY)
          digitalWrite(POWER_SUPPLY, !POWER_ON); // power off -> external power supply
       #endif
-      if (Config.transEffect) { 
+      if (Config.transEffect) {
         brightness_trans   = 0;
-      } 
+      }
     }
   }
 #if defined(POWER_SUPPLY)
   if (State.mode != OFF) {
     if (prevmode != State.mode) {digitalWrite(POWER_SUPPLY, POWER_ON); } // power on -> external power supply
   }
-#endif  
-  
+#endif
+
   if (State.mode == SET) {
     State.mode = HOLD;
     // Segment
@@ -680,7 +680,7 @@ void loop() {
         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", State.segment);
       #endif
       //prevsegment = State.segment;
-    }    
+    }
     // Mode
     if (segState.mode[State.segment] != fx_mode) {
       segState.mode[State.segment] = fx_mode;
@@ -714,20 +714,20 @@ void loop() {
     }
     prevmode = SET;
   }
-    
-  if ((State.mode == HOLD) || ((State.mode == OFF) && (strip->getBrightness() > 0) && Config.transEffect)) { 
+
+  if ((State.mode == HOLD) || ((State.mode == OFF) && (strip->getBrightness() > 0) && Config.transEffect)) {
     if(!strip->isRunning()) strip->start();
     strip->service();
     for (uint8_t i = 0; i < Config.segments; i++) {
       if (segState.mode[i] == FX_MODE_CUSTOM_0) { handleAutoPlay(i); }
-      if (segState.mode[i] == FX_MODE_CUSTOM_3) { 
+      if (segState.mode[i] == FX_MODE_CUSTOM_3) {
         if (strip->getSpeed(i) > SPEED_MIN) {
           strip->setSpeed(i, SPEED_MIN);
         }
       }
     }
   }
-   
+
   if (prevmode != State.mode) {
     if (segState.mode[prevsegment] != FX_MODE_CUSTOM_0) {
       convertColors();
@@ -739,7 +739,7 @@ void loop() {
       }
       strip->setSpeed(prevsegment, convertSpeed(fx_speed));
     }
-    //strip->setBrightness(brightness_actual);       
+    //strip->setBrightness(brightness_actual);
     #if defined(ENABLE_MQTT)
       #if ENABLE_MQTT == 0
         mqtt_client->publish(mqtt_outtopic, mqtt_buf);
@@ -748,13 +748,14 @@ void loop() {
         mqtt_client->publish(mqtt_outtopic, qospub, false, mqtt_buf);
       #endif
       #if defined(ENABLE_HOMEASSISTANT)
-        if(!ha_send_data.active())  ha_send_data.once(3, tickerSendState);
+        if(ha_send_data.active()) ha_send_data.detach();
+        ha_send_data.once(5, tickerSendState);
       #endif
     #endif
   }
-  
+
   prevmode = State.mode;
-  
+
   #if defined(ENABLE_STATE_SAVE)
     if (updateState){
       (writeStateFS(updateState)) ? DBG_OUTPUT_PORT.println("State FS Save Success!") : DBG_OUTPUT_PORT.println("State FS Save failure!");
@@ -766,7 +767,7 @@ void loop() {
       (writeConfigFS(updateConfig)) ? DBG_OUTPUT_PORT.println("Config FS Save success!"): DBG_OUTPUT_PORT.println("Config FS Save failure!");
     }
   #endif
-  
+
   // Async color transition
   if ((segState.mode[prevsegment] != FX_MODE_CUSTOM_0) && (memcmp(hexcolors_trans, strip->getColors(prevsegment), sizeof(hexcolors_trans)) != 0)) {
     if (Config.transEffect) {
@@ -799,10 +800,10 @@ void loop() {
       if (speedFadeDelay <= millis()) {
         //DBG_OUTPUT_PORT.print("Speed trans actual: ");
         if (fx_speed < segState.speed[prevsegment]) {
-          fx_speed++;     
+          fx_speed++;
         }
         if (fx_speed > segState.speed[prevsegment]) {
-          fx_speed--;     
+          fx_speed--;
         }
         //DBG_OUTPUT_PORT.println(fx_speed);
         speedFadeDelay = millis() + TRANS_DELAY;
@@ -817,16 +818,16 @@ void loop() {
        if (State.mode == HOLD) strip->trigger();
     }
   }
-  
+
   // Async brightness transition
   if (strip->getBrightness() != brightness_trans) {
     if (Config.transEffect) {
       if(brightnessFadeDelay <= millis()) {
         if (strip->getBrightness() < brightness_trans) {
-          strip->increaseBrightness(1);    
+          strip->increaseBrightness(1);
         }
         if (strip->getBrightness() > brightness_trans) {
-          strip->decreaseBrightness(1); 
+          strip->decreaseBrightness(1);
         }
         brightnessFadeDelay = millis() + TRANS_DELAY;
         if (State.mode == HOLD) strip->trigger();
@@ -841,10 +842,10 @@ void loop() {
   if (prevsegment != State.segment) {
     DBG_OUTPUT_PORT.println("Segment not equal");
     //if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[State.segment] == FX_MODE_CUSTOM_2) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {
-    if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {   
+    if ((segState.mode[State.segment] == FX_MODE_CUSTOM_0) || (segState.mode[prevsegment] == FX_MODE_CUSTOM_0)) {
       fx_speed  = segState.speed[State.segment];
       DBG_OUTPUT_PORT.printf("Switched segment from: %i to %i", prevsegment, State.segment);
-      prevsegment = State.segment;   
+      prevsegment = State.segment;
     } else if ((memcmp(hexcolors_trans, strip->getColors(prevsegment), sizeof(hexcolors_trans)) == 0) && (fx_speed == segState.speed[prevsegment])) {
       memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
       fx_speed  = segState.speed[State.segment];
@@ -853,7 +854,7 @@ void loop() {
     }
   }
 
-  
+
   #if defined(ENABLE_REMOTE)
     handleRemote();
   #endif

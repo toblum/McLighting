@@ -4,14 +4,14 @@
   #define MAXLEDS 384           // due to memory limit of esp8266 at the moment only 384 leds are supported in DMA Mode. More can crash if mqtt is used.
 #else
   #define MAXLEDS 4096
-#endif 
+#endif
 // Neopixel
 #define LED_PIN 3          // PIN (15 / D8) where neopixel / WS2811 strip is attached; is configurable, if USE_WS2812FX_DMA is not defined. Just for the start
-#define NUMLEDS 50         // Number of leds in the; is configurable just for the start 
+#define NUMLEDS 50         // Number of leds in the; is configurable just for the start
 #define RGBORDER "GRBW"    // RGBOrder; is configurable just for the start
 #define FX_OPTIONS 48      // ws2812fx Options 48 = SIZE_SMALL + FADE_MEDIUM  is configurable just for the start; for WS2812FX setSegment OPTIONS, see: https://github.com/kitesurfer1404/WS2812FX/blob/master/extras/WS2812FX%20Users%20Guide.md
 //#define LED_TYPE_WS2811    // Uncomment, if LED type uses 400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-#define LED_BUILTIN 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192 
+#define LED_BUILTIN 2      // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just for the start. Hostname should not contain spaces as this can break Home Assistant discovery if used.
 
 #define ENABLE_OTA 1                  // If defined, enable Arduino OTA code. If set to 0 enable Arduino OTA code, if set to 1 enable ESP8266HTTPUpdateServer OTA code.
@@ -20,22 +20,23 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 //#define ENABLE_MQTT_INCLUDE_IP        // uncomment/comment to add the IP-adress to the MQTT message
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
+//#define DISABLE_MQTT_OUT_ON_MQTT_IN   // If defined, McLighting will not send back MQTT-out on MQTT-in regarding issue #67, does not change anything at the moment
 
-//#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
+#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 //#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
 //#define POWER_SUPPLY 12               // PIN (12 / D6) If defined, enable output to control external power supply
 #if defined(POWER_SUPPLY)
   #define POWER_ON   HIGH           // Define the output state to turn on the power supply, either HIGH or LOW.  Opposite will be uses for power off.
-#endif 
-#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out 
+#endif
+//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out
 
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
 #endif
 
-#define ENABLE_STATE_SAVE             // If defined, load saved state on reboot and save state on SPIFFS 
+#define ENABLE_STATE_SAVE             // If defined, load saved state on reboot and save state on SPIFFS
 
-#define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h" 
+#define CUSTOM_WS2812FX_ANIMATIONS    // uncomment and put animations in "custom_ws2812fx_animations.h"
 #define USE_HTML_MIN_GZ               // uncomment for using index.htm & edit.htm from PROGMEM instead of SPIFFS
 
 #define TRANS_COLOR_DELAY 5            // Delay for color transition
@@ -74,7 +75,7 @@ uint8_t  prevsegment        = 0;
 #endif
 
 #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-  #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87 
+  #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87
 #endif
 
 #if defined(USE_WS2812FX_DMA) && (USE_WS2812FX_DMA < 0 || USE_WS2812FX_DMA > 2)
@@ -155,7 +156,7 @@ struct {
   uint8_t    mode[10]         = {};  // Global variable for storing the WS2812FX mode to set for each segment
   uint8_t    speed[10]        = {};  // Global variable for storing the speed for effects --> smaller == slower
   uint32_t   colors[10][3]    = {};  // 2 dim. Color array for setting colors of WS2812FX
-  uint8_t    options          = FX_OPTIONS; 
+  uint8_t    options          = FX_OPTIONS;
 } segState;
 
 // List of all color modes
@@ -187,11 +188,11 @@ struct {
   #endif
   bool    transEffect = false;
 } Config;
-  
+
 uint8_t  fx_speed             = 196;  // Global variable for storing the speed for effects while fading --> smaller == slower
 uint8_t  fx_mode              = 0;
 uint8_t  brightness_trans     = 0;    // Global variable for storing the brightness before change
-uint32_t hexcolors_trans[3]   = {};   // Color array of colors of WS2812FX before fading 
+uint32_t hexcolors_trans[3]   = {};   // Color array of colors of WS2812FX before fading
 struct ledstate                       // Data structure to store a state of a single led
 {
   uint8_t red;

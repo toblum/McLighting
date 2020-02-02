@@ -16,7 +16,7 @@
 
                         "switch": {
                                 "status": "http://<ESP_HOST>/get_switch",
-                                "powerOn": "http://<ESP_HOST>/all?r=255&g=255&b=255",
+                                "powerOn": "http://<ESP_HOST>/on",
                                 "powerOff": "http://<ESP_HOST>/off"
                         },
 
@@ -27,7 +27,7 @@
 
                         "color": {
                                 "status": "http://<ESP_HOST>/get_color",
-                                "url": "http://<ESP_HOST>/set?m=0?rgb=%s",
+                                "url": "http://<ESP_HOST>/set?m=0?rgb=00%s",
                                 "brightness": true
                         }
                 }

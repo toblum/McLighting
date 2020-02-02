@@ -136,17 +136,27 @@ server.on("/get_switch", []() {
 });
 
 server.on("/get_color", []() {
-  char rgbcolor[10];
-  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+  char rgbcolor[7];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X", main_color.red, main_color.green, main_color.blue);
   rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "text/plain", rgbcolor );
+  server.send(200, "text/plain", rgbcolor);
   DBG_OUTPUT_PORT.print("/get_color: ");
   DBG_OUTPUT_PORT.println(rgbcolor);
 });
 
+server.on("/get_color1", []() {
+  char rgbcolor[9];
+  snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", main_color.white, main_color.red, main_color.green, main_color.blue);
+  rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", rgbcolor );
+  DBG_OUTPUT_PORT.print("/get_color1: ");
+  DBG_OUTPUT_PORT.println(rgbcolor);
+});
+
 server.on("/get_color2", []() {
-  char rgbcolor[10];
+  char rgbcolor[9];
   snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", back_color.white, back_color.red, back_color.green, back_color.blue);
   rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -156,7 +166,7 @@ server.on("/get_color2", []() {
 });
 
 server.on("/get_color3", []() {
-  char rgbcolor[10];
+  char rgbcolor[9];
   snprintf(rgbcolor, sizeof(rgbcolor), "%02X%02X%02X%02X", xtra_color.white, xtra_color.red, xtra_color.green, xtra_color.blue);
   rgbcolor[sizeof(rgbcolor) - 1] = 0x00;
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -294,10 +304,12 @@ server.on("/config", []() {
 
 #if defined(ENABLE_STATE_SAVE)
   if (_updateStrip || _updateConfig) {
-    if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
+    if(save_conf.active()) save_conf.detach();
+    save_conf.once(3, tickerSaveConfig);
   }
   if (_updateState) {
-    if(!save_state.active()) save_state.once(3, tickerSaveState);
+    if(save_state.active()) save_state.detach();
+    save_state.once(3, tickerSaveState);
   }
 #endif
   _updateStrip = false;
@@ -308,21 +320,23 @@ server.on("/config", []() {
 
 server.on("/off", []() {
   if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
-  getStateJSON();
+  getACK("OK");
   #if defined(ENABLE_STATE_SAVE)
-    if(!save_state.active()) save_state.once(3, tickerSaveState);
+    if(save_state.active()) save_state.detach();
+    save_state.once(3, tickerSaveState);
   #endif
 });
 
 server.on("/on", []() {
   if (prevmode == OFF) {
     State.mode = SET;
-    getStateJSON();
+    getACK("OK");
     #if defined(ENABLE_STATE_SAVE)
-      if(!save_state.active()) save_state.once(3, tickerSaveState);
+      if(save_state.active()) save_state.detach();
+      save_state.once(3, tickerSaveState);
     #endif
   } else {
-    getStateJSON(); 
+    getACK("NOK"); 
   }
 });
 
@@ -482,16 +496,18 @@ server.on("/set", []() {
     State.mode = SET;
     _updateState = true;
   }
-  DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStateJSONfull()); 
-  getStateJSON();
+  //DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStateJSONfull()); //possibly causing heap problems
+  getACK("OK");
   
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
-    if(!save_state.active()) save_state.once(3, tickerSaveState);
+    if(save_state.active()) save_state.detach();
+    save_state.once(3, tickerSaveState);
   }
   if (_updateSegState) {
     State.mode = SET;
-    if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+    if(save_seg_state.active()) save_seg_state.detach();
+    save_seg_state.once(3, tickerSaveSegmentState);
   }
 #endif
   _updateState = false;

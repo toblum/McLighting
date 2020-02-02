@@ -7,7 +7,7 @@
 bool handleSetMainColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[1], NULL, 16);
-  if (rgb != segState.colors[State.segment][0]) { 
+  if (rgb != segState.colors[State.segment][0]) {
     main_color.white = ((rgb >> 24) & 0xFF);
     main_color.red = ((rgb >> 16) & 0xFF);
     main_color.green = ((rgb >> 8) & 0xFF);
@@ -20,7 +20,7 @@ bool handleSetMainColor(uint8_t * mypayload) {
 bool handleSetBackColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[2], NULL, 16);
-  if (rgb != segState.colors[State.segment][1]) { 
+  if (rgb != segState.colors[State.segment][1]) {
     back_color.white = ((rgb >> 24) & 0xFF);
     back_color.red = ((rgb >> 16) & 0xFF);
     back_color.green = ((rgb >> 8) & 0xFF);
@@ -32,7 +32,7 @@ bool handleSetBackColor(uint8_t * mypayload) {
 bool handleSetXtraColor(uint8_t * mypayload) {
   // decode rgb data
   uint32_t rgb = (uint32_t) strtoul((const char *) &mypayload[3], NULL, 16);
-  if (rgb != segState.colors[State.segment][2]) { 
+  if (rgb != segState.colors[State.segment][2]) {
     xtra_color.white = ((rgb >> 24) & 0xFF);
     xtra_color.red = ((rgb >> 16) & 0xFF);
     xtra_color.green = ((rgb >> 8) & 0xFF);
@@ -116,7 +116,7 @@ void handleSetDifferentColors(uint8_t * mypayload) {
 void handleRangeDifferentColors(uint8_t * mypayload) {
   uint8_t* nextCommand = 0;
   nextCommand = (uint8_t*) strtok((char*) mypayload, "R");
-  // While there is a range to process R00010010<0000ff00> 
+  // While there is a range to process R00010010<0000ff00>
 
   while (nextCommand) {
     // Loop for each LED.
@@ -189,7 +189,7 @@ bool setModeByStateString(String saved_state_string) {
     return true;
   } else {
     DBG_OUTPUT_PORT.println("Saved state not found!");
-    return false;    
+    return false;
   }
   return false;
 }
@@ -206,7 +206,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
     if (strcmp((char *) &mypayload[1], "on") == 0) {
       State.mode = SET;
     }
-  }    
+  }
 }
 
 // ***************************************************************************
@@ -249,11 +249,11 @@ void handleNotFound() {
 }
 
 // ***************************************************************************
-// Functions and variables 
+// Functions and variables
 // ***************************************************************************
 void Dbg_Prefix(bool _mqtt, uint8_t _num) {
   if (_mqtt == true)  {
-    DBG_OUTPUT_PORT.print("MQTT: "); 
+    DBG_OUTPUT_PORT.print("MQTT: ");
   } else {
     DBG_OUTPUT_PORT.print("WS: ");
     webSocket.sendTXT(_num, "OK");
@@ -314,7 +314,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         Dbg_Prefix(mqtt, num);
         DBG_OUTPUT_PORT.printf("Set segment options to: [%u]\r\n", segState.options);
       }
-    }    
+    }
     char * buffer = listSegmentStateJSON(State.segment);
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
@@ -330,7 +330,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, buffer);
-    } 
+    }
   }
   // / ==> Set WS2812 mode.
   if (_payload[0] == '/') {
@@ -340,7 +340,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
       Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Set WS2812 mode: [%s]\r\n", _payload);
     }
-  }    
+  }
   // # ==> Set main color - ## ==> Set 2nd color - ### ==> Set 3rd color
   if (_payload[0] == '#') {
     if (_payload[2] == '#') {
@@ -432,12 +432,14 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   }
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
-    if(!save_state.active()) save_state.once(3, tickerSaveState);
+    if(save_state.active()) save_state.detach();
+    save_state.once(3, tickerSaveState);
   }
   if (_updateSegState) {
     State.mode = SET;
-    if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
-    
+    if(save_seg_state.active()) save_seg_state.detach();
+    save_seg_state.once(3, tickerSaveSegmentState);
+
   }
   _updateState = false;
   _updateSegState = false;
@@ -467,12 +469,12 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         Config.stripSize = constrain(atoi(tmp_count), 1, MAXLEDS);
         _updateStrip = true;
       }
-      if (_payload[2] == 'r') {     
+      if (_payload[2] == 'r') {
         char _rgbOrder[5];
         snprintf(_rgbOrder, sizeof(_rgbOrder), "%s", &_payload[3]);
         _rgbOrder[4] = 0x00;
         checkRGBOrder(_rgbOrder);
-        _updateStrip=true;    
+        _updateStrip=true;
       }
     #if !defined(USE_WS2812FX_DMA)
       if (_payload[2] == 'p') {
@@ -482,10 +484,10 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         checkPin(atoi(tmp_pin));
         _updateStrip = true;
       }
-    #endif   
+    #endif
     }
     if (_updateStrip){
-      initStrip();   
+      initStrip();
     }
     if (_payload[1] == 'h') {
       snprintf(HOSTNAME, sizeof(HOSTNAME), "%s", &_payload[2]);
@@ -515,12 +517,12 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", &_payload[3]);
         mqtt_pass[sizeof(mqtt_pass) - 1] = 0x00;
         _updateConfig = true;
-      }    
+      }
     }
     if (_updateConfig) {
       initMqtt();
-    }    
-  #endif   
+    }
+  #endif
     if (_payload[1] == 'e') {
       char _transEffect[2];
       snprintf(_transEffect, sizeof(_transEffect), "%s", &_payload[2]);
@@ -528,7 +530,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
       Config.transEffect = atoi(_transEffect);
       _updateConfig = true;
     }
-    
+
     char * buffer = listConfigJSON();
     if (mqtt == true)  {
       DBG_OUTPUT_PORT.print("MQTT: ");
@@ -544,13 +546,15 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
       DBG_OUTPUT_PORT.print("WS: ");
       webSocket.sendTXT(num, "OK");
       webSocket.sendTXT(num, buffer);
-    } 
+    }
 #if defined(ENABLE_STATE_SAVE)
     if (_updateStrip || _updateConfig) {
-      if(!save_conf.active()) save_conf.once(3, tickerSaveConfig);
+      if(save_conf.active()) save_conf.detach();
+      save_conf.once(3, tickerSaveConfig);
     }
     if (_updateState) {
-      if(!save_state.active()) save_state.once(3, tickerSaveState);
+      if(save_state.active()) save_state.detach();
+      save_state.once(3, tickerSaveState);
     }
 #endif
     _updateStrip = false;
@@ -559,7 +563,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
     free (buffer);
   }
-  
+
   // $ ==> Get status Info.
   if (_payload[0] == '$') {
     char * buffer = listStateJSONfull();
@@ -581,22 +585,22 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     DBG_OUTPUT_PORT.printf("Get status info: %s\r\n", buffer);
     free (buffer);
   }
-  
+
   // ~ ==> Get WS2812 modes.
   if (_payload[0] == '~') {
     char * buffer  = listModesJSON();
     if (mqtt == true)  {
-      DBG_OUTPUT_PORT.print("MQTT: "); 
+      DBG_OUTPUT_PORT.print("MQTT: ");
       #if defined(ENABLE_MQTT)
         #if ENABLE_MQTT == 0
           uint16_t msg_len = strlen(buffer) + 1;
           mqtt_client->beginPublish(mqtt_outtopic, msg_len, true);
           mqtt_client->write((const uint8_t*)buffer, msg_len);
-          mqtt_client->endPublish();       
+          mqtt_client->endPublish();
         #endif
         #if ENABLE_MQTT == 1
           mqtt_client->publish(mqtt_outtopic, qospub, false, buffer);
-        #endif  
+        #endif
       #endif
     } else {
       DBG_OUTPUT_PORT.print("WS: ");
@@ -707,7 +711,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
        DynamicJsonDocument jsonBuffer(bufferSize);
        JsonObject root = jsonBuffer.to<JsonObject>();
        root["state"] = (State.mode != OFF) ? on_cmd : off_cmd;
-       #if defined(ENABLE_MQTT_INCLUDE_IP) 
+       #if defined(ENABLE_MQTT_INCLUDE_IP)
          root["ip"] = WiFi.localIP().toString();
        #endif
        root["segment"] = State.segment;
@@ -769,7 +773,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
       //DBG_OUTPUT_PORT.println("JSON ParseObject() done!");
       JsonObject root = jsonBuffer.as<JsonObject>();
-      
+
       if (root.containsKey("state")) {
         const char* state_in = root["state"];
         if (strcmp(state_in, on_cmd) == 0) {
@@ -788,10 +792,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (prevsegment != json_segment) {
           prevsegment = State.segment;
           State.segment = json_segment;
-          getSegmentParams(State.segment);   
+          getSegmentParams(State.segment);
           State.mode = SET;
           _updateState = true;
-        }      
+        }
       }
       if (root.containsKey("color")) {
         JsonObject color = root["color"];
@@ -809,7 +813,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (color.containsKey("w3")) { xtra_color.white = (uint8_t) color["w3"]; }
         _updateSegState = true;
       }
-      
+
       if (root.containsKey("white_value")) {
         uint8_t json_white_value = constrain((uint8_t) root["white_value"], 0, 255);
         if (json_white_value != main_color.white) {
@@ -817,7 +821,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           _updateSegState = true;
         }
       }
-      
+
       if (root.containsKey("speed")) {
         uint8_t _fx_speed = constrain((uint8_t) root["speed"], 0, 255);
         if (_fx_speed != segState.speed[State.segment]) {
@@ -863,11 +867,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
       #if defined(ENABLE_STATE_SAVE)
         if (_updateState) {
-          if(!save_state.active()) save_state.once(3, tickerSaveState);
+          if(save_state.active()) save_state.detach();
+          save_state.once(3, tickerSaveState);
         }
         if (_updateSegState) {
           State.mode = SET;
-          if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+          if(save_seg_state.active()) save_seg_state.detach();
+          save_seg_state.once(3, tickerSaveSegmentState);
         }
       #endif
         _updateState = false;
@@ -880,7 +886,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   #if ENABLE_MQTT == 0
   void onMqttMessage(char* topic, byte* payload_in, uint16_t length) {
   #endif
-  
+
   #if ENABLE_MQTT == 1
   void onMqttMessage(char* topic, char* payload_in, AsyncMqttClientMessageProperties properties, size_t length, size_t index, size_t total) {
   #endif
@@ -888,14 +894,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     memcpy(payload, payload_in, length);
     payload[length] = 0;
     DBG_OUTPUT_PORT.printf("MQTT: Recieved [%s]: %s\r\n", topic, payload);
- 
+
     #if defined(ENABLE_HOMEASSISTANT)
       if (strcmp(topic, mqtt_ha_state_in) == 0) {
         if (!processJson((char*)payload)) {
           return;
         }
-        if(!ha_send_data.active()) ha_send_data.once(5, tickerSendState);
-        } else if (strcmp(topic, mqtt_intopic) == 0) {
+        if(ha_send_data.active()) ha_send_data.detach();
+        ha_send_data.once(5, tickerSendState);
+      } else if (strcmp(topic, mqtt_intopic) == 0) {
     #endif
 
     checkpayload(payload, true);
@@ -994,7 +1001,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       DBG_OUTPUT_PORT.println("Re-connecting to Wi-Fi...");
       WiFi.setSleepMode(WIFI_NONE_SLEEP);
       WiFi.mode(WIFI_STA);
-      WiFi.hostname(HOSTNAME); 
+      WiFi.hostname(HOSTNAME);
       WiFi.begin();
     }
 
@@ -1159,7 +1166,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     }
   }
 #endif
-  
+
 #if defined(ENABLE_BUTTON_GY33)
   void shortKeyPress_gy33() {
     DBG_OUTPUT_PORT.printf("Short GY-33 button press\r\n");
@@ -1169,18 +1176,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     uint8_t r, g, b, col, conf;
     tcs.getData(&r, &g, &b, &col, &conf);
     DBG_OUTPUT_PORT.printf("Colors: R: [%d] G: [%d] B: [%d] Color: [%d] Conf: [%d]\r\n", (int)r, (int)g, (int)b, (int)col, (int)conf);
-    main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0; 
+    main_color.red = (pow((r/255.0), GAMMA)*255); main_color.green = (pow((g/255.0), GAMMA)*255); main_color.blue = (pow((b/255.0), GAMMA)*255);main_color.white = 0;
     State.mode = SET;
   }
 
   // called when button is kept pressed for less than 2 seconds
-  void mediumKeyPress_gy33() {   
+  void mediumKeyPress_gy33() {
       tcs.setConfig(MCU_LED_03, MCU_WHITE_OFF);
   }
 
   // called when button is kept pressed for 2 seconds or more
   void longKeyPress_gy33() {
-      tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);  
+      tcs.setConfig(MCU_LED_OFF, MCU_WHITE_OFF);
   }
 
   void button_gy33() {
@@ -1273,7 +1280,7 @@ void handleRemote() {
             }
           }
         }
-        if ((segState.mode[State.segment] < FX_MODE_CUSTOM_0) || (segState.mode[State.segment] > FX_MODE_CUSTOM_4)) {        
+        if ((segState.mode[State.segment] < FX_MODE_CUSTOM_0) || (segState.mode[State.segment] > FX_MODE_CUSTOM_4)) {
           if (results.value == rmt_commands[RED_UP]) { //Red Up
             last_remote_cmd = results.value;
             if (selected_color == 1) {
@@ -1300,7 +1307,7 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.red - chng >= 0) {
                 main_color.red = main_color.red - chng;
-                _updateSegState = true; 
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
@@ -1342,7 +1349,7 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.green - chng >= 0) {
                 main_color.green = main_color.green - chng;;
-                _updateSegState = true; 
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
@@ -1384,7 +1391,7 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.blue - chng >= 0) {
                 main_color.blue = main_color.blue - chng;
-                _updateSegState = true; 
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
@@ -1426,7 +1433,7 @@ void handleRemote() {
             if (selected_color == 1) {
               if (main_color.white - chng >= 0) {
                 main_color.white = main_color.white - chng;
-                _updateSegState = true; 
+                _updateSegState = true;
               }
             }
             if (selected_color == 2) {
@@ -1445,11 +1452,11 @@ void handleRemote() {
           if (results.value == rmt_commands[COL_M]) { // Select Main Color
             last_remote_cmd = 0;
             selected_color = 1;
-          } 
+          }
           if (results.value == rmt_commands[COL_B]) { // Select Back Color
             last_remote_cmd = 0;
             selected_color = 2;
-          } 
+          }
           if (results.value == rmt_commands[COL_X]) { // Select Extra Color
             last_remote_cmd = 0;
             selected_color = 3;
@@ -1481,17 +1488,17 @@ void handleRemote() {
         fx_mode = FX_MODE_CUSTOM_2;
         _updateSegState = true;
       }
-    #endif 
+    #endif
       if (results.value == rmt_commands[CUST_2]) { // Select Custom Mode 2
         last_remote_cmd = 0;
         fx_mode = FX_MODE_RAINBOW_CYCLE;
         _updateSegState = true;
-      } 
+      }
       if (results.value == rmt_commands[CUST_3]) { // Select Custom Mode 3
         last_remote_cmd = 0;
         fx_mode = FX_MODE_FIRE_FLICKER;
         _updateSegState = true;
-      } 
+      }
       if (results.value == rmt_commands[SEG_UP]) { // Select segment up
         last_remote_cmd = 0;
         if ((State.segment < Config.segments - 1) && (State.mode == HOLD)) {
@@ -1499,7 +1506,7 @@ void handleRemote() {
           State.segment = State.segment + 1;
           getSegmentParams(State.segment);
         }
-        _updateSegState = true; 
+        _updateSegState = true;
       }
       if (results.value == rmt_commands[SEG_DOWN]) { // Select segment down
         last_remote_cmd = 0;
@@ -1509,16 +1516,18 @@ void handleRemote() {
           getSegmentParams(State.segment);
         }
         _updateSegState = true;
-      } 
+      }
       irrecv.resume();  // Receive the next value
     }
     #if defined(ENABLE_STATE_SAVE)
       if (_updateState) {
-        if(!save_state.active()) save_state.once(3, tickerSaveState);
+        if(save_state.active()) save_state.detach();
+        save_state.once(3, tickerSaveState);
       }
       if (_updateSegState) {
         State.mode = SET;
-        if(!save_seg_state.active()) save_seg_state.once(3, tickerSaveSegmentState);
+        if(save_seg_state.active()) save_seg_state.detach();
+        save_seg_state.once(3, tickerSaveSegmentState);
       }
     #endif
       _updateState = false;

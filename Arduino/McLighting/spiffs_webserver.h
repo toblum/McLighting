@@ -70,6 +70,9 @@ bool handleFileRead(String path) {
       path += ".gz";
     File file = SPIFFS.open(path, "r");
     server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    server.sendHeader("Pragma", "no-cache");
+    server.sendHeader("Expires", "-1");
     size_t sent = server.streamFile(file, contentType);
     file.close();
     return true;

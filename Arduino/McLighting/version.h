@@ -1,1 +1,1 @@
-#define SKETCH_VERSION "3.1.0.BETA6"
+#define SKETCH_VERSION "3.1.0.BETA7"
