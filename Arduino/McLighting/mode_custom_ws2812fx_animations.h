@@ -101,7 +101,7 @@ uint16_t handleCustomWS(void) {
       }
     } else {
       if (millis() - dipStartTime[_seg_num] < darkTime[_seg_num]) {
-        for (uint16_t i=(_seg->start + 3); i<= _seg->stop; i++) {
+        for (uint16_t i = _seg->start; i <= _seg->stop; i++) {
           ledstates[i] = 0;
           for (uint16_t j=_seg->start; j<=_seg->stop; j++) {
             uint16_t index = (j%3 == 0) ? 400 : random(0,767);
@@ -118,15 +118,19 @@ uint16_t handleCustomWS(void) {
   // E1.31 mode
   // ***************************************************************************
   uint16_t handleE131(void) {
-    WS2812FX::Segment* _seg = strip->getSegment();
+  WS2812FX::Segment* _seg = strip->getSegment();
+  return _seg->speed/(_seg->stop - _seg->start);
+  }
+  
+  void handleE131Play(void) {
     if (!e131->isEmpty()) {
       e131_packet_t packet;
       e131->pull(&packet); // Pull packet from ring buffer
-
+      
       uint16_t universe = htons(packet.universe);
       uint8_t *data = packet.property_values + 1;
 
-      if (universe < START_UNIVERSE || universe > END_UNIVERSE) return _seg->speed/(_seg->stop - _seg->start); //async will take care about filling the buffer
+      if (universe < START_UNIVERSE || universe > END_UNIVERSE) return; //async will take care about filling the buffer
 
       // Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH1: %u\n",
       //               htons(packet.universe),                 // The Universe for this packet
@@ -140,21 +144,24 @@ uint16_t handleCustomWS(void) {
       uint16_t len = (128 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 128;
     #else*/
       uint16_t multipacketOffset = (universe - START_UNIVERSE) * 170; //if more than 170 LEDs * 3 colors = 510 channels, client will send in next higher universe
-      if (Config.stripSize <= multipacketOffset) return _seg->speed/(_seg->stop - _seg->start);
+      if (Config.stripSize <= multipacketOffset) return;
       uint16_t len = (170 + multipacketOffset > Config.stripSize) ? (Config.stripSize - multipacketOffset) : 170;
   /*  #endif */
-      for (uint16_t i = 0; i < len; i++){
-        if ((i >= _seg->start) && (i <= _seg->stop)) {
-          uint16_t j = i * 3;
-    /*  #if defined(RGBW)
-          strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
-      #else */
-          strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
-    /*  #endif */
+      for (uint8_t k = 0; k < Config.segments; k++) {
+        if (segState.mode[k] == FX_MODE_CUSTOM_3) {
+          for (uint16_t i = 0; i < len; i++){
+            if ((i >= strip->getSegment(k)->start) && (i <= strip->getSegment(k)->stop)) {
+              uint16_t j = i * 3;
+        /*  #if defined(RGBW)
+              strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], data[j + 3]);
+          #else */
+              strip->setPixelColor(i + multipacketOffset, data[j], data[j + 1], data[j + 2], 0);
+       /*  #endif */
+            }
+          }
         }
       }
     }
-    return _seg->speed/(_seg->stop - _seg->start);
   }
 
   /*

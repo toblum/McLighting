@@ -718,14 +718,12 @@ void loop() {
   if ((State.mode == HOLD) || ((State.mode == OFF) && (strip->getBrightness() > 0) && Config.transEffect)) {
     if(!strip->isRunning()) strip->start();
     strip->service();
+    bool playE131 = false;
     for (uint8_t i = 0; i < Config.segments; i++) {
       if (segState.mode[i] == FX_MODE_CUSTOM_0) { handleAutoPlay(i); }
-      if (segState.mode[i] == FX_MODE_CUSTOM_3) {
-        if (strip->getSpeed(i) > SPEED_MIN) {
-          strip->setSpeed(i, SPEED_MIN);
-        }
-      }
+      if (segState.mode[i] == FX_MODE_CUSTOM_3) { playE131 = true; }
     }
+    if (playE131 == true) { handleE131Play(); }
   }
 
   if (prevmode != State.mode) {

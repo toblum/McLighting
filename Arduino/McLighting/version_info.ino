@@ -248,8 +248,13 @@
  * Homeassistant will allways use active segment
  * E1.31 is only working for one segment at the moment
  * 
- * 27 January
+ * 27 January 2020
  * Version Bump to 3.1.0.BETA7
  * small API changes
  * work to solve heap problems
+ * 
+ * 23 February 2020
+ * Version Bump to 3.1.0
+ * bugfixes
+ * E1.31 is now working for multi segments
  */

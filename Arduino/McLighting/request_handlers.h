@@ -1244,7 +1244,7 @@ void handleRemote() {
           _updateState = true;
         } else {
           State.mode = OFF;
-          _updateState = true;;
+          _updateState = true;
         }
       }
       if (State.mode == HOLD) {
@@ -1348,7 +1348,7 @@ void handleRemote() {
             last_remote_cmd = results.value;
             if (selected_color == 1) {
               if (main_color.green - chng >= 0) {
-                main_color.green = main_color.green - chng;;
+                main_color.green = main_color.green - chng;
                 _updateSegState = true;
               }
             }

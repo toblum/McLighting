@@ -250,8 +250,8 @@ void initStrip(uint16_t _stripSize = Config.stripSize, uint8_t _num_segments = C
 }
 
 void getSegmentParams(uint8_t _seg) {
-  segState.start   = strip->getSegment(_seg)->start;;
-  segState.stop    = strip->getSegment(_seg)->stop;;
+  segState.start   = strip->getSegment(_seg)->start;
+  segState.stop    = strip->getSegment(_seg)->stop;
   //segState.mode[_seg]     = strip->getMode(_seg);
   //segState.speed[_seg]    = unconvertSpeed(strip->getSpeed(_seg));
   //fx_mode          = segState.mode[_seg];
