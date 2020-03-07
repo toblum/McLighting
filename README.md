@@ -1,6 +1,6 @@
-# McLighting v2 - The ESP8266 based multi-client lighting gadget
+# McLighting v3 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.7-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.1.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
 
 McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
@@ -33,16 +33,22 @@ again in out wiki: [Software installation](../../wiki/Software-installation)
 
 This project uses libraries and code by different authors:
 
-- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.12.0)
+- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.15.0)
 
-- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version downloaded 2017-02-05)
+- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1)
 
-- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.0.6)
+- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.1.4)
 
-- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.1.2)
+- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.2.5)
 
-- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.6.0)
+- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.7.0)
   _Only when you have activated MQTT in definitions.h._
+  
+- Optional: [Brzo I2C](https://github.com/pasko-zh/brzo_i2c/) by pazko-zh (tested with 1.3.3)
+  _Only when you have activated GY33 in definitions.h._
+  
+- Optional: [FastLed](https://github.com/FastLED/FastLED/) by FastLED (tested with 1.3.3)
+  _Only when you have activated custom animations (Fire2012) in definitions.h._
   
 The sketch also uses the following built-in library:
 - Ticker by [@igrr](https://github.com/igrr)
@@ -60,21 +66,29 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Todos
-- [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
-- [ ] Remove old / wrong EEPROM settings completely [Issue]
+- [ ] Redesign of Code and bump to V3
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
-- [ ] If no wifi, at least enable button mode.
-- [ ] Also enable McLighting in Wifi AP mode.
-- [ ] Search an non blocking alternative for WifiManager
+- [x] If no wifi, at least enable button mode.
+- [x] Also enable McLighting in Wifi AP mode.
+- [ ] Search a non-blocking alternative for wifiManager
 - [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
 - [ ] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
 - [ ] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
-- [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/93)
+- [x] Remove old / wrong EEPROM settings completely [Issue] EEPROM saving discarded
+- [x] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
+- [x] Support for up to ten segments
+- [x] Removal of LEGACY_ANIMATIONS
+- [x] Include ws2812fx library to code due to modifications in library 
+- [x] Add TV, E1.31 and AUTO to CUSTOM_WS2812FX_ANIMATIONS
+- [x] Save status: Added saving of status 'AUTO'. [Issue](https://github.com/FabLab-Luenen/McLighting/issues/30)
+- [x] EXPERIMENTAL: Added transition feature on changing values of color brightness and speed. ATTENTION! Does not work properly for all WS2812fx effects. Can be set via UI or REST-API.
+- [x] Added Custom Animation 'Gradient': [Issue](https://github.com/FabLab-Luenen/McLighting/issues/25)
+- [x] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/101)
 - [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
 - [x] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
 - [x] MQTT support
-- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
+- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)
 - [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
 - [x] Fix issue with websockets connection problems
 - [x] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)

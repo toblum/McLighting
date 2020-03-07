@@ -165,12 +165,96 @@
  * adressed issue: #31
  * adressed issue: #32 
  * 
- * 09 Oktober 2019
- * Version Bump to 2.2.7 rgbw 3colors 
- * added output to control external power supply
+ * 15 September 2019
+ * Version Bump to 2.2.7.BETA1.rgbw.3colors
+ * adressed issue: #25 (added Custom Animation 'Gradient' with number 57)
+ * adressed issue: #30 (Status 'AUTO' is saved now)
+ * adressed issue: https://github.com/toblum/McLighting/issues/403 (Experimental Support of transitions: set transEffect = true in definitions.h)
+ * corrected use of DMA for Neopixelbus by Makuna (Tests for other strips than SK6812 GRBW were not made)
  * 
- * 06 December 2019
- * Version Bump to 2.2.8 rgbw 3colors 
+ * 27 September 2019
+ * Version Bump to 3.0.0.ALPHA1
+ * removed LEGACY_ANIMATIONS
+ * removed old Custom Animations from beginning of list.
+ * added Custom Animation 'AutoPlay' with number 56
+ * added Custom Animation 'Custom WS' with number 57
+ * added Custom Animation 'TV' with number 58
+ * added Custom Animation 'E1.31' with number 59
+ * moved Custom Animation 'Fire2012' to number 60
+ * moved Custom Animation 'Gradients' to number 61
+ * REST-API changes (will be documented soon)
+ *
+ * 29 September 2019
+ * Version Bump to 3.0.0.BETA1
+ * further code changes
+ * bugfixes
+ *
+ * 30 September 2019
+ * Version Bump to 3.1.0.ALPHA1
+ * further code changes
+ * removal of saving to EEPROM
+ * first integration of multi segments
+ *
+ * 3 October 2019
+ * Version Bump to 3.1.0.ALPHA2
+ * further code changes
+ * further integration of multi segments
+ * integration of multi segments to GUI
+ *
+ * 5 October 2019
+ * Version Bump to 3.1.0.ALPHA2
+ * further code changes
+ * further integration of multi segments
+ * known problem: as always: AUTOPLAY (as it is not multi segment capable yet)
+ * 
+ * 07 October 
+ * Version Bump to 3.1.0.BETA1
+ * bugfixes
+ * adressed issue: #39 uncooment //#define ENABLE_MQTT_INCLUDE_IP in defninitions.h
+ * 
+ * 09 October 
+ * Version Bump to 3.1.0.BETA2
+ * bugfixes
+ * implemented https://github.com/FabLab-Luenen/McLighting/commit/589806d0fda737011426754a6d84c88535ded688
+ * 
+ * 20 October
+ * Version Bump to 3.1.0.BETA3
  * Bugfixes
+ * adressed issue: #39
+ * 
+ * 25 October
+ * Version Bump to 3.1.0.BETA4
+ * Bugfixes
+ * Made GUI fully offline compatible (included material icons, etc.)
+ * After Timeout (#define WIFIMGR_PORTAL_TIMEOUT 180) in definitions.h Config Portal is closed and MCL is usable over own AP @192.168.4.1
+ * adressed issue: #48
+ * known problems: E1.31 is only working for one segment at the moment
+ * 
+ * 26 October
+ * Version Bump to 3.1.0.BETA5
+ * adressed issue: #44
+ * known problems:
+ * Homeassistant will allways use active segment
+ * E1.31 is only working for one segment at the moment
+ * 
+ * 09 December
+ * Version Bump to 3.1.0.BETA6
+ * bugfixes for IR remote control
+ * Implemented segments to IR Remote
+ * Power supply update
+ * bugfix for Button definitions as speed and brightness were interchanged
  * adressed issue #59
+ * known problems:
+ * Homeassistant will allways use active segment
+ * E1.31 is only working for one segment at the moment
+ * 
+ * 27 January 2020
+ * Version Bump to 3.1.0.BETA7
+ * small API changes
+ * work to solve heap problems
+ * 
+ * 23 February 2020
+ * Version Bump to 3.1.0
+ * bugfixes
+ * E1.31 is now working for multi segments
  */

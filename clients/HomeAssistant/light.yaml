@@ -64,7 +64,12 @@ light:
       - "Bicolor Chase"
       - "Tricolor Chase"
       - "ICU"
-      - "E131"
+      - "AutoPlay"
+      - "Custom WS"
+      - "TV"
+      - "E1.31"
+      - "Fire(2012)"
+      - "Gradient"
     brightness: true
     color_temp: true
     rgb: true
