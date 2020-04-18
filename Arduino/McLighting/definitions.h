@@ -28,7 +28,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #if defined(POWER_SUPPLY)
   #define POWER_ON   HIGH           // Define the output state to turn on the power supply, either HIGH or LOW.  Opposite will be uses for power off.
 #endif
-//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out
+#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out
 
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
