@@ -743,11 +743,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
          root["effect"] = strip->getModeName(strip->getMode());
        }
        #endif
-      char buffer[measureJson(root) + 1];
+      uint16_t msg_len = measureJson(root) + 1;
+      char buffer[msg_len];
       serializeJson(root, buffer, sizeof(buffer));
       jsonBuffer.clear();
       #if ENABLE_MQTT == 0
-      mqtt_client->publish(mqtt_ha_state_out, buffer, true);
+      //mqtt_client->publish(mqtt_ha_state_out, buffer, true);
+      mqtt_client->beginPublish(mqtt_ha_state_out, msg_len-1, true);
+      mqtt_client->write((const uint8_t*)buffer, msg_len-1);
+      mqtt_client->endPublish();
       DBG_OUTPUT_PORT.printf("MQTT: Send [%s]: %s\r\n", mqtt_ha_state_out, buffer);
       #endif
       #if ENABLE_MQTT == 1
@@ -901,7 +905,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           return;
         }
         if(ha_send_data.active()) ha_send_data.detach();
-        ha_send_data.once(5, tickerSendState);
+        ha_send_data.once(DELAY_MQTT_HA_MESSAGE, tickerSendState);
       } else if (strcmp(topic, mqtt_intopic) == 0) {
     #endif
 
@@ -936,7 +940,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         #if defined(ENABLE_HOMEASSISTANT)
           ha_send_data.detach();
           mqtt_client->subscribe(mqtt_ha_state_in, qossub);
-          ha_send_data.once(5, tickerSendState);
+          ha_send_data.once(DELAY_MQTT_HA_MESSAGE, tickerSendState);
           #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
             const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);

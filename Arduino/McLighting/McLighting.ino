@@ -747,7 +747,7 @@ void loop() {
       #endif
       #if defined(ENABLE_HOMEASSISTANT)
         if(ha_send_data.active()) ha_send_data.detach();
-        ha_send_data.once(5, tickerSendState);
+        ha_send_data.once(DELAY_MQTT_HA_MESSAGE, tickerSendState);
       #endif
     #endif
   }

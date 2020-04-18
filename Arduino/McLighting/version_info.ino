@@ -257,4 +257,8 @@
  * Version Bump to 3.1.0
  * bugfixes
  * E1.31 is now working for multi segments
+ * 
+ * 18 April 2020
+ * Version Bump to 3.1.1
+ * bugfixes regarding issue #80
  */

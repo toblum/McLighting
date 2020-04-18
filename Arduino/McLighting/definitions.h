@@ -20,7 +20,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 //#define ENABLE_MQTT_INCLUDE_IP        // uncomment/comment to add the IP-adress to the MQTT message
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
 #define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
-//#define DISABLE_MQTT_OUT_ON_MQTT_IN   // If defined, McLighting will not send back MQTT-out on MQTT-in regarding issue #67, does not change anything at the moment
+#define DELAY_MQTT_HA_MESSAGE 5       // HA Status is send after DELAY_MQTT_HA_MESSAGE seconds, to save bandwith
 
 //#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 //#define ENABLE_BUTTON_GY33 12         // If defined, enable button handling code for GY-33 color sensor to scan color. The value defines the input pin (12 / D6) for read color data with RGB sensor, connect this PIN to ground to trigger button.
@@ -28,7 +28,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 #if defined(POWER_SUPPLY)
   #define POWER_ON   HIGH           // Define the output state to turn on the power supply, either HIGH or LOW.  Opposite will be uses for power off.
 #endif
-#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out
+//#define ENABLE_REMOTE 13              // If defined, enable Remote Control via TSOP31238. The value defines the input pin (13 / D7) for TSOP31238 Out
 
 #if defined(ENABLE_BUTTON_GY33)
   #define GAMMA 2.5                   // Gamma correction for GY-33 sensor
@@ -178,10 +178,10 @@ struct {
       uint8_t pin = 3;
     #endif
     #if USE_WS2812FX_DMA == 1
-      uint8_t pin = 2;
+      uint8_t pin = 1;
     #endif
     #if USE_WS2812FX_DMA == 2
-      uint8_t pin = 1;
+      uint8_t pin = 2;
     #endif
   #else
     uint8_t pin = LED_PIN;
