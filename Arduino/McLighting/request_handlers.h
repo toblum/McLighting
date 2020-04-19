@@ -199,9 +199,25 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
     fx_mode = (uint8_t) strtol((const char *) &mypayload[1], NULL, 10);
     fx_mode = constrain(fx_mode, 0, strip->getModeCount() - 1);
     State.mode = SET;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", fx_mode);
+      sendmqtt();
+    #endif
   } else  {
     if (strcmp((char *) &mypayload[1], "off") == 0) {
-      if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
+      if (State.mode == OFF) {
+        State.mode = SET;
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
+          sendmqtt();
+        #endif
+      } else {
+        State.mode = OFF;
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
+          sendmqtt();
+        #endif
+      }
     }
     if (strcmp((char *) &mypayload[1], "on") == 0) {
       State.mode = SET;
@@ -276,7 +292,11 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         //memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));
         _updateState = true;
         Dbg_Prefix(mqtt, num);
-        DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", State.segment);
+        DBG_OUTPUT_PORT.printf("Set segment to: [%u]\r\n", _seg);
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", _seg);
+          sendmqtt();
+        #endif
       }
     }
     // / ==> Set segment first LED
@@ -289,6 +309,10 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         setSegmentSize();
         Dbg_Prefix(mqtt, num);
         DBG_OUTPUT_PORT.printf("Set segment start to: [%u]\r\n", _seg_start);
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK S[%i", _seg_start);
+          sendmqtt();
+        #endif
       }
     }
     // / ==> Set segment last LED
@@ -301,18 +325,25 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
         setSegmentSize();
         Dbg_Prefix(mqtt, num);
         DBG_OUTPUT_PORT.printf("Set segment stop to: [%u]\r\n", _seg_stop);
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK S]%i", _seg_stop);
+          sendmqtt();
+        #endif
       }
     }
     if (_payload[1] == 'o') {
-      char _fx_options[4];
-      snprintf(_fx_options, sizeof(_fx_options), "%s", &_payload[2]);
-      _fx_options[3] = 0x00;
-      if (((constrain(atoi(_fx_options), 0, 255)>>1)<<1) != segState.options) {
-        segState.options= ((constrain(atoi(_fx_options), 0, 255)>>1)<<1);
+      uint8_t _fx_options = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
+      _fx_options = ((constrain(server.arg("fxopt").toInt(), 0, 255)>>1)<<1);
+      if (_fx_options != segState.options) {
+        segState.options= _fx_options;
         _updateSegState = true;
         strip->setOptions(State.segment, segState.options);
         Dbg_Prefix(mqtt, num);
-        DBG_OUTPUT_PORT.printf("Set segment options to: [%u]\r\n", segState.options);
+        DBG_OUTPUT_PORT.printf("Set segment options to: [%u]\r\n", _fx_options);
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK So%i", _fx_options);
+          sendmqtt();
+        #endif
       }
     }
     char * buffer = listSegmentStateJSON(State.segment);
@@ -373,11 +404,16 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   // ? ==> Set speed
   if (_payload[0] == '?') {
     uint16_t _fx_speed = (uint16_t) strtol((const char *) &_payload[1], NULL, 10);
-    segState.speed[State.segment] = constrain(_fx_speed, SPEED_MIN, SPEED_MAX );
-    State.mode = SET;
+    _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX );
+    //if (segState.speed[State.segment] != _fx_speed) {}
+    segState.speed[State.segment] = _fx_speed;
     _updateSegState = true;
     Dbg_Prefix(mqtt, num);
-    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", segState.speed[State.segment]);
+    DBG_OUTPUT_PORT.printf("Set speed to: [%u]\r\n", _fx_speed);
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", _fx_speed);
+      sendmqtt();
+    #endif
   }
 
   // % ==> Set brightness
@@ -385,10 +421,13 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     uint8_t b = (uint8_t) strtol((const char *) &_payload[1], NULL, 10);
     State.brightness = constrain(b, 0, 255);
     if (strip->getBrightness() != State.brightness) {
-      State.mode = SET;
       Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", State.brightness);
       _updateState = true;
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", State.brightness);
+        sendmqtt();
+      #endif
     }
   }
 
@@ -432,6 +471,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   }
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
+    State.mode = SET;
     if(save_state.active()) save_state.detach();
     save_state.once(3, tickerSaveState);
   }
@@ -941,7 +981,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           ha_send_data.detach();
           mqtt_client->subscribe(mqtt_ha_state_in, qossub);
           ha_send_data.once(DELAY_MQTT_HA_MESSAGE, tickerSendState);
-          #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
+          #if defined(MQTT_HOMEASSISTANT_SUPPORT)
             const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
             DynamicJsonDocument jsonBuffer(bufferSize);
             JsonObject root = jsonBuffer.to<JsonObject>();
@@ -1047,7 +1087,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         ha_send_data.detach();
         uint16_t packetIdSub2 = mqtt_client->subscribe((char *)mqtt_ha_state_in, qossub);
         DBG_OUTPUT_PORT.printf("Subscribing at QoS %d, packetId: ", qossub); DBG_OUTPUT_PORT.println(packetIdSub2);
-        #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
+        #if defined(MQTT_HOMEASSISTANT_SUPPORT)
           const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount()+ 4) + JSON_OBJECT_SIZE(11) + 1500;
           DynamicJsonDocument jsonBuffer(bufferSize);
           JsonObject root = jsonBuffer.to<JsonObject>();

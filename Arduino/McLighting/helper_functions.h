@@ -321,3 +321,15 @@ uint32_t trans(uint32_t _newcolor, uint32_t _oldcolor, uint8_t _level, uint8_t _
   _oldcolor = scale_wrgb(_oldcolor, 255-_level);
   return _newcolor + _oldcolor;
 }
+
+#if defined(ENABLE_MQTT)
+  void sendmqtt() {
+      #if ENABLE_MQTT == 0
+        mqtt_client->publish(mqtt_outtopic, mqtt_buf);
+      #endif
+      #if ENABLE_MQTT == 1
+        mqtt_client->publish(mqtt_outtopic, qospub, false, mqtt_buf);
+      #endif
+      memset(mqtt_buf,0,sizeof(mqtt_buf));
+  }
+#endif

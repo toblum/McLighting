@@ -261,4 +261,9 @@
  * 18 April 2020
  * Version Bump to 3.1.1
  * bugfixes regarding issue #80
+ * 
+ * 19 April 2020
+ * Version Bump to 3.1.2
+ * Almost finished: bugfixes regarding issue #80
+ * ToDo: bugfixes regarding issue #70
  */
