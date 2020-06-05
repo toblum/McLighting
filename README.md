@@ -37,17 +37,17 @@ This project uses libraries and code by different authors:
 
 - [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1)
 
-- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.1.4)
+- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.2.0)
 
-- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.2.5)
+- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.4.0)
 
-- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.7.0)
+- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.8.0)
   _Only when you have activated MQTT in definitions.h._
   
 - Optional: [Brzo I2C](https://github.com/pasko-zh/brzo_i2c/) by pazko-zh (tested with 1.3.3)
   _Only when you have activated GY33 in definitions.h._
   
-- Optional: [FastLed](https://github.com/FastLED/FastLED/) by FastLED (tested with 1.3.3)
+- Optional: [FastLed](https://github.com/FastLED/FastLED/) by FastLED (tested with 3.3.3)
   _Only when you have activated custom animations (Fire2012) in definitions.h._
   
 The sketch also uses the following built-in library:
@@ -66,7 +66,7 @@ I hope I didn't miss any sources and mentioned every author. In case I forgot so
 
 
 ## Todos
-- [ ] Redesign of Code and bump to V3
+- [x] Redesign of Code and bump to V3
 - [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
 - [x] If no wifi, at least enable button mode.
