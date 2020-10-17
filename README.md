@@ -11,6 +11,7 @@ Because of it's open architecture and APIs it's easy to build new clients for di
 > **Hello, folks,  
 > the McLighting project is currently paused. Unfortunately, for personal reasons, I don't have enough time to support it in the usual way. However, the project is still available and I will help if I can find the time. Meanwhile there is also a large community of users who are happy to help you with any problems, thanks for your effort at this point.  
 > But there won't be any major enhancements at the moment. If you're looking for more features, please have a look at the great fork https://github.com/FabLab-Luenen/McLighting which offers support for RGBW LEDs and an extended UI.  
+> Please also have a look at the great [WLED](https://github.com/Aircoookie/WLED) project, if you want to have the latest and greatest features and interfaces for blinking LEDs you want to have today.  
 > If there is anyone of you who would like to help continue the project. Just get in touch with me.**
 
 ---
