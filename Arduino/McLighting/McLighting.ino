@@ -271,9 +271,11 @@ void initMqtt() {
   mqtt_intopic[sizeof(mqtt_intopic) - 1] = 0x00;
   snprintf(mqtt_outtopic, sizeof(mqtt_outtopic), "%s/out", mqtt_clientid);
   mqtt_outtopic[sizeof(mqtt_outtopic) - 1] = 0x00;
-  #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-    snprintf(mqtt_ha_config, sizeof(mqtt_ha_config), "homeassistant/light/%s/config", mqtt_clientid);
-    mqtt_ha_config[sizeof(mqtt_ha_config) - 1] = 0x00;
+  #if defined(ENABLE_HOMEASSISTANT)
+    #if defined(MQTT_HOMEASSISTANT_SUPPORT)
+      snprintf(mqtt_ha_config, sizeof(mqtt_ha_config), "homeassistant/light/%s/config", mqtt_clientid);
+      mqtt_ha_config[sizeof(mqtt_ha_config) - 1] = 0x00;
+    #endif
     snprintf(mqtt_ha_state_in,  sizeof(mqtt_ha_state_in),   "home/%s_ha/state/in",  mqtt_clientid);
     mqtt_ha_state_in[sizeof(mqtt_ha_state_in) - 1] = 0x00;
     snprintf(mqtt_ha_state_out, sizeof(mqtt_ha_state_out),  "home/%s_ha/state/out", mqtt_clientid);
@@ -655,9 +657,6 @@ void loop() {
 
   if (State.mode == OFF) {
     if (prevmode != State.mode) {
-      #if defined(ENABLE_MQTT)
-         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK =off", "");
-      #endif
       #if defined(POWER_SUPPLY)
          digitalWrite(POWER_SUPPLY, !POWER_ON); // power off -> external power supply
       #endif
@@ -674,19 +673,9 @@ void loop() {
 
   if (State.mode == SET) {
     State.mode = HOLD;
-    // Segment
-    if (prevsegment != State.segment) {
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", State.segment);
-      #endif
-      //prevsegment = State.segment;
-    }
     // Mode
-    if (segState.mode[State.segment] != fx_mode) {
+    if ((segState.mode[State.segment] != fx_mode) || prevmode == OFF) {
       segState.mode[State.segment] = fx_mode;
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
-      #endif
       strip->strip_off();
       autoCount[State.segment] = 0;
       autoDelay[State.segment] = 0;
@@ -701,13 +690,10 @@ void loop() {
     }*/
     // Brightness
     if (strip->getBrightness() != State.brightness) {
-      #if defined(ENABLE_MQTT)
-        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", State.brightness);
-      #endif
       brightness_trans = State.brightness;
     }
     // Speed
-    if (fx_speed != segState.speed[State.segment]) {
+    if (fx_speed != segState.speed[prevsegment]) {
       #if defined(ENABLE_MQTT)
         snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", segState.speed[prevsegment]);
       #endif
@@ -739,12 +725,6 @@ void loop() {
     }
     //strip->setBrightness(brightness_actual);
     #if defined(ENABLE_MQTT)
-      #if ENABLE_MQTT == 0
-        mqtt_client->publish(mqtt_outtopic, mqtt_buf);
-      #endif
-      #if ENABLE_MQTT == 1
-        mqtt_client->publish(mqtt_outtopic, qospub, false, mqtt_buf);
-      #endif
       #if defined(ENABLE_HOMEASSISTANT)
         if(ha_send_data.active()) ha_send_data.detach();
         ha_send_data.once(DELAY_MQTT_HA_MESSAGE, tickerSendState);

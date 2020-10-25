@@ -19,7 +19,7 @@ char HOSTNAME[65] = "McLightingRGBW"; // Friedly hostname  is configurable just 
 //#define ENABLE_MQTT_HOSTNAME_CHIPID   // Uncomment/comment to add ESPChipID to end of MQTT hostname
 //#define ENABLE_MQTT_INCLUDE_IP        // uncomment/comment to add the IP-adress to the MQTT message
 #define ENABLE_HOMEASSISTANT          // If defined, enable Homeassistant integration, ENABLE_MQTT must be active
-#define MQTT_HOME_ASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
+#define MQTT_HOMEASSISTANT_SUPPORT   // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define DELAY_MQTT_HA_MESSAGE 5       // HA Status is send after DELAY_MQTT_HA_MESSAGE seconds, to save bandwith
 
 //#define ENABLE_BUTTON 14              // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control, the value defines the input pin (14 / D5) for switching the LED strip on / off, connect this PIN to ground to trigger button.
@@ -74,7 +74,7 @@ uint8_t  prevsegment        = 0;
   uint8_t _sn[4] = {255,255,255,0};
 #endif
 
-#if defined(MQTT_HOME_ASSISTANT_SUPPORT)
+#if defined(MQTT_HOMEASSISTANT_SUPPORT)
   #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87
 #endif
 
@@ -93,7 +93,7 @@ uint8_t  prevsegment        = 0;
 #if defined(ENABLE_HOMEASSISTANT) and !defined(ENABLE_MQTT)
 #error "To use HA, you have to either enable PubCubClient or AsyncMQTT"
 #endif
-#if !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOME_ASSISTANT_SUPPORT)
+#if !defined(ENABLE_HOMEASSISTANT) and defined(MQTT_HOMEASSISTANT_SUPPORT)
 #error "To use HA support, you have to either enable Homeassistant component"
 #endif
 

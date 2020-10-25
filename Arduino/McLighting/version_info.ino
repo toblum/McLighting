@@ -261,4 +261,17 @@
  * 18 April 2020
  * Version Bump to 3.1.1
  * bugfixes regarding issue #80
+ * 
+ * 19 April 2020
+ * Version Bump to 3.1.2
+ * Almost finished: bugfixes regarding issue #80
+ * ToDo: bugfixes regarding issue #70
+ * 
+ * 25.10.2020
+ * Updated WS2812FX Lib
+ * Version Bump to 3.1.3
+ * fixed issue #100
+ * included pull request from issue #93
+ * Fixed a GUI bug on reloading
+ * ToDo: bugfixes regarding issue #70
  */

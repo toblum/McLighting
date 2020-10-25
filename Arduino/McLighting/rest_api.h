@@ -84,6 +84,7 @@ server.on("/restart", []() {
   DBG_OUTPUT_PORT.printf("/restart\r\n");
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", "restarting..." );
+  delay(1000);
   ESP.restart();
 });
 
@@ -318,8 +319,20 @@ server.on("/config", []() {
   getConfigJSON();
 });
 
-server.on("/off", []() {
-  if (State.mode == OFF) { State.mode = SET; } else { State.mode = OFF; };
+server.on("/toggle", []() {
+ if (State.mode == OFF) {
+    State.mode = SET;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
+      sendmqtt();
+    #endif
+  } else {
+    State.mode = OFF;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
+      sendmqtt();
+    #endif
+  }
   getACK("OK");
   #if defined(ENABLE_STATE_SAVE)
     if(save_state.active()) save_state.detach();
@@ -330,6 +343,10 @@ server.on("/off", []() {
 server.on("/on", []() {
   if (prevmode == OFF) {
     State.mode = SET;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
+      sendmqtt();
+    #endif
     getACK("OK");
     #if defined(ENABLE_STATE_SAVE)
       if(save_state.active()) save_state.detach();
@@ -337,6 +354,23 @@ server.on("/on", []() {
     #endif
   } else {
     getACK("NOK"); 
+  }
+});
+
+server.on("/off", []() {
+  if (State.mode == SET) {
+    State.mode = OFF;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
+      sendmqtt();
+    #endif
+    getACK("OK");
+    #if defined(ENABLE_STATE_SAVE)
+      if(save_state.active()) save_state.detach();
+      save_state.once(3, tickerSaveState);
+    #endif
+  } else {
+    getACK("NOK");
   }
 });
 
@@ -354,6 +388,10 @@ server.on("/set", []() {
         //memcpy(hexcolors_trans, segState.colors[State.segment], sizeof(hexcolors_trans));     
         State.mode = SET;
         _updateState = true;
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK Ss%i", _seg);
+          sendmqtt();
+        #endif
       }      
   }
   if ((server.arg("start") != "") && (server.arg("start").toInt() >= 0) && (server.arg("start").toInt() <= segState.stop)) { 
@@ -363,6 +401,10 @@ server.on("/set", []() {
         segState.start = _seg_start;
         setSegmentSize();
         _updateSegState = true;
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK S[%i", _seg_start);
+          sendmqtt();
+        #endif
       }
   }
   if ((server.arg("stop") != "") && (server.arg("stop").toInt() >= segState.start) && (server.arg("stop").toInt() <= Config.stripSize)) { 
@@ -372,6 +414,10 @@ server.on("/set", []() {
         segState.stop = _seg_stop;
         setSegmentSize();
         _updateSegState = true;
+        #if defined(ENABLE_MQTT)
+          snprintf(mqtt_buf, sizeof(mqtt_buf), "OK S]%i", _seg_stop);
+          sendmqtt();
+        #endif
       }
   }
 
@@ -381,6 +427,10 @@ server.on("/set", []() {
       segState.options = _fx_options;
       strip->setOptions(State.segment, segState.options);
       _updateSegState = true;
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK So%i", _fx_options);
+        sendmqtt();
+      #endif
     }
   }
   //color wrgb
@@ -475,14 +525,24 @@ server.on("/set", []() {
   
   // Speed
   if ((server.arg("s") != "") && (server.arg("s").toInt() >= 0) && (server.arg("s").toInt() <= 255)) {
-    segState.speed[State.segment] = constrain(server.arg("s").toInt(), 0, 255);
+    uint8_t _fx_speed = constrain(server.arg("s").toInt(), 0, 255);
+    segState.speed[State.segment] = _fx_speed;
     _updateSegState = true;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", _fx_speed);
+      sendmqtt();
+    #endif
   }
+  
   //Mode
   if ((server.arg("m") != "") && (server.arg("m").toInt() >= 0) && (server.arg("m").toInt() <= strip->getModeCount())) {
     fx_mode = constrain(server.arg("m").toInt(), 0, strip->getModeCount() - 1);
     if (fx_mode !=  segState.mode[State.segment]) {
       _updateSegState = true;
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", fx_mode);
+        sendmqtt();
+      #endif
     }
   }
   
@@ -495,6 +555,10 @@ server.on("/set", []() {
   if (strip->getBrightness() != State.brightness) {
     State.mode = SET;
     _updateState = true;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK %%%i", State.brightness);
+      sendmqtt();
+    #endif
   }
   //DBG_OUTPUT_PORT.printf("Get Args: %s\r\n", listStateJSONfull()); //possibly causing heap problems
   getACK("OK");
