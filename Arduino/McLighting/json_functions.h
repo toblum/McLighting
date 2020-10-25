@@ -136,9 +136,15 @@ void getConfigJSON() {
 }
 
 char * listModesJSON() {
-  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 1) + (strip->getModeCount() + 1)*JSON_OBJECT_SIZE(2) + 2000;
+  const size_t bufferSize = JSON_ARRAY_SIZE(strip->getModeCount() + 3) + (strip->getModeCount() + 1)*JSON_OBJECT_SIZE(2) + 2000;
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonArray root = jsonBuffer.to<JsonArray>();
+  JsonObject objecttoggle = root.createNestedObject();
+  objecttoggle["mode"] = "toggle";
+  objecttoggle["name"] = "TOGGLE";
+  JsonObject objecton = root.createNestedObject();
+  objecton["mode"] = "on";
+  objecton["name"] = "ON";
   JsonObject objectoff = root.createNestedObject();
   objectoff["mode"] = "off";
   objectoff["name"] = "OFF";

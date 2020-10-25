@@ -150,14 +150,23 @@ void handleRangeDifferentColors(uint8_t * mypayload) {
 bool setModeByStateString(String saved_state_string) {
   if (getValue(saved_state_string, '|', 0) == "STA") {
     DBG_OUTPUT_PORT.printf("Parsed state: %s\r\n", saved_state_string.c_str());
+    
     String str_mode = getValue(saved_state_string, '|', 1);
     State.mode = static_cast<MODE>(str_mode.toInt());
+    
     String str_fx_mode = getValue(saved_state_string, '|', 2);
     fx_mode = str_fx_mode.toInt();
-    String str_fx_speed = getValue(saved_state_string, '|', 3);
-    segState.speed[State.segment] = str_fx_speed.toInt();
+    
+    String _fx_speed = getValue(saved_state_string, '|', 3);
+    segState.speed[State.segment] = _fx_speed.toInt();
+    #if defined(ENABLE_MQTT)
+      //snprintf(mqtt_buf, sizeof(mqtt_buf), "OK ?%i", _fx_speed);
+      //sendmqtt();
+    #endif
+    
     String str_brightness = getValue(saved_state_string, '|', 4);
     State.brightness = str_brightness.toInt();
+    
     String str_red = getValue(saved_state_string, '|', 5);
     main_color.red = str_red.toInt();
     String str_green = getValue(saved_state_string, '|', 6);
@@ -166,6 +175,7 @@ bool setModeByStateString(String saved_state_string) {
     main_color.blue = str_blue.toInt();
     String str_white = getValue(saved_state_string, '|', 8);
     main_color.white = str_white.toInt();
+    
     str_red = getValue(saved_state_string, '|', 9);
     back_color.red = str_red.toInt();
     str_green = getValue(saved_state_string, '|', 10);
@@ -174,6 +184,7 @@ bool setModeByStateString(String saved_state_string) {
     back_color.blue = str_blue.toInt();
     str_white = getValue(saved_state_string, '|', 12);
     back_color.white = str_white.toInt();
+    
     str_red = getValue(saved_state_string, '|', 13);
     xtra_color.red = str_red.toInt();
     str_green = getValue(saved_state_string, '|', 14);
@@ -182,10 +193,9 @@ bool setModeByStateString(String saved_state_string) {
     xtra_color.blue = str_blue.toInt();
     str_white = getValue(saved_state_string, '|', 16);
     xtra_color.white = str_white.toInt();
+    
     DBG_OUTPUT_PORT.print("Set to state: ");
     DBG_OUTPUT_PORT.println(listStateJSON());
-    //prevmode=mode;
-    //State.mode = SET;
     return true;
   } else {
     DBG_OUTPUT_PORT.println("Saved state not found!");
@@ -204,7 +214,7 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
       sendmqtt();
     #endif
   } else  {
-    if (strcmp((char *) &mypayload[1], "off") == 0) {
+    if (strcmp((char *) &mypayload[1], "toggle") == 0) {
       if (State.mode == OFF) {
         State.mode = SET;
         #if defined(ENABLE_MQTT)
@@ -221,6 +231,17 @@ void handleSetWS2812FXMode(uint8_t * mypayload) {
     }
     if (strcmp((char *) &mypayload[1], "on") == 0) {
       State.mode = SET;
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
+        sendmqtt();
+      #endif
+    }
+    if (strcmp((char *) &mypayload[1], "off") == 0) {
+      State.mode = OFF;
+      #if defined(ENABLE_MQTT)
+        snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
+        sendmqtt();
+      #endif
     }
   }
 }
@@ -333,7 +354,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     }
     if (_payload[1] == 'o') {
       uint8_t _fx_options = (uint8_t) strtol((const char *) &_payload[2], NULL, 10);
-      _fx_options = ((constrain(server.arg("fxopt").toInt(), 0, 255)>>1)<<1);
+      _fx_options = ((constrain(_fx_options, 0, 255)>>1)<<1);
       if (_fx_options != segState.options) {
         segState.options= _fx_options;
         _updateSegState = true;
@@ -406,6 +427,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     uint16_t _fx_speed = (uint16_t) strtol((const char *) &_payload[1], NULL, 10);
     _fx_speed = constrain(_fx_speed, SPEED_MIN, SPEED_MAX );
     //if (segState.speed[State.segment] != _fx_speed) {}
+    State.mode = SET;
     segState.speed[State.segment] = _fx_speed;
     _updateSegState = true;
     Dbg_Prefix(mqtt, num);
@@ -421,6 +443,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
     uint8_t b = (uint8_t) strtol((const char *) &_payload[1], NULL, 10);
     State.brightness = constrain(b, 0, 255);
     if (strip->getBrightness() != State.brightness) {
+      State.mode = SET;
       Dbg_Prefix(mqtt, num);
       DBG_OUTPUT_PORT.printf("Set brightness to: [%u]\r\n", State.brightness);
       _updateState = true;
@@ -471,7 +494,7 @@ void checkpayload(uint8_t * _payload, bool mqtt = false, uint8_t num = 0) {
   }
 #if defined(ENABLE_STATE_SAVE)
   if (_updateState) {
-    State.mode = SET;
+    //State.mode = SET;
     if(save_state.active()) save_state.detach();
     save_state.once(3, tickerSaveState);
   }

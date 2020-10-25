@@ -84,6 +84,7 @@ server.on("/restart", []() {
   DBG_OUTPUT_PORT.printf("/restart\r\n");
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", "restarting..." );
+  delay(1000);
   ESP.restart();
 });
 
@@ -318,7 +319,7 @@ server.on("/config", []() {
   getConfigJSON();
 });
 
-server.on("/off", []() {
+server.on("/toggle", []() {
  if (State.mode == OFF) {
     State.mode = SET;
     #if defined(ENABLE_MQTT)
@@ -353,6 +354,23 @@ server.on("/on", []() {
     #endif
   } else {
     getACK("NOK"); 
+  }
+});
+
+server.on("/off", []() {
+  if (State.mode == SET) {
+    State.mode = OFF;
+    #if defined(ENABLE_MQTT)
+      snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
+      sendmqtt();
+    #endif
+    getACK("OK");
+    #if defined(ENABLE_STATE_SAVE)
+      if(save_state.active()) save_state.detach();
+      save_state.once(3, tickerSaveState);
+    #endif
+  } else {
+    getACK("NOK");
   }
 });
 

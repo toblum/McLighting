@@ -1602,8 +1602,9 @@ function xhttp(url, post, callback) {
     else xhr.open("GET", url, true);
     xhr.send(post);
 }
+
 function getModes() {
-    document.getElementById("percentage").innerHTML = "0%";
+	document.getElementById("percentage").innerHTML = "0%";
     document.getElementById("percentage-done").setAttribute("stroke-dasharray", "0,100");
     document.getElementById("modal-content").innerHTML = language.en.loadModes;
     xhttp("http://" + host + "/get_modes", false, function(e) {
@@ -1611,7 +1612,7 @@ function getModes() {
         if (e && e.substring(0,6) !== "ERROR!") {
             modes = JSON.parse(e);
             if (typeof modes[0] !== "undefined") {
-                     modes.forEach(item => {
+					 modes.forEach(item => {
                         if (item.name && item.name.length > 0) {
                             data.modes.push({ title: item.name, id: item.mode });
                         }
@@ -1625,45 +1626,7 @@ function getModes() {
     });
 
 }
-function getConfig() {
-    document.getElementById("percentage").innerHTML = "75%";
-    document.getElementById("percentage-done").setAttribute("stroke-dasharray", "75,100");
-    document.getElementById("modal-content").innerHTML = language.en.loadConfig;
-    xhttp("http://" + host + "/config", false, function(e) {
-        console.log("Getting config via REST:", e);
-        if (e && e.substring(0,6) !== "ERROR!") {
-            var res = JSON.parse(e);
-            if (res) {
-                if (typeof res.hostname  !== "undefined") config.hostname = res.hostname;
-                if (typeof res.mqtt_host !== "undefined") config.mqtt_host = res.mqtt_host;
-                if (typeof res.mqtt_port !== "undefined") config.mqtt_port = res.mqtt_port;
-                if (typeof res.mqtt_user !== "undefined") config.mqtt_user = res.mqtt_user;
-                if (typeof res.mqtt_pass !== "undefined") config.mqtt_pass = res.mqtt_pass;
-                if (typeof res.ws_seg    !== "undefined") config.ws_seg = res.ws_seg;
-                if (typeof res.ws_cnt    !== "undefined") config.ws_cnt = res.ws_cnt;
-                if (typeof res.ws_rgbo   !== "undefined") {
-                     config.ws_rgbo   = res.ws_rgbo;
-                     config.enable_rgbw = config.ws_rgbo.includes("W");
-                }
-                if (typeof res.ws_pin    !== "undefined") config.ws_pin = res.ws_pin;
-                if (typeof res.ws_trans  !== "undefined") config.ws_trans = res.ws_trans;
-            }
-        } else {
-            console.error(e);
-            document.getElementById("percentage").innerHTML = language.en.error;
-            showSnackbar(language.en.loadError, "error", 5000);
-        }
-        if (config.enable_rgbw) {
-            document.getElementById("white").parentNode.className = "";
-        } else {
-                document.getElementById("white").parentNode.className = "hidden";
-                white.value = 0;
-                segstate.color.w = 0;
-                segstate.color.w2 = 0;
-                segstate.color.w3 = 0;
-        }
-    });
-}
+
 function showModes(mode, index) {
     //console.log("Mode: " + mode.title + " - ID: " + mode.id + " - Hidden: " + mode.hidden);
     var div = document.createElement("DIV");
@@ -1691,7 +1654,7 @@ function showModes(mode, index) {
     document.getElementById("modes").appendChild(div);
 }
 function readSettings() {
-    document.getElementById("percentage").innerHTML = "25%";
+    document.getElementById("percentage").innerHTML = "33%";
     document.getElementById("percentage-done").setAttribute("stroke-dasharray", "25,100");
     document.getElementById("modal-content").innerHTML = language.en.loadSettings;
     xhttp("http://" + host + "/uistate.json", false, function(e) {
@@ -1711,6 +1674,7 @@ function readSettings() {
         }
     });
 }
+
 function applySettings() {
     // Make sure language contains all the words from English translation.
     if (settings.lang !== "en") {
@@ -1723,6 +1687,7 @@ function applySettings() {
     translate(document.body);
     document.title = language[settings.lang].title;
     data.modes.forEach(mode => {
+	console.log("something");
         mode.hidden = false;
         if (settings.visibility.indexOf(mode.id) > -1) {
             mode.hidden = true;
@@ -2037,8 +2002,6 @@ function initSettings() {
     colmain.dispatchEvent(event);
     colfont.dispatchEvent(event);
     colback.dispatchEvent(event);
-    colbtn.dispatchEvent(event);
-    colbtns.dispatchEvent(event);
 
     document.getElementById("settings-open").addEventListener('click', ()=>{
         var icons = document.getElementsByClassName("icon--link");
@@ -2159,7 +2122,7 @@ function ws_reconnect() {
 
 function ws_connect() {
     data.connection = new ReconnectingWebSocket(ws_url, "arduino", ws_options);
-    document.getElementById("percentage").innerHTML = "75%";
+    document.getElementById("percentage").innerHTML = "66%";
     document.getElementById("percentage-done").setAttribute("stroke-dasharray", "75,100");
     document.getElementById("modal-content").innerHTML = language[settings.lang].loadWebsock;
 
@@ -2167,14 +2130,10 @@ function ws_connect() {
     data.connection.onopen = function() {
         console.log("WebSocket open");
         data.is_connected = true;
-        data.refresh_interval = setInterval(() => ws_send("$"), 10000);
         var con = document.getElementById("disconnected");
         con.className = "hidden";
         con = document.getElementById("connected");
         con.className = con.className = "";
-        //setTimeout(function() { ws_send("$"); }, 2000);
-        //setTimeout(function() { ws_send("C"); }, 3000);
-        //setTimeout(function() { ws_send("~"); }, 4000);
         document.getElementById("percentage").innerHTML = "100%";
         document.getElementById("percentage-done").setAttribute("stroke-dasharray", "100,100");
         document.getElementById("modal-content").innerHTML = language[settings.lang].loadReady;
@@ -2205,6 +2164,7 @@ function ws_connect() {
     // Log messages from the server
     data.connection.onmessage = function(e) {
         console.log("WebSocket from server: ", e.data);
+		console.log("data.init: ", data.init);
         try {
             var res = JSON.parse(e.data);
 //             document.getElementById('modal').style.display = "none";
@@ -2311,10 +2271,9 @@ function ws_connect() {
                 // init display Colors
                 displayColors(true);
                 console.log("displayColors finished!");
-                select_active_button();
-                console.log("select_active_button finished!");
+				select_active_button();
+				console.log("select_active_button finished!");
             }
-            console.log("data.init: ", data.init);
             if (data.init == true) {
                 console.log("Initializing...");
                 // Set selected mode button
@@ -2323,10 +2282,11 @@ function ws_connect() {
                 setTimeout(() => {
                     document.getElementById('modal').style.display = "none";
                     document.getElementById('container').style.display = "";
-                }, 500);
+                }, 50);
                 initSettings();
                 initcolorSliders();
                 data.init = false;
+				data.refresh_interval = setInterval(() => ws_send("$"), 10000);
             }
         } catch (e) {}
     };
@@ -2361,7 +2321,7 @@ function disable_color_selection(status) {
 
 function select_active_button() {
     btns = document.getElementsByClassName("btn");
-    for (i = 0; i < btns.length; i++) {
+	for (i = 0; i < btns.length; i++) {
         btns[i].style.backgroundColor = settings.theme_btn;
     }
     if (state.mode != 1 || (state.mode == 1 && segstate.mode != 57)) {  // CUSTOM WS MODE
@@ -2374,8 +2334,9 @@ function select_active_button() {
         segments.className = segments.className.replace(/\b hidden\b/g, "");
     }
     if (state.mode >= 1) {
-        document.getElementById(segstate.mode).style.backgroundColor = settings.theme_btnsel;
-        if (segstate.mode == 56) { // AUTOPLAY
+		document.getElementById(segstate.mode).style.backgroundColor = settings.theme_btnsel;
+        document.getElementById("on").style.backgroundColor = settings.theme_btnsel;
+		if (segstate.mode == 56) { // AUTOPLAY
             disable_modebuttons(false);
             disable_color_selection(true);
             disable_bright_selection(false);
@@ -2451,6 +2412,7 @@ function set_mode(mode_id) {
     }
     select_active_button();
     ws_send("/" + mode_id);
+	ws_send("$");
 }
 function set_speed() {
     ws_send("?" + segstate.speed);
@@ -2597,7 +2559,7 @@ function drawWheel() {
 function drawCircle() {
     let radius = canvas.width / 2;
     let image = context.createImageData(2 * radius, 2 * radius);
-    let data = image.data;
+    let idata = image.data;
 
     for (let x = -radius; x < radius; x++) {
         for (let y = -radius; y < radius; y++) {
@@ -2624,10 +2586,10 @@ function drawCircle() {
             let [red, green, blue] = hsv2rgb(hue, saturation, value);
             let alpha = 255;
 
-            data[index] = red;
-            data[index + 1] = green;
-            data[index + 2] = blue;
-            data[index + 3] = alpha;
+            idata[index] = red;
+            idata[index + 1] = green;
+            idata[index + 2] = blue;
+            idata[index + 3] = alpha;
         }
     }
     this.context.putImageData(image, 0, 0);
@@ -2682,14 +2644,16 @@ function translate(node) {
 document.addEventListener("DOMContentLoaded", function(event) {
     // Code to run since DOM is loaded and ready
     getModes();
-    readSettings();
-    ws_connect();
-    ws_send("$");
-    //ws_send("C");
-    getConfig();
-    canvas.width = 400;
-    canvas.height = 400;
-    redrawColorPicker();
+	setTimeout(function() {
+		readSettings();
+	}, 500);
+	setTimeout(function() {	
+	    ws_connect();
+		ws_send("$");
+		canvas.width = 400;
+		canvas.height = 400;
+		redrawColorPicker();
+    }, 1000);
 });
         </script>
     </body>
