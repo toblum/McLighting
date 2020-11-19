@@ -1,6 +1,6 @@
 # McLighting v3 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.1.0-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v3.1.3-blue.svg)](https://github.com/FabLab-Luenen/McLighting/blob/master/Arduino/McLighting/version.h)
 
 McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
@@ -33,13 +33,15 @@ again in out wiki: [Software installation](../../wiki/Software-installation)
 
 This project uses libraries and code by different authors:
 
+- [esp8266](https://github.com/esp8266/Arduino) tested with version 2.7.4
+
 - [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.15.0)
 
-- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.2.1)
+- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version 1.3.1) included in code.
 
-- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.2.0)
+- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.3.0)
 
-- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.4.0)
+- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.7.0)
 
 - Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.8.0)
   _Only when you have activated MQTT in definitions.h._
@@ -48,7 +50,10 @@ This project uses libraries and code by different authors:
   _Only when you have activated GY33 in definitions.h._
   
 - Optional: [FastLed](https://github.com/FastLED/FastLED/) by FastLED (tested with 3.3.3)
-  _Only when you have activated custom animations (Fire2012) in definitions.h._
+  _Only when you have activated custom animations in definitions.h._
+  
+ - Optional: [IRremoteESP8266](https://github.com/crankyoldgit/IRremoteESP8266) by crankyoldgit (tested with 2.7.12)
+  _Only when you have activated IR-Remote in definitions.h._
   
 The sketch also uses the following built-in library:
 - Ticker by [@igrr](https://github.com/igrr)
