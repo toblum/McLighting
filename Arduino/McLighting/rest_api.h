@@ -341,7 +341,7 @@ server.on("/toggle", []() {
 });
 
 server.on("/on", []() {
-  if (prevmode == OFF) {
+  if (State.mode == OFF) {
     State.mode = SET;
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /%i", segState.mode[State.segment]);
@@ -358,7 +358,7 @@ server.on("/on", []() {
 });
 
 server.on("/off", []() {
-  if (State.mode == SET) {
+  if (State.mode == HOLD) {
     State.mode = OFF;
     #if defined(ENABLE_MQTT)
       snprintf(mqtt_buf, sizeof(mqtt_buf), "OK /off", "");
