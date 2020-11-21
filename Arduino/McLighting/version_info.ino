@@ -274,4 +274,8 @@
  * included pull request from issue #93
  * Fixed a GUI bug on reloading
  * ToDo: bugfixes regarding issue #70
+ * 
+ * 21.11.2020
+ * Version Bump to 3.1.4
+ * Bugfix Rest-API
  */
