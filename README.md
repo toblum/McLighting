@@ -1,81 +1,107 @@
-# McLighting - The ESP8266 based multi-client lighting gadget
+# McLighting v2 - The ESP8266 based multi-client lighting gadget
 
-[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Gitter](https://badges.gitter.im/mclighting/Lobby.svg)](https://gitter.im/mclighting/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.com/toblum/McLighting.svg?branch=master)](https://travis-ci.com/toblum/McLighting) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![version](https://img.shields.io/badge/version-v2.2.4-blue.svg)](https://github.com/toblum/McLighting/blob/master/Arduino/McLighting/version.h)
 
-> Mc Lighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features a self-hosted responsive web-interface, a REST-API and a websocket connector.
+McLighting (the multi-client lighting gadget) is a very cheap internet-controllable lighting solution based on the famous ESP8266 microcontroller and WS2811/2812 led strips. It features among other things a web-interface, a REST-API and a websocket connector.
 
-> Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
+Because of it's open architecture and APIs it's easy to build new clients for different platforms (iOS, Android, Windows Universal Apps, Siri/Cortana integration, ...). 
 
+---
 
-___
-Update 04.01.2017:
-Now, there are two forks of McLighting (using the famous FastLED library). I did not notice it first, because I currently do not receive notification e-mails by Github (I have no idea why). Maybe you want to give them also a try, I will definitely do so as soon as I find time.  
-https://github.com/russp81/LEDLAMP_FASTLEDs  
-And this one was also forked: https://github.com/jake-b/Griswold-LED-Controller
+> **Hello, folks,  
+> the McLighting project is currently paused. Unfortunately, for personal reasons, I don't have enough time to support it in the usual way. However, the project is still available and I will help if I can find the time. Meanwhile there is also a large community of users who are happy to help you with any problems, thanks for your effort at this point.  
+> But there won't be any major enhancements at the moment. If you're looking for more features, please have a look at the great fork https://github.com/FabLab-Luenen/McLighting which offers support for RGBW LEDs and an extended UI.  
+> Please also have a look at the great [WLED](https://github.com/Aircoookie/WLED) project, if you want to have the latest and greatest features and interfaces for blinking LEDs you want to have today.  
+> If there is anyone of you who would like to help continue the project. Just get in touch with me.**
 
-Update 12.08.2016:
-There is now a [gitter.im](https://gitter.im/mclighting/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link) chat room for this project.
-
-Update 11.06.2016:  
-Today I presented the project at [Pi and More 9](https://piandmore.de/) and got some good feedback, even though my presentation was not perfect and time was too short to present everything I prepared. So I uploaded the [slides (german)](documentation/slides/Ein%20SmartLight%20im%20Selbstbau%20für%20unter%2015%20€_Pi%20and%20More%209.pdf) to this repository for your reference.
-___
-
+---
 
 [![Demo video WebClient](https://j.gifs.com/kRPrzN.gif)](https://youtu.be/rc6QVHKAXBs)
 
 [![Demo video Apple Homekit integration](https://j.gifs.com/gJP2o6.gif)](https://youtu.be/4JnGXZaPnrw)
 
+---
 
 ## The Hardware
 
-The project ist based on the famous ESP8266 microcontroller and WD2811/WS2812 LED strips. There are many variations of the ESP chip out there, but I chose the NodeMCU dev board, because it's powered by micro USB and has a voltage converter included to power the ESP which uses 3.3V.
-A standalone ESP8266 or a Adafruit Huzzah should work too.
+The project is based on the ESP8266 and WD2811/WS2812 LED strips. There are many variations of the ESP chip out there, but for beginners we suggest a NodeMCU dev board, as these are as "plug 'n' play"as it can get.
+A standalone ESP8266 or an Adafruit Huzzah should work too.
 
-The RGB LED strips are also available in many different flavours as strip or as standalone LEDs and can easily be chained.
+The RGB LED strips are also available in many different flavours (as strips or as standalone LEDs) and can easily be chained.
 
-See wiki [Hardware](../../wiki/Hardware)
+For a detailed explanation see our wiki: [Hardware](../../wiki/Hardware)
 
 
 ## Software installation
-See wiki [Software installation](../../wiki/Software-installation)
 
+You can read how to get started on the software side of this project 
+again in out wiki: [Software installation](../../wiki/Software-installation)
+
+---
 
 ### Used Libraries
+
 This project uses libraries and code by different authors:
-- WiFiManager by @tzapu (tested with version 0.11.0)
-  https://github.com/tzapu/WiFiManager
-- WebSockets by @Links2004 (tested with version 2.0.2)
-  https://github.com/Links2004/arduinoWebSockets
-- Adafruit NeoPixel by @adafruit (tested with 1.0.5)
-  https://github.com/adafruit/Adafruit_NeoPixel
+
+- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzapu (tested with version 0.12.0)
+
+- [WS2812FX](https://github.com/kitesurfer1404/WS2812FX) by kitesurfer1404 (tested with version downloaded 2017-02-05)
+
+- [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Links2004 (tested with version 2.0.6)
+
+- [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) by adafruit (tested with 1.1.2)
+
+- Optional: [PubSubClient](https://github.com/knolleary/pubsubclient/) by knolleary (tested with 2.6.0)
+  _Only when you have activated MQTT in definitions.h._
   
 The sketch also uses the following built-in library:
-- Ticker by @igrr
+- Ticker by [@igrr](https://github.com/igrr)
 
 Parts of the code were taken or inspired by the following sources:
-- HSB3RGB conversion
-  https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/
-- TV simulator logic inspired by @BulldogLowell
-  https://github.com/BulldogLowell/PhoneyTV
-- SPIFS Webserver by Hristo Gochkov
-  https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer/examples/FSBrowser
+
+- [HSB3RGB conversion](https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/)
+
+- [TV simulator](https://github.com/BulldogLowell/PhoneyTV) logic inspired by BulldogLowell
+  
+- [SPIFFS Webserver](https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer/examples/FSBrowser) by Hristo Gochkov
 
 Thank you to all the authors for distributing their software that way.
 I hope I didn't miss any sources and mentioned every author. In case I forgot someone please let me know and I will fix it.
 
 
 ## Todos
-- [x] Fix issue with websockets connection problems
-- [ ] Add support for 433MHz wireless socket using the [RC switch](https://github.com/sui77/rc-switch) library.
-- [ ] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
-- [ ] Use the led strip for status information in connection phase
-- [ ] Enhance the documentation
-- [ ] Stability improvements
+- [ ] Support multiple strips and control them separately or together [Issue](https://github.com/toblum/McLighting/issues/118)
+- [ ] Remove old / wrong EEPROM settings completely [Issue]
+- [ ] Customer profile to define segments of (in)active areas on the strip [Issue](https://github.com/toblum/McLighting/issues/37)
 - [ ] Additional clients
+- [ ] If no wifi, at least enable button mode.
+- [ ] Also enable McLighting in Wifi AP mode.
+- [ ] Multiple buttons/GPIO Inputs. [Issue](https://github.com/toblum/McLighting/issues/119)
+- [ ] IR remote support [issue](https://github.com/toblum/McLightingUI/issues/3)
+- [ ] Make number of pixels, MQTT and PIN configurable via front end [Issue](https://github.com/toblum/McLighting/issues/93) and [Issue](https://github.com/toblum/McLighting/issues/272)
+- [ ] Make switching between methods: Adafruit NeoPixel, NeoPixelBus's DMA, NeoPixelBus's UART1 and NeoPixelBus's UART2 via REST API
+- [ ] Add Espalexa library support [Issue](https://github.com/toblum/McLighting/issues/348)
+- [x] Make number of pixels, RGB Order and PIN configurable via REST API
+- [x] Bundle webpages instead of SPIFFS [Issue](https://github.com/toblum/McLighting/issues/93)
+- [x] Music visualizer / Bring back ArtNet [Issue](https://github.com/toblum/McLighting/issues/111)
+- [x] Display version and parameters (Number of LEDs, definition settings, ..) in the web UI [Issue](https://github.com/toblum/McLighting/issues/150)
+- [x] MQTT support
+- [x] Save favourite effects? [Issue](https://github.com/toblum/McLighting/issues/35)(https://github.com/toblum/McLighting/issues/101)
+- [x] OTA update [Issue](https://github.com/toblum/McLighting/issues/92)
+- [x] Fix issue with websockets connection problems
+- [x] Switch to the [NeoPixelBus library](https://github.com/Makuna/NeoPixelBus/wiki)
+- [x] Use the led strip for status information in connection phase
+- [x] Enhance the documentation
+- [x] Stability improvements
+- [x] RGBW mode [Issue](https://github.com/toblum/McLighting/issues/24)
+- [x] Add called command to response [Issue](https://github.com/toblum/McLighting/issues/19)
+- [x] Button control [Issue](https://github.com/toblum/McLighting/issues/36)
+- [x] Retain last state [Issue](https://github.com/toblum/McLighting/issues/47)
+- [x] Make a set of NodeRed nodes.
 
 
 ## Licence
-[GNU LGPLv3](http://www.gnu.org/licenses/lgpl-3.0.txt)
+[MIT](https://choosealicense.com/licenses/mit/)
 
 
 ## Disclaimer

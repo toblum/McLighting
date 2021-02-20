@@ -33,7 +33,7 @@ gulp.task('watch', function() {
 
 
 gulp.task('upload', ['html'], function() {
-	var url = 'http://192.168.0.24/edit';
+	var url = 'http://192.168.0.49/edit';
 	var options = {
 		url: url,
 		headers: {

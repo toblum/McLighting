@@ -1,0 +1,291 @@
+[
+    {
+        "id": "60b3fe49.13b14",
+        "type": "tab",
+        "label": "McLighting Proxy",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "30663a5b.cc72c6",
+        "type": "http response",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "x": 770,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "cc64aa0d.b17bd8",
+        "type": "http in",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "url": "/mclighting",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "2f677b34.f2b934"
+            ]
+        ]
+    },
+    {
+        "id": "2f677b34.f2b934",
+        "type": "template",
+        "z": "60b3fe49.13b14",
+        "name": "Simple Web Page",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "html",
+        "syntax": "mustache",
+        "template": "\n<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<!--Import Google Icon Font-->\n\t\t<link href=\"http://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\">\n\t\t<!--Import materialize.css-->\n\t\t<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css\" media=\"screen,projection\" />\n\n\t\t<!--Let browser know website is optimized for mobile-->\n\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\"/>\n\t\t<meta charset=\"utf-8\"/>\n\t\t<title>McLighting v2</title>\n\t</head>\n\n\t<body>\n\t\t<nav class=\"blue light-blueXXX lighten-1XXX\" role=\"navigation\" id=\"mc-nav\">\n\t\t\t<div class=\"nav-wrapper container\">\n\t\t\t\t<a id=\"logo-container\" href=\"#\" class=\"brand-logo\">Mc Lighting v2</a>\n\n\t\t\t\t<ul class=\"right hide-on-med-and-down\">\n\t\t\t\t\t<li><a href=\"#\" class=\"mc-navlink\" data-pane=\"pane1\">Wheel</a></li>\n\t\t\t\t\t<li><a href=\"#\" class=\"mc-navlink\" data-pane=\"pane2\">Modes</a></li>\n\t\t\t\t</ul>\n\n\t\t\t\t<ul id=\"nav-mobile\" class=\"side-nav\">\n\t\t\t\t\t<li><a href=\"#\" class=\"mc-navlink\" data-pane=\"pane1\">Wheel</a></li>\n\t\t\t\t\t<li><a href=\"#\" class=\"mc-navlink\" data-pane=\"pane2\">Modes</a></li>\n\t\t\t\t</ul>\n\t\t\t\t<a href=\"#\" data-activates=\"nav-mobile\" class=\"button-collapse\"><i class=\"material-icons\">menu</i></a>\n\t\t\t</div>\n\t\t</nav>\n\t\t\n\t\t<div class=\"container mc_pane\" id=\"pane0\">\n\t\t\t<div class=\"section\">\n\t\t\t\t<div class=\"row\" id=\"mc-wsloader\">\n\t\t\t\t\t<div class=\"col\">\n\t\t\t\t\t\t<div class=\"preloader-wrapper active\">\n\t\t\t\t\t\t\t<div class=\"spinner-layer spinner-blue-only\">\n\t\t\t\t\t\t\t\t<div class=\"circle-clipper left\">\n\t\t\t\t\t\t\t\t\t<div class=\"circle\"></div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"gap-patch\">\n\t\t\t\t\t\t\t\t\t<div class=\"circle\"></div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"circle-clipper right\">\n\t\t\t\t\t\t\t\t\t<div class=\"circle\"></div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div class=\"row hide\" id=\"mc-wserror\">\n\t\t\t\t\t<div class=\"col\">\n\t\t\t\t\t\t<div>Error on websocket connect.</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t\n\t\t<div class=\"container mc_pane hide\" id=\"pane1\">\n\t\t\t<div class=\"section\">\n\t\t\t\t<div class=\"row\">\n\t\t\t\t\t<div class=\"col s12 m6\">\n\t\t\t\t\t\t<div style=\"height: 330px; width: 330px;\">\n\t\t\t\t\t\t\t<canvas id=\"myCanvas\" width=\"330\" height=\"330\" style=\"-webkit-user-select: none;-webkit-tap-highlight-color: rgba(0,0,0,0);-moz-user-select:none;\"></canvas>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class=\"col s12 m6\">\n\t\t\t\t\t\t<div class=\"card-panel\" id=\"status\">\n\t\t\t\t\t\t\t<div id=\"status_pos\">pick a color</div>\n\t\t\t\t\t\t\t<div id=\"status_color\"></div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class=\"col s12 m6\">\n\t\t\t\t\t\t<div class=\"right switch\">Auto:<br>\n\t\t\t\t\t\t\t<label>Off \n\t\t\t\t\t\t\t\t<input id=\"autoSwitch\" type=\"checkbox\"><span class=\"lever\"></span>On \n\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t\n\t\t<div class=\"container mc_pane hide\" id=\"pane2\">\n\t\t\t<div class=\"section\">\n\t\t\t\t<div class=\"row\">\n\t\t\t\t\t<form class=\"col s12\">\n\t\t\t\t\t\t<div class=\"row\">\n\t\t\t\t\t\t\t<div class=\"input-field col s12 l4\">\n\t\t\t\t\t\t\t\t<label for=\"txt_red\">Red</label><br/>\n\t\t\t\t\t\t\t\t<p class=\"range-field\"><input type=\"range\" id=\"rng_red\" min=\"0\" max=\"255\" class=\"update_colors\" /></p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"input-field col s12 l4\">\n\t\t\t\t\t\t\t\t<label for=\"txt_green\">Green</label><br/>\n\t\t\t\t\t\t\t\t<p class=\"range-field\"><input type=\"range\" id=\"rng_green\" min=\"0\" max=\"255\" class=\"update_colors\" /></p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"input-field col s12 l4\">\n\t\t\t\t\t\t\t\t<label for=\"txt_blue\">Blue</label><br/>\n\t\t\t\t\t\t\t\t<p class=\"range-field\"><input type=\"range\" id=\"rng_blue\" min=\"0\" max=\"255\" class=\"update_colors\" /></p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<div class=\"row\">\n\t\t\t\t\t\t\t<div class=\"input-field col s12\">\n\t\t\t\t\t\t\t\t<label for=\"txt_delay\">Speed</label><br/>\n\t\t\t\t\t\t\t\t<p class=\"range-field\"><input type=\"range\" id=\"rng_delay\" min=\"0\" max=\"255\" value=\"196\" class=\"update_delay\" /></p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<div class=\"row\">\n\t\t\t\t\t\t\t<div class=\"input-field col s12\">\n\t\t\t\t\t\t\t\t<label for=\"txt_delay\">Brightness</label><br/>\n\t\t\t\t\t\t\t\t<p class=\"range-field\"><input type=\"range\" id=\"rng_brightness\" min=\"0\" max=\"255\" value=\"196\" class=\"update_brightness\" /></p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</form>\n\t\t\t\t</div>\n\t\t\t\t\n\t\t\t\t<div class=\"row\">\n\t\t\t\t\t<div class=\"col s12 m6 l6 btn_grid\">\n\t\t\t\t\t\t<a class=\"btn waves-effect waves-light btn_mode_static blue\" name=\"action\" data-mode=\"off\">OFF\n\t\t\t\t\t\t\t<i class=\"material-icons right\">send</i>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t<div class=\"col s12 m6 l6 btn_grid\">\n\t\t\t\t\t\t<a class=\"btn waves-effect waves-light btn_mode_static blue\" name=\"action\" data-mode=\"tv\">TV\n\t\t\t\t\t\t\t<i class=\"material-icons right\">send</i>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\n\t\t\t\t\t<div id=\"modes\">\n\t\t\t\t\t\t<div class=\"input-field col s12\">\n\t\t\t\t\t\t\tLoading animations...\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t\n\t\t<footer class=\"page-footer blue\">\n\t\t\t<div class=\"footer-copyright\">\n\t\t\t\t<div class=\"container\">© 2017\n\t\t\t\t<a class=\"grey-text text-lighten-4 right\" href=\"https://github.com/toblum/McLighting\">Project home</a>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</footer>\n\t\t\n\t\t<style type=\"text/css\">\n\t\t\t.btn_grid {\n\t\t\t\tmargin: 7px 0;\n\t\t\t}\n\t\t</style>\n\t\n\t\t<!--Import jQuery before materialize.js-->\n\t\t<script type=\"text/javascript\" src=\"https://code.jquery.com/jquery-3.2.1.min.js\"></script>\n\t\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js\"></script>\n\t\t<script type=\"text/javascript\">(function($){\n$(function(){\n\t  \n\t// Settings\n\tvar host = window.location.hostname;\n\t//host = \"esp8266_02.local\";\n\n\tvar ws_url = 'ws://' + host + ':1880/mclighting/ws';\n\tvar connection;\n\tvar ws_waiting = 0;\n\n\t// ******************************************************************\n\t// Side navigation\n\t// ******************************************************************\n    $('.button-collapse').sideNav();\n\t\n\t// Navlinks\n\t$('#mc-nav').on('click', '.mc-navlink', function(){\n\t\tconsole.log(\"Navigate to pane: \", $(this).data(\"pane\"));\n\t\tshowPane($(this).data(\"pane\"));\n\t});\n\t\n\tfunction showPane(pane) {\n\t\t$('.mc_pane').addClass('hide');\n\t\t$('#' + pane).removeClass('hide');\n\t\t$('.button-collapse').sideNav('hide');\n\t\t\n\t\tif (pane == \"pane2\") {\n\t\t\tsetMainColor();\n\t\t}\n\t}\n\t\n\t\n\t// ******************************************************************\n\t// init()\n\t// ******************************************************************\n\tfunction init() {\n\t\tconsole.log(\"Connection websockets to:\", ws_url);\n\t\tconnection = new WebSocket(ws_url, ['arduino']);\n\t\t\n\t\t// Load modes async\n\t\t$.getJSON(\"http://\" + host + \":\" + location.port + \"/get_modes\", function(data) {\n\t\t\t//console.log(\"modes\", data);\n\t\t\t\n\t\t\tvar modes_html = \"\";\n\t\t\tdata.forEach(function(current_mode){\n\t\t\t\tif (current_mode.mode !== undefined) {\n\t\t\t\t\tmodes_html += '<div class=\"col s12 m6 l6 btn_grid\">'; \n\t\t\t\t\tmodes_html += '<a class=\"btn waves-effect waves-light btn_mode blue\" name=\"action\" data-mode=\"' + current_mode.mode + '\">(' + current_mode.mode +') '+ current_mode.name; \n\t\t\t\t\tmodes_html += '<i class=\"material-icons right\">send</i>';\n\t\t\t\t\tmodes_html += '</a>';\n\t\t\t\t\tmodes_html += '</div>';\n\t\t\t\t}\n\t\t\t});\n\t\t\t\n\t\t\t$('#modes').html(modes_html);\n\t\t});\n\t\t\t\t\n\t\t// When the connection is open, send some data to the server\n\t\tconnection.onopen = function () {\n\t\t\t//connection.send('Ping'); // Send the message 'Ping' to the server\n\t\t\tconsole.log('WebSocket Open');\n\t\t\tshowPane('pane1');\n\t\t};\n\n\t\t// Log errors\n\t\tconnection.onerror = function (error) {\n\t\t\tconsole.log('WebSocket Error ' + error);\n\t\t\t$('#mc-wsloader').addClass('hide');\n\t\t\t$('#mc-wserror').removeClass('hide');\n\t\t};\n\n\t\t// Log messages from the server\n\t\tconnection.onmessage = function (e) {\n\t\t\tconsole.log('WebSocket from server: ' + e.data);\n\t\t\tws_waiting = 0;\n\t\t};\n\t}\n\n\t\n\t// ******************************************************************\n\t// Modes\n\t// ******************************************************************\t\n\t$(\"#pane2\").on(\"click\", \".btn_mode\", function() {\n\t\tvar mode = $(this).attr(\"data-mode\");\n\t\tlast_mode = mode;\n\t\tvar btn = $(this);\n\t\tsetMode(mode, function() {\n\t\t\t$(\".btn_mode, .btn_mode_static\").removeClass(\"red\").addClass(\"blue\");\n\t\t\tbtn.removeClass(\"blue\").addClass(\"red\");\n\t\t});\n\t});\t\n\t\n\t$(\"#pane2\").on(\"click\", \".btn_mode_static\", function() {\n\t\tvar mode = $(this).attr(\"data-mode\");\n\t\tvar btn = $(this);\n\t\t\n\t\twsSendCommand(\"=\" + mode);\n\t\t$(\".btn_mode, .btn_mode_static\").removeClass(\"red\").addClass(\"blue\");\n\t\tbtn.removeClass(\"blue\").addClass(\"red\");\n\t});\n\t\n\t$(\"#pane2\").on(\"change\", \".update_colors\", setMainColor);\t\n\t\n\t$(\"#pane2\").on(\"change\", \".update_delay\", function() {\n\t\tvar delay = $(\"#rng_delay\").val();\t\t\n\t\t\n\t\twsSendCommand(\"?\" + delay);\n\t});\n\t\n\t$(\"#pane2\").on(\"change\", \".update_brightness\", function() {\n\t\tvar brightness = $(\"#rng_brightness\").val();\t\t\n\t\t\n\t\twsSendCommand(\"%\" + brightness);\n\t});\n\n\t$(\"#autoSwitch\").on(\"change\", function () {\n\t\tif ($(this).prop('checked')) {\n\t\t\twsSendCommand(\"start\");\n\t\t} else {\n\t\t\twsSendCommand(\"stop\");\n\t\t}\n\t}); \n\t\n\tfunction setMode(mode, finish_funtion) {\n\t\tconsole.log(\"Mode: \", mode);\n\n\t\twsSendCommand(\"/\" + mode);\n\t\tfinish_funtion();\n\t}\n\t\n\tfunction setMainColor() {\n\t\tvar red = $(\"#rng_red\").val();\n\t\tvar green = $(\"#rng_green\").val();\n\t\tvar blue = $(\"#rng_blue\").val();\t\t\n\t\t\n\t\tvar mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);\n\t\twsSetMainColor(mainColorHex);\n\t}\n\t\n\t\n\t// ******************************************************************\n\t// WebSocket commands\n\t// ******************************************************************\n\tfunction wsSendCommand(cmd) {\n\t\tconsole.log(\"Send WebSocket command:\", cmd);\n\t\tif (ws_waiting == 0)  {\n\t\t\tconnection.send(cmd);\n\t\t\tws_waiting++;\n\t\t} else {\n\t\t\tconsole.log(\"++++++++ WS call waiting, skip\")\n\t\t}\n\t}\t\n\t\n\t\n\tfunction wsSetAll(hexColor) {\n\t\tconsole.log(\"wsSetAll() Set all colors to:\", hexColor);\n\t\twsSendCommand(\"*\" + hexColor);\n\t}\n\t\n\tfunction wsSetMainColor(hexColor) {\n\t\tconsole.log(\"wsSetMainColor() Set main colors to:\", hexColor);\n\t\twsSendCommand(\"#\" + hexColor);\n\t}\n\t\n\t\n\t\n\t// ******************************************************************\n\t// Colorwheel\n\t// ******************************************************************\n\t// this is supposed to work on mobiles (touch) as well as on a desktop (click)\n\t// since we couldn't find a decent one .. this try of writing one by myself\n\t// + google. swiping would be really nice - I will possibly implement it with\n\t// jquery later - or never.\n\n\tvar canvas = document.getElementById(\"myCanvas\");\n\t// FIX: Cancel touch end event and handle click via touchstart\n\t// canvas.addEventListener(\"touchend\", function(e) { e.preventDefault(); }, false);\n\tcanvas.addEventListener(\"touchmove\", doTouch, false);\n\tcanvas.addEventListener(\"click\", doClick, false);\n\t//canvas.addEventListener(\"mousemove\", doClick, false);\n\n\t\n\tvar context = canvas.getContext('2d');\n\tvar centerX = canvas.width / 2;\n\tvar centerY = canvas.height / 2;\n\tvar innerRadius = canvas.width / 4.5;\n\tvar outerRadius = (canvas.width - 10) / 2\n\n\t//outer border\n\tcontext.beginPath();\n\t//outer circle\n\tcontext.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI, false);\n\t//draw the outer border: (gets drawn around the circle!)\n\tcontext.lineWidth = 4;\n\tcontext.strokeStyle = '#000000';\n\tcontext.stroke();\n\tcontext.closePath();\n\n\t//fill with beautiful colors \n\t//taken from here: http://stackoverflow.com/questions/18265804/building-a-color-wheel-in-html5\n\tfor(var angle=0; angle<=360; angle+=1) {\n\t\tvar startAngle = (angle-2)*Math.PI/180;\n\t\tvar endAngle = angle * Math.PI/180;\n\t\tcontext.beginPath();\n\t\tcontext.moveTo(centerX, centerY);\n\t\tcontext.arc(centerX, centerY, outerRadius, startAngle, endAngle, false);\n\t\tcontext.closePath();\n\t\tcontext.fillStyle = 'hsl('+angle+', 100%, 50%)';\n\t\tcontext.fill();\n\t\tcontext.closePath();\n\t}\n\n\t//inner border\n\tcontext.beginPath();\n\t//context.arc(centerX, centerY, radius, startAngle, endAngle, counterClockwise);\n\tcontext.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, false);\n\t//fill the center\n\tvar my_gradient=context.createLinearGradient(0,0,170,0);\n\tmy_gradient.addColorStop(0,\"black\");\n\tmy_gradient.addColorStop(1,\"white\");\n\t\n\tcontext.fillStyle = my_gradient;\n\tcontext.fillStyle = \"white\";\n\tcontext.fill();\n\n\t//draw the inner line\n\tcontext.lineWidth = 2;\n\tcontext.strokeStyle = '#000000';\n\tcontext.stroke();\n\tcontext.closePath();\n\n\t//get Mouse x/y canvas position\n\tfunction getMousePos(canvas, evt) {\n\t\tvar rect = canvas.getBoundingClientRect();\n\t\treturn {\n\t\t\tx: evt.clientX - rect.left,\n\t\t\ty: evt.clientY - rect.top\n\t\t};\n\t}\n\n\t//comp to Hex\n\tfunction componentToHex(c) {\n\t\t//var hex = c.toString(16);\n\t\t//return hex.length == 1 ? \"0\" + hex : hex;\n\t\treturn  (\"0\"+(Number(c).toString(16))).slice(-2).toUpperCase();\n\t}\n\n\t//rgb/rgba to Hex\n\tfunction rgbToHex(rgb) {\n\t\treturn componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);\n\t}\n\n\t//display the touch/click position and color info\n\tfunction updateStatus(pos, color) {\n\t\tvar hexColor = rgbToHex(color);\n\t\twsSetAll(hexColor);\n\t\t\n\t\thexColor = \"#\" + hexColor;\n\t\t\n\t\t$('#status').css(\"backgroundColor\", hexColor);\n\t\t$('#status_color').text(hexColor + \" - R=\" + color[0] + \", G=\" + color[1] + \", B=\" + color[2]);\n\t\t$('#status_pos').text(\"x: \" + pos.x + \" - y: \" + pos.y);\n\t\t\n\t\t$(\"#rng_red\").val(color[0]);\n\t\t$(\"#rng_green\").val(color[1]);\n\t\t$(\"#rng_blue\").val(color[2]);\n\t}\n\n\t//handle the touch event\n\tfunction doTouch(event) {\n\t\t//to not also fire on click\n\t\tevent.preventDefault();\n\t\tvar el = event.target;\n\t\t\n\t\t//touch position\n\t\tvar pos = {x: Math.round(event.targetTouches[0].pageX - el.offsetLeft),\n\t\t\t\t   y: Math.round(event.targetTouches[0].pageY - el.offsetTop)};\n\t\t//color\n\t\tvar color = context.getImageData(pos.x, pos.y, 1, 1).data;\n\n\t\tupdateStatus(pos, color);\n\t}\n\n\tfunction doClick(event) {   \n\t\t//click position   \n\t\tvar pos = getMousePos(canvas, event);\n\t\t//color\n\t\tvar color = context.getImageData(pos.x, pos.y, 1, 1).data;\n\t\t\n\t\t//console.log(\"click\", pos.x, pos.y, color);\n\t\tupdateStatus(pos, color);\n\t\t\n\t\t//now do sth with the color rgbToHex(color);\n\t\t//don't do stuff when #000000 (outside circle and lines\n\t}\n\n\n\t// ******************************************************************\n\t// main\n\t// ******************************************************************\n\tinit();\n\t\n}); // end of document ready\n})(jQuery); // end of jQuery name space</script>\n\t</body>\n</html>",
+        "x": 470,
+        "y": 100,
+        "wires": [
+            [
+                "30663a5b.cc72c6"
+            ]
+        ]
+    },
+    {
+        "id": "c9b17f3b.9dff8",
+        "type": "websocket in",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "server": "566e6e2.291cd9",
+        "client": "",
+        "x": 150,
+        "y": 320,
+        "wires": [
+            [
+                "269d49ad.a76b86",
+                "290609d3.6278b6"
+            ]
+        ]
+    },
+    {
+        "id": "269d49ad.a76b86",
+        "type": "debug",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 770,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "c919144e.a042d8",
+        "type": "websocket out",
+        "z": "60b3fe49.13b14",
+        "name": "McLighting MASTER",
+        "server": "",
+        "client": "76c1e2a2.260edc",
+        "x": 720,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "290609d3.6278b6",
+        "type": "change",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "rules": [
+            {
+                "t": "delete",
+                "p": "_session",
+                "pt": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 420,
+        "y": 360,
+        "wires": [
+            [
+                "c919144e.a042d8",
+                "66d9365b.ea4678"
+            ]
+        ]
+    },
+    {
+        "id": "34867cb8.1e90c4",
+        "type": "websocket in",
+        "z": "60b3fe49.13b14",
+        "name": "McLighting MASTER",
+        "server": "",
+        "client": "76c1e2a2.260edc",
+        "x": 150,
+        "y": 540,
+        "wires": [
+            [
+                "895c4072.f2c8b",
+                "476937ec.2e6bc8"
+            ]
+        ]
+    },
+    {
+        "id": "895c4072.f2c8b",
+        "type": "debug",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 770,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "60647cef.9d1b84",
+        "type": "websocket out",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "server": "566e6e2.291cd9",
+        "client": "",
+        "x": 730,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "476937ec.2e6bc8",
+        "type": "change",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "rules": [
+            {
+                "t": "delete",
+                "p": "_session",
+                "pt": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 440,
+        "y": 580,
+        "wires": [
+            [
+                "60647cef.9d1b84"
+            ]
+        ]
+    },
+    {
+        "id": "66d9365b.ea4678",
+        "type": "websocket out",
+        "z": "60b3fe49.13b14",
+        "name": "McLighting SLAVE 1",
+        "server": "",
+        "client": "a3ea760c.37e1c8",
+        "x": 720,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "78a93dec.7bbd84",
+        "type": "template",
+        "z": "60b3fe49.13b14",
+        "name": "Modes list",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "plain",
+        "template": "[{\"mode\":0, \"name\":\"Static\"},{\"mode\":1, \"name\":\"Blink\"},{\"mode\":2, \"name\":\"Breath\"},{\"mode\":3, \"name\":\"Color Wipe\"},{\"mode\":4, \"name\":\"Color Wipe Inverse\"},{\"mode\":5, \"name\":\"Color Wipe Reverse\"},{\"mode\":6, \"name\":\"Color Wipe Reverse Inverse\"},{\"mode\":7, \"name\":\"Color Wipe Random\"},{\"mode\":8, \"name\":\"Random Color\"},{\"mode\":9, \"name\":\"Single Dynamic\"},{\"mode\":10, \"name\":\"Multi Dynamic\"},{\"mode\":11, \"name\":\"Rainbow\"},{\"mode\":12, \"name\":\"Rainbow Cycle\"},{\"mode\":13, \"name\":\"Scan\"},{\"mode\":14, \"name\":\"Dual Scan\"},{\"mode\":15, \"name\":\"Fade\"},{\"mode\":16, \"name\":\"Theater Chase\"},{\"mode\":17, \"name\":\"Theater Chase Rainbow\"},{\"mode\":18, \"name\":\"Running Lights\"},{\"mode\":19, \"name\":\"Twinkle\"},{\"mode\":20, \"name\":\"Twinkle Random\"},{\"mode\":21, \"name\":\"Twinkle Fade\"},{\"mode\":22, \"name\":\"Twinkle Fade Random\"},{\"mode\":23, \"name\":\"Sparkle\"},{\"mode\":24, \"name\":\"Flash Sparkle\"},{\"mode\":25, \"name\":\"Hyper Sparkle\"},{\"mode\":26, \"name\":\"Strobe\"},{\"mode\":27, \"name\":\"Strobe Rainbow\"},{\"mode\":28, \"name\":\"Multi Strobe\"},{\"mode\":29, \"name\":\"Blink Rainbow\"},{\"mode\":30, \"name\":\"Chase White\"},{\"mode\":31, \"name\":\"Chase Color\"},{\"mode\":32, \"name\":\"Chase Random\"},{\"mode\":33, \"name\":\"Chase Rainbow\"},{\"mode\":34, \"name\":\"Chase Flash\"},{\"mode\":35, \"name\":\"Chase Flash Random\"},{\"mode\":36, \"name\":\"Chase Rainbow White\"},{\"mode\":37, \"name\":\"Chase Blackout\"},{\"mode\":38, \"name\":\"Chase Blackout Rainbow\"},{\"mode\":39, \"name\":\"Color Sweep Random\"},{\"mode\":40, \"name\":\"Running Color\"},{\"mode\":41, \"name\":\"Running Red Blue\"},{\"mode\":42, \"name\":\"Running Random\"},{\"mode\":43, \"name\":\"Larson Scanner\"},{\"mode\":44, \"name\":\"Comet\"},{\"mode\":45, \"name\":\"Fireworks\"},{\"mode\":46, \"name\":\"Fireworks Random\"},{\"mode\":47, \"name\":\"Merry Christmas\"},{\"mode\":48, \"name\":\"Fire Flicker\"},{\"mode\":49, \"name\":\"Fire Flicker (soft)\"},{\"mode\":50, \"name\":\"Fire Flicker (intense)\"},{\"mode\":51, \"name\":\"Circus Combustus\"},{\"mode\":52, \"name\":\"Halloween\"},{\"mode\":53, \"name\":\"Bicolor Chase\"},{\"mode\":54, \"name\":\"Tricolor Chase\"},{\"mode\":55, \"name\":\"ICU\"},{}]",
+        "output": "str",
+        "x": 470,
+        "y": 160,
+        "wires": [
+            [
+                "8639e406.b82e38"
+            ]
+        ]
+    },
+    {
+        "id": "7cc35600.dc2558",
+        "type": "http in",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "url": "/get_modes",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 160,
+        "wires": [
+            [
+                "78a93dec.7bbd84"
+            ]
+        ]
+    },
+    {
+        "id": "8639e406.b82e38",
+        "type": "http response",
+        "z": "60b3fe49.13b14",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 770,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "e1ce7b73.d32078",
+        "type": "comment",
+        "z": "60b3fe49.13b14",
+        "name": "HTTP server for the McLighting web page / modes list",
+        "info": "These is mainly the original source code from McLighting, just the endpoint were patched so that they match with Node Red.\nWeb page listens on http://<node_red_url>/mclighting",
+        "x": 260,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "84c92c41.eb3a9",
+        "type": "comment",
+        "z": "60b3fe49.13b14",
+        "name": "Websocket Input -> split to multiple McLighting nodes",
+        "info": "You can output the message to multiple McLighting Nodes. \nJust add websocket output nodes for each McLighting.",
+        "x": 260,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "776ca012.6f1d4",
+        "type": "comment",
+        "z": "60b3fe49.13b14",
+        "name": "Websocket Output --> Get return value from MASTER and echo to web page",
+        "info": "",
+        "x": 330,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "566e6e2.291cd9",
+        "type": "websocket-listener",
+        "z": "60b3fe49.13b14",
+        "path": "/mclighting/ws",
+        "wholemsg": "false"
+    },
+    {
+        "id": "76c1e2a2.260edc",
+        "type": "websocket-client",
+        "z": "",
+        "path": "ws://192.168.0.49:81",
+        "wholemsg": "false"
+    },
+    {
+        "id": "a3ea760c.37e1c8",
+        "type": "websocket-client",
+        "z": "",
+        "path": "ws://192.168.0.64:81/",
+        "wholemsg": "false"
+    }
+]

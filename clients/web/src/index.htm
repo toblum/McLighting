@@ -4,16 +4,20 @@
 		<!--Import Google Icon Font-->
 		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		<!--Import materialize.css-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css" media="screen,projection" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css" media="screen,projection" />
 
 		<!--Let browser know website is optimized for mobile-->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+		<meta name="mobile-web-app-capable" content="yes">
 		<meta charset="utf-8"/>
+		<title>McLighting v2</title>
 	</head>
 
 	<body>
-		<nav class="light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
-			<div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Mc Lighting</a>
+		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
+			<div class="nav-wrapper container">
+				<a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
+
 				<ul class="right hide-on-med-and-down">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
@@ -22,7 +26,6 @@
 				<ul id="nav-mobile" class="side-nav">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-
 				</ul>
 				<a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
 			</div>
@@ -33,13 +36,15 @@
 				<div class="row" id="mc-wsloader">
 					<div class="col">
 						<div class="preloader-wrapper active">
-							<div class="spinner-layer spinner-red-only">
+							<div class="spinner-layer spinner-blue-only">
 								<div class="circle-clipper left">
 									<div class="circle"></div>
-								</div><div class="gap-patch">
+								</div>
+								<div class="gap-patch">
 									<div class="circle"></div>
-								</div><div class="circle-clipper right">
-								<div class="circle"></div>
+								</div>
+								<div class="circle-clipper right">
+									<div class="circle"></div>
 								</div>
 							</div>
 						</div>
@@ -67,62 +72,19 @@
 							<div id="status_color"></div>
 						</div>
 					</div>
+					<div class="col s12 m6">
+						<div class="right switch">Auto:<br>
+							<label>Off 
+								<input id="autoSwitch" type="checkbox"><span class="lever"></span>On 
+							</label>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 		
 		<div class="container mc_pane hide" id="pane2">
 			<div class="section">
-				<div class="row">
-					<div class="col s12 m6 l3 btn_grid">
-						<button class="btn waves-effect waves-light btn_mode" name="action" data-mode="off">Off
-							<i class="material-icons right">send</i>
-						</button>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="all">All
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="wipe">Wipe
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="rainbow">Rainbow
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="rainbowCycle">Rainbow cycle
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="theaterchase">Theaterchase
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="theaterchaseRainbow">Theaterchase rainbow
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-
-					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="tv">TV
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
-				</div>
-				
 				<div class="row">
 					<form class="col s12">
 						<div class="row">
@@ -142,25 +104,45 @@
 						
 						<div class="row">
 							<div class="input-field col s12">
-								<label for="txt_delay">Delay</label><br/>
-								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="50" class="update_delay" /></p>
+								<label for="txt_delay">Speed</label><br/>
+								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="196" class="update_delay" /></p>
 							</div>
 						</div>
 						
 						<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_delay">Brightness</label><br/>
-								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="255" class="update_brightness" /></p>
+								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="196" class="update_brightness" /></p>
 							</div>
 						</div>
 					</form>
 				</div>
+				
+				<div class="row">
+					<div class="col s12 m6 l6 btn_grid">
+						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF
+							<i class="material-icons right">send</i>
+						</a>
+					</div>
+					
+					<div class="col s12 m6 l6 btn_grid">
+						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV
+							<i class="material-icons right">send</i>
+						</a>
+					</div>
+
+					<div id="modes">
+						<div class="input-field col s12">
+							Loading animations...
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		
-		<footer class="page-footer">
+		<footer class="page-footer blue">
 			<div class="footer-copyright">
-				<div class="container">© 2016
+				<div class="container">© 2017
 				<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project home</a>
 				</div>
 			</div>
@@ -173,8 +155,8 @@
 		</style>
 	
 		<!--Import jQuery before materialize.js-->
-		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
 		<script type="text/javascript">@@include('js/script.js')</script>
 	</body>
 </html>
