@@ -544,6 +544,12 @@ void setup() {
       if (mqtt_user != "" or mqtt_pass != "") amqttClient.setCredentials(mqtt_user, mqtt_pass);
       amqttClient.setClientId(mqtt_clientid);
       amqttClient.setWill(mqtt_will_topic, 2, true, mqtt_will_payload, 0);
+#if ASYNC_TCP_SSL_ENABLED
+      amqttClient.setSecure(MQTT_SECURE);
+      if (MQTT_SECURE) {
+        amqttClient.addServerFingerprint((const uint8_t[])MQTT_SERVER_FINGERPRINT);
+      }
+#endif
 
       connectToMqtt();
     }
@@ -635,6 +641,14 @@ void setup() {
     #endif
     #ifdef ENABLE_MQTT
       json["mqtt"] = "ON";
+    #endif
+    #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
+      json["mqtt_host"] = mqtt_host;
+      json["mqtt_port"] = mqtt_port;
+      json["mqtt_user"] = mqtt_user;
+      #if ASYNC_TCP_SSL_ENABLED
+        json["mqtt_tls"] = (MQTT_SECURE ? "ON" : "OFF");
+      #endif
     #endif
     #ifdef ENABLE_HOMEASSISTANT
       json["home_assistant"] = "ON";

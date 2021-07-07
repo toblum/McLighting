@@ -38,6 +38,11 @@
   uint8_t _sn[4] = {255,255,255,0};
 #endif
 
+#if ASYNC_TCP_SSL_ENABLED
+  #define MQTT_SECURE true
+  #define MQTT_SERVER_FINGERPRINT {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44}
+#endif
+
 #ifdef MQTT_HOME_ASSISTANT_SUPPORT
   #define MQTT_HOME_ASSISTANT_0_87_SUPPORT // Comment if using HA version < 0.87
 #endif
