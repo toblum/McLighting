@@ -319,9 +319,6 @@ char hostString[16] = {0};
 void setup() {
 //  system_update_cpu_freq(160);
 
-  sprintf(hostString, HOSTNAME, ESP.getChipId());
-  WiFi.hostname(hostString);
-  
   DBG_OUTPUT_PORT.begin(115200);
   EEPROM.begin(512);
 
@@ -439,6 +436,10 @@ void setup() {
     ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
     delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
+
+// friendly name for your ROUTER
+  sprintf(hostString, HOSTNAME, ESP.getChipId());
+  WiFi.hostname(hostString);
 
   #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //read updated parameters
