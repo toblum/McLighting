@@ -827,6 +827,8 @@ void setup() {
         WS2812FXStripSettings.stripSize = pixelCt;
         updateStrip = true;
         DBG_OUTPUT_PORT.printf("/pixels: Count# %d\n", pixelCt);
+        String wsPinStr = "Pixels count: " + String(pixelCt);
+        webSocket.broadcastTXT(wsPinStr);
       }
     }
     if(server.hasArg("rgbo")){
@@ -858,7 +860,10 @@ void setup() {
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
+        webSocket.broadcastTXT("invalid RGBO input!");
       }
+      String wsRGBStr = "RGB Order: " + String(RGBOrder);
+      webSocket.broadcastTXT(wsRGBStr);
     }
     if(server.hasArg("pin")){
       uint8_t pin = server.arg("pin").toInt();
@@ -880,7 +885,10 @@ void setup() {
         DBG_OUTPUT_PORT.println(pin);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
+        webSocket.broadcastTXT("invalid PIN nr input!");
       }
+        String wsPinNrStr = "PIN nr: " + String(pin);
+        webSocket.broadcastTXT(wsPinNrStr);
       #endif
     }
 
@@ -923,6 +931,7 @@ void setup() {
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
+    webSocket.broadcastTXT("Off");
   });
 
   server.on("/all", []() {
