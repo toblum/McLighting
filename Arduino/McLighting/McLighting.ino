@@ -307,12 +307,21 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   #include "colormodes.h"
 #endif
 
+
+// ***************************************************************************
+// HOSTNAME - Fix for random name in ROUTER.
+// ***************************************************************************
+char hostString[16] = {0};
+
 // ***************************************************************************
 // MAIN
 // ***************************************************************************
 void setup() {
 //  system_update_cpu_freq(160);
 
+  sprintf(hostString, HOSTNAME, ESP.getChipId());
+  WiFi.hostname(hostString);
+  
   DBG_OUTPUT_PORT.begin(115200);
   EEPROM.begin(512);
 
