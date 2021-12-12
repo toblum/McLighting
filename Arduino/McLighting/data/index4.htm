@@ -323,14 +323,14 @@ box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.36);}
 			</div>
 
 			<div class="sub_mod_box">
-				  <label for="rgbo">Choose RGB order: *need FIX</label>
+				  <label for="rgbo">Choose RGB order:</label>
 				  <select onchange="sendRgbOrder()" name="rgbo" id="rgbo">
-					<option name="82" value="82">GRB</option>
-					<option name="161" value="161">GBR</option>
-					<option name="6" value="6">RGB</option>
-					<option name="9" value="9">RBG</option>
-					<option name="88" value="88">BRG</option>
-					<option name="164" value="164">BGR</option>
+					<option name="grb" value="82">GRB</option>
+					<option name="gbr" value="161">GBR</option>
+					<option name="rgb" value="6">RGB</option>
+					<option name="rbg" value="9">RBG</option>
+					<option name="brg" value="88">BRG</option>
+					<option name="bgr" value="164">BGR</option>
 				  </select>
 			<!--  <button class="blue btn" onclick="sendRgbOrder(this);" >SAVE rgb</button>//-->
 			</div>
@@ -359,11 +359,13 @@ box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.36);}
 
 
 			<div class="sub_mod_box">
-			  <button class="red btn" onclick="window.location.href='/restart'" >Restart</button>
+<!--			  <button class="red btn" onclick="window.location.href='/restart'" >Restart</button>	-->
+			  <button class="red btn" onclick="wsSendCommand('Restart');" >Restart</button>
 			</div>
 
 			<div class="sub_mod_box">
-			  <button class="red btn" onclick="window.location.href='/reset_wlan'" >Reset wlan</button>
+<!--			  <button class="red btn" onclick="window.location.href='/reset_wlan'" >Reset wlan</button>	-->
+			  <button class="red btn" onclick="resetWLAN();" >Reset WLAN </button>
 			</div>
 			
 			
@@ -760,7 +762,8 @@ GetStripState();
 
 	function sendRgbOrder(button) {
 		let e = document.getElementById("rgbo");
-		let rgboa = e.options[e.selectedIndex].value;
+//		let rgboa = e.options[e.selectedIndex].value;
+		let rgboa = e.options[e.selectedIndex].attributes.name.value;
 		let vser = "rgbo="+rgboa ;
 
 		var xhr = new XMLHttpRequest();
@@ -848,7 +851,7 @@ GetStripState();
 	;}
 
 // neoconfig
-	function GetNeoConfig(){ //FIX RGB VAL!!
+	function GetNeoConfig(){
 		var xhr = new XMLHttpRequest();
 			xhr.open("GET", "http://" + host + "/neoconfig.json", true);
 			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
@@ -920,6 +923,15 @@ GetStripState();
 		console.log("Theme: ","NOT yet ReadY");
 	}
 
+// Reset to AP mode
+	function resetWLAN(){
+		var rst = confirm("Reset to AP mode?");
+		if (rst == true) {
+			wsSendCommand('resetWLAN');
+		} else {
+			wsSendCommand('ABORT!');
+		}
+	}
 </script>
 
 	</body>
