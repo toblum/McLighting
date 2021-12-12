@@ -746,6 +746,23 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         handleAutoStop();
         webSocket.sendTXT(num, "OK");
       }
+
+     // reset WLAN
+      if (strcmp((char *)payload, "resetWLAN") == 0 ) {
+        webSocket.broadcastTXT("Reset WLAN to AP!");
+        delay(500);
+        WiFiManager wifiManager;
+        wifiManager.resetSettings();
+        ESP.restart();
+      }
+
+    // Reboot ESP // broadcast to ALL!
+      if (strcmp((char *)payload, "Restart") == 0 ) {
+        webSocket.broadcastTXT("RebooT");
+        delay(500);
+        ESP.restart();
+      }
+      
       break;
   }
 }
