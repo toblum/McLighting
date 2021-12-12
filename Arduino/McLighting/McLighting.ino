@@ -12,7 +12,7 @@
 
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <EEPROM.h>
 
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
@@ -328,9 +328,9 @@ void setup() {
   // ***************************************************************************
   // Setup: SPIFFS
   // ***************************************************************************
-  SPIFFS.begin();
+  LittleFS.begin();
   {
-    Dir dir = SPIFFS.openDir("/");
+    Dir dir = LittleFS.openDir("/");
     while (dir.next()) {
       String fileName = dir.fileName();
       size_t fileSize = dir.fileSize();
@@ -338,7 +338,7 @@ void setup() {
     }
 
     FSInfo fs_info;
-    SPIFFS.info(fs_info);
+    LittleFS.info(fs_info);
     DBG_OUTPUT_PORT.printf("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
 

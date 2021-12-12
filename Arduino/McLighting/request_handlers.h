@@ -1307,7 +1307,7 @@ bool writeConfigFS(bool saveConfig){
     json["mqtt_pass"] = mqtt_pass;
   
     //SPIFFS.remove("/config.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-    File configFile = SPIFFS.open("/config.json", "w");
+    File configFile = LittleFS.open("/config.json", "w");
     if (!configFile) DBG_OUTPUT_PORT.println("failed to open config file for writing");
 
     serializeJson(json, DBG_OUTPUT_PORT);
@@ -1326,10 +1326,10 @@ bool writeConfigFS(bool saveConfig){
 bool readConfigFS() {
   //read configuration from FS JSON
   updateFS = true;
-  if (SPIFFS.exists("/config.json")) {
+  if (LittleFS.exists("/config.json")) {
     //file exists, reading and loading
     DBG_OUTPUT_PORT.print("Reading config file... ");
-    File configFile = SPIFFS.open("/config.json", "r");
+    File configFile = LittleFS.open("/config.json", "r");
     if (configFile) {
       DBG_OUTPUT_PORT.println("Opened!");
       size_t size = configFile.size();
@@ -1379,7 +1379,7 @@ bool writeStateFS(){
   json["blue"] = main_color.blue;
 
   //SPIFFS.remove("/stripstate.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-  File configFile = SPIFFS.open("/stripstate.json", "w");
+  File configFile = LittleFS.open("/stripstate.json", "w");
   if (!configFile) {
     DBG_OUTPUT_PORT.println("Failed!");
     updateFS = false;
@@ -1401,10 +1401,10 @@ bool readStateFS() {
   //read strip state from FS JSON
   updateFS = true;
   //if (resetsettings) { SPIFFS.begin(); SPIFFS.remove("/config.json"); SPIFFS.format(); delay(1000);}
-  if (SPIFFS.exists("/stripstate.json")) {
+  if (LittleFS.exists("/stripstate.json")) {
     //file exists, reading and loading
     DBG_OUTPUT_PORT.print("Read cfg: ");
-    File configFile = SPIFFS.open("/stripstate.json", "r");
+    File configFile = LittleFS.open("/stripstate.json", "r");
     if (configFile) {
       size_t size = configFile.size();
       // Allocate a buffer to store contents of the file.
@@ -1481,10 +1481,10 @@ Ticker saveWS2812FXStripSettings;
 bool readStripConfigFS(void) {
   //read stripconfiguration from FS JSON
   updateFS = true;
-  if (SPIFFS.exists("/neoconfig.json")) {
+  if (LittleFS.exists("/neoconfig.json")) {
     //file exists, reading and loading
     DBG_OUTPUT_PORT.print("Reading neoconfig file... ");
-    File configFile = SPIFFS.open("/neoconfig.json", "r");
+    File configFile = LittleFS.open("/neoconfig.json", "r");
     if (configFile) {
       DBG_OUTPUT_PORT.println("Opened!");
       size_t size = configFile.size();
@@ -1528,7 +1528,7 @@ void writeStripConfigFS(void){
   json["pin"] = WS2812FXStripSettings.pin;
 
   //SPIFFS.remove("/neoconfig.json") ? DBG_OUTPUT_PORT.println("removed file") : DBG_OUTPUT_PORT.println("failed removing file");
-  File configFile = SPIFFS.open("/neoconfig.json", "w");
+  File configFile = LittleFS.open("/neoconfig.json", "w");
   if (!configFile) {
     DBG_OUTPUT_PORT.println("Failed!");
     updateFS = false;

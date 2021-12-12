@@ -65,10 +65,10 @@ bool handleFileRead(String path) {
 	if (path.endsWith("/")) path += "index.htm";
 	String contentType = getContentType(path);
 	String pathWithGz = path + ".gz";
-	if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
-		if (SPIFFS.exists(pathWithGz))
+	if (LittleFS.exists(pathWithGz) || LittleFS.exists(path)) {
+		if (LittleFS.exists(pathWithGz))
 			path += ".gz";
-		File file = SPIFFS.open(path, "r");
+		File file = LittleFS.open(path, "r");
     server.sendHeader("Access-Control-Allow-Origin", "*");
 		size_t sent = server.streamFile(file, contentType);
 		file.close();
@@ -85,7 +85,7 @@ void handleFileUpload() {
 		if (!filename.startsWith("/")) filename = "/" + filename;
 		DBG_OUTPUT_PORT.print("handleFileUpload Name: "); 
 		DBG_OUTPUT_PORT.println(filename);
-		fsUploadFile = SPIFFS.open(filename, "w");
+		fsUploadFile = LittleFS.open(filename, "w");
 		filename = String();
 	} else if (upload.status == UPLOAD_FILE_WRITE) {
 		//DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
@@ -104,9 +104,9 @@ void handleFileDelete() {
 	DBG_OUTPUT_PORT.println("handleFileDelete: " + path);
 	if (path == "/")
 		return server.send(500, "text/plain", "BAD PATH");
-	if (!SPIFFS.exists(path))
+	if (!LittleFS.exists(path))
 		return server.send(404, "text/plain", "FileNotFound");
-	SPIFFS.remove(path);
+	LittleFS.remove(path);
 	server.send(200, "text/plain", "");
 	path = String();
 }
@@ -118,9 +118,9 @@ void handleFileCreate() {
 	DBG_OUTPUT_PORT.println("handleFileCreate: " + path);
 	if (path == "/")
 		return server.send(500, "text/plain", "BAD PATH");
-	if (SPIFFS.exists(path))
+	if (LittleFS.exists(path))
 		return server.send(500, "text/plain", "FILE EXISTS");
-	File file = SPIFFS.open(path, "w");
+	File file = LittleFS.open(path, "w");
 	if (file)
 		file.close();
 	else
@@ -137,7 +137,7 @@ void handleFileList() {
 	
 	String path = server.arg("dir");
 	DBG_OUTPUT_PORT.println("handleFileList: " + path);
-	Dir dir = SPIFFS.openDir(path);
+	Dir dir = LittleFS.openDir(path);
 	path = String();
 	
 	String output = "[";
