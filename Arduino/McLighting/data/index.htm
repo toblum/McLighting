@@ -1,466 +1,938 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<!--Import Google Icon Font-->
-		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-		<!--Import materialize.css-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css" media="screen,projection" />
 
+<style>
+:root {
+
+--body-bg-dark:#303030;
+--body-bg-light:#ccc;
+--nav-bg:#a9a9a9;
+--container-bg:#424242;
+--sw-bg:#269f42;
+--btn-bg:#424549;
+--btn-lbl-bg:#1B1D23;
+--sl-lbl-bg:#1B1D23;
+--sl-range-bg:linear-gradient(90deg, rgba(82,82,82,1) 0%, rgba(37,37,37,1) 100%);
+--modal-bg:#303030;
+--btn-bg:#26a69a;
+--btn-link-bg:#555555;
+}
+
+	/* BodY */
+*{margin:0;box-sizing:border-box;}
+html,body{background-color:var(--body-bg-dark);display:flex;flex-direction:column;  min-height:100vh;margin:0;color:#fff;font-family:sans-serif;-webkit-text-size-adjust:100%}
+a{background-color:transparent;text-decoration:none}
+*,a:active,a:hover{outline:0;text-decoration:none;-webkit-tap-highlight-color:transparent}
+
+	/* Random */
+.hide{display:none!important}
+.no-select,input[type=range],input[type=range]+.thumb{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
+#modes{display:grid;grid-template-columns:auto auto auto;grid-gap:5px;}
+
+	/* Container */
+.grid{width:95%;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;grid-gap:5px;}
+.container{background-color:var(--container-bg);margin:0 auto;max-width:1280px;width:100%;flex:1;padding:50px 0 90px 0;}
+.section{width:90%;margin:0 auto;}
+.col{display:flex;flex-direction:column;}
+.col_sw{display:flex;flex-direction:row;justify-content:space-around;align-items:baseline;}
+
+	/* Inner DIV */
+.sub_mod_box input, select, #navSub .link,.linkz .link {background-color:var(--btn-link-bg);border:2px solid #000;display: inline-block;color:white;padding:8px 15px;text-align:center;text-decoration:none;cursor:pointer;}
+#navSub {text-align:center;padding:5px;background:gray;}
+#navSub .link{margin:2px;}
+.sub_mod_box{display:flex;align-items:center;padding:10px;border-bottom:1px solid #666;text-align:center;}
+.sub_mod_box *{width:100%;}
+#m_config .mod_box {font-size:24px;}
+
+	/*Canvas DIV*/
+.MainCanvas{margin:0 auto;margin-bottom:10px;}
+#myCanvas{-webkit-user-select: none;-webkit-tap-highlight-color: rgba(0,0,0,0);-moz-user-select:none;}
+
+	/* TOP nav */
+.nav-wrapper{display:flex;flex-direction:row;justify-content:space-around;align-items:flex-start;margin: 0 auto;}
+.nav{background-color:var(--nav-bg);border-radius:0px 0px 20px 20px;position:fixed;color:#000;width:100%;height:40px;z-index:10;left:50%;transform: translateX(-50%);text-align:center;padding-top:5px;}
+.nav .brand-logo {color:#000;font-size:20px;transform:translateX(-50%);}
+.connect .svg {width:30px;height:30px;position:absolute;}
+
+	/* Bottom menu */
+.tab-bar {width:100%;height:50px;background-color:var(--nav-bg);border-radius:20px 20px 0px 0px;display:flex;justify-content:space-around;align-items:center;position:fixed;bottom:0;left: 50%;transform:translateX(-50%);}
+.tab-bar .home {position:absolute;bottom:5px;background-color:var(--nav-bg);width:70px;height:70px;border-radius:50%;transition:0.5s;}
+.dropup {height:100%;padding:5px 0px;}
+.dropup-content {display:none;position:absolute;background-color:#f1f1f1;min-width:110px;bottom:50px;z-index:1;border-radius: 15px 30px 30px 0px;border:5px solid black;-webkit-box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.36); 
+box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.36);}
+.dropup-content a {color:black;padding:12px 16px;display:block;}
+.dropup-content a:hover {background-color:#ccc;}
+.dropup:hover .dropup-content {display:block;overflow:hidden;}
+
+	/* SVG icons */
+.svg-icon {display:flex;justify-content:center;align-items:center;cursor:pointer;}
+.svg-icon svg {width:40px;height:40px;}
+.svg, .home svg {width:60px;height:60px;}
+
+	/* Buttons */
+.btn_mode_static{margin-bottom:5px}
+.btn,.btn-flat,.btn-large{border:none;border-radius:10px;display:inline-block;height:36px;line-height:36px;text-transform:uppercase;vertical-align:middle;-webkit-tap-highlight-color:transparent;box-shadow: 0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px 0 rgba(0,0,0,.14),0 1px 18px 0 rgba(0,0,0,.12)!important;}
+.btn-floating:focus,.btn-large:focus,.btn:focus{background-color:#1d7d74}
+.btn{background:var(--btn-bg);text-decoration:none;width:100%;color:#fff;text-align:center;transition:.2s ease-out;cursor:pointer}
+.btn:hover{background-color:#2bbbad}
+
+	/* Checkbox */
+.switch{display:flex;align-items: center;}
+.switch .svg{margin-right:10px;width:30px; height:30px;fill:beige}
+.switch label{cursor:pointer}
+.switch label input[type=checkbox]{display:none}
+.switch label input[type=checkbox]:checked+.lever:after,.switch label input[type=checkbox]:checked+.lever:before{left:18px;background-color:#26a69a}
+.switch label .lever{content:"";display:inline-block;position:relative;width:36px;height:14px;background-color:rgba(0,0,0,.38);border-radius:15px;transition:background .3s ease;vertical-align:middle;margin:0 8px}
+.switch label .lever:after,.switch label .lever:before{content:"";position:absolute;display:inline-block;width:20px;height:20px;border-radius:50%;left:0;top:-3px;transition:left .3s ease,background .3s ease,-webkit-box-shadow .1s ease,-webkit-transform .1s ease}
+.switch label .lever:before{background-color:rgba(38,166,154,.85)}
+
+	/* Sliders */
+.sl_info {margin-right:10px;width:30px;display: flex;flex-direction:column;justify-content:center;align-items:stretch;text-align:center;}
+.slider_div{align-items:baseline;display:flex;flex-direction:row;}
+.sl_container{margin:0 auto;max-width:360px;}
+.slider_div{padding-bottom:15px;}
+.slider_div [class*="sl_lbl_"]{background-color:var(--sl-lbl-bg);width:30%;margin:0px 2px 0px 2px;display:inline-block;border-radius:10px 10px 0px 0px;}
+.sl_range {width:100%;height:5px;cursor:pointer;margin:0;border-radius:20px;border:none;}
+.sl_range::-webkit-slider-thumb{border:1px solid #fff;width:25px;height:25px;border-radius:50%;background:#000;cursor:pointer}
+.sl_range,.sl_range::-webkit-slider-thumb{-webkit-appearance:none;outline:none;}
+
+	/* modal box */
+.mod_box{background-color:var(--modal-bg);display:inline-block;width:100%;margin:1px;border:1px solid #666;}
+.modVal {background:#d3d3d3;color:#000;}
+.modName,.modVal {padding:2px}
+
+	/* SVG colors */
+.red,#rng_red {background-color:#f44336;background:#f44336;}
+.green,#rng_green {background-color:#4caf50;background:#4caf50;}
+.blue,#rng_blue {background-color:#2196f3;background:#2196f3;}
+.yellow,#rng_brightness {background-color:#FFA600;background:#FFA600;}
+.gray,#rng_delay {background-color:gray;background:gray;}
+.black{background-color:#000}
+
+	/* ToasT */
+.toast-container{position:fixed;z-index:9999;max-width:300px;bottom:10px;right:10px}
+.toast{opacity:1;position:relative;right:0;color:#fff;padding:10px;margin-bottom:8px}
+.toast.toast-exit{transition:.3s all ease;transform:translate3d(0,0,0);right:-300px;opacity:0}
+
+	/*RESPONSIVE?*/
+@media only screen and (max-width:401px){
+	#modes{grid-template-columns: auto auto;}
+	.grid{grid-template-columns:1fr 1fr;}
+	.section? {width:100%}
+}
+@media only screen and (min-width:601px){
+	.nav,.tab-bar,.nav-wrapper,.foot-wrapper,.container{width:85%;}
+}
+@media only screen and (min-width:993px){
+	.nav,.tab-bar,.nav-wrapper,.foot-wrapper,.container{width:70%;}
+}
+@media only screen and (max-width: 993px){
+}
+
+	/* Animation */
+#spin{transform-origin:center;animation-name:spins;animation-duration:10s;animation-iteration-count:infinite;animation-timing-function:linear;}
+@keyframes spins{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+@keyframes animate-wifi {0%,50%,100% {opacity:1;}25%,75% {opacity:0.2;}}
+.anim-wifi {animation:animate-wifi 10s ease;animation-iteration-count:infinite;}
+
+
+</style>
 		<!--Let browser know website is optimized for mobile-->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 		<meta name="mobile-web-app-capable" content="yes">
 		<meta charset="utf-8"/>
-		<title>McLighting v2</title>
+		<title>McLighting v1.5</title>
 	</head>
 
 	<body>
-		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
-			<div class="nav-wrapper container">
-				<a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
 
-				<ul class="right hide-on-med-and-down">
-					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
-					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-				</ul>
-
-				<ul id="nav-mobile" class="side-nav">
-					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
-					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
-				</ul>
-				<a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
-			</div>
-		</nav>
-		
-		<div class="container mc_pane" id="pane0">
-			<div class="section">
-				<div class="row" id="mc-wsloader">
-					<div class="col">
-						<div class="preloader-wrapper active">
-							<div class="spinner-layer spinner-blue-only">
-								<div class="circle-clipper left">
-									<div class="circle"></div>
-								</div>
-								<div class="gap-patch">
-									<div class="circle"></div>
-								</div>
-								<div class="circle-clipper right">
-									<div class="circle"></div>
-								</div>
-							</div>
-						</div>
-					</div>
+	<nav class="nav" role="navigation" id="mc-nav">
+		<div class="nav-wrapper">
+			<a id="logo-container" href="/" class="brand-logo">Mc Lighting v1.5</a>
+			<div class="connect">
+				<div class="svg wifi_on_svg hide">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M605 770a104 104 0 1 1-207 0 104 104 0 0 1 207 0zM798 516a416 416 0 0 0-463-88c-51 22-96 53-135 93l128 124a240 240 0 0 1 344-3l126-126z"></path><path d="M501 105A702 702 0 0 0 1 312l126 126a529 529 0 0 1 747-2l125-126a703 703 0 0 0-498-205z" class="anim-wifi"></path></svg>
 				</div>
-				<div class="row hide" id="mc-wserror">
-					<div class="col">
-						<div>Error on websocket connect.</div>
-					</div>
+				<div class="svg wifi_off_svg">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><circle fill="#000" cx="501.3" cy="791.3" r="103.8"/><path fill="#000" d="M664 462c-33-14-67-23-101-28l176 176 58-58c-39-39-83-69-133-90zm-341 7c-46 21-87 51-123 88l128 123c37-38 84-63 136-71L323 469zM112 258c-39 26-76 56-110 90l125 125c34-34 73-63 114-86L112 258zm662-62a703 703 0 0 0-475-26l151 151 51-3c140 0 272 55 372 154l125-126a704 704 0 0 0-224-150z"/><path fill="red" d="m62 143 693 693 73-72L134 78l-72 73z"class="anim-wifi"/></svg>
+				</div>
+				<div class="svg wifi_err_svg hide">
+				<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 1000 1000"><path d="M367 481c-68 21-133 58-188 113l95 94c29-28 62-50 97-66l-4-141zm-8-258A700 700 0 0 0 1 415l95 95c77-76 170-126 268-150l-5-137zm282 0-5 137c98 24 191 74 268 151l95-95a699 699 0 0 0-358-193zm-12 399c35 16 68 38 97 67l95-95c-55-54-120-92-188-113l-4 141z"/><circle cx="500" cy="822.7" r="81.5"/><path d="M532 674h-64c-17 0-31-13-32-30l-15-516c-1-18 14-32 31-32h96c17 0 32 14 31 32l-16 516c0 17-14 30-31 30z"/></svg>
 				</div>
 			</div>
 		</div>
+	</nav>
 		
-		<div class="container mc_pane hide" id="pane1">
+		<div class="container mc_pane" id="pane1">
 			<div class="section">
-				<div class="row">
-					<div class="col s12 m6">
-						<div style="height: 330px; width: 330px;">
-							<canvas id="myCanvas" width="330" height="330" style="-webkit-user-select: none;-webkit-tap-highlight-color: rgba(0,0,0,0);-moz-user-select:none;"></canvas>
-						</div>
-					</div>
-					<div class="col s12 m6">
-						<div class="card-panel" id="status">
-							<div id="status_pos">pick a color</div>
-							<div id="status_color"></div>
-						</div>
-					</div>
-					<div class="col s12 m6">
-						<div class="right switch">Auto:<br>
+					<div class="col_sw">
+						
+						<div class="switch">
+							<div class="svg autoSwitch_svg"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M512 854q140 0 241-101t101-241-101-241-241-101-241 101-101 241 101 241 241 101zm0-768q176 0 301 125t125 301-125 301-301 125-301-125T86 512t125-301T512 86zm-86 618V320l256 192z" id="autoSwitch_svg"/></svg>
+							</div>
 							<label>Off 
-								<input id="autoSwitch" type="checkbox"><span class="lever"></span>On 
+								<input id="autoSwitch" onclick="autoSwitch()" type="checkbox"><span class="lever"></span>On 
 							</label>
 						</div>
+						
+						
+						<div class="switch">
+							<div class="svg OnOff_svg"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path stroke="null" d="m737 795 64-62 81 80-65 65-80-83zm124-345h137v90H861v-90zM635 261c42 24 74 56 100 96s36 87 36 137c0 74-26 139-80 191a266 266 0 0 1-382 0c-54-52-80-117-80-191 0-50 12-94 36-137 26-40 58-72 100-96l-2-251h270l4 251h-2zM139 450v90H2v-90h137zm317 540V855h88v135h-88zM118 813l81-82 64 64-80 83-65-65z" id="OnOff_svg"/></svg>
+							</div>
+							<label>Off 
+								<input id="onoff" onclick="OnOff()" type="checkbox"><span class="lever"></span>On 
+							</label>
+						</div>
+						
 					</div>
-				</div>
+					
+					<div class="col">
+						<div class="MainCanvas">
+							<canvas id="myCanvas" width="333" height="333" onclick="onSelectColor(event)" ontouchmove="onSelectColor(event)"></canvas>
+							<div id="dragger"></div>
+						</div>
+					</div>
+					
+					<div class="col">
+
+						<div class="slider_div"> <!-- Slider start -->
+							<div class="sl_info">
+								<span class="sl_svg">
+									R
+								</span>
+							  <span class="sl_val" id="red_val">R</span>
+							</div>
+							<div class="sl_range">
+								<input type="range" class="sl_range update_colors" value="1" id="rng_red" name="1" min="0" max="255">
+							</div>
+						</div> <!-- Slider stop -->
+
+						<div class="slider_div"> <!-- Slider start -->
+							<div class="sl_info">
+								<span class="sl_svg">
+									G
+								</span>
+							  <span class="sl_val" id="green_val">R</span>
+							</div>
+							<div class="sl_range">
+								<input type="range" class="sl_range update_colors" value="1" id="rng_green" name="1" min="0" max="255">
+							</div>
+						</div> <!-- Slider stop -->
+
+						<div class="slider_div"> <!-- Slider start -->
+							<div class="sl_info">
+								<span class="sl_svg">
+									B
+								</span>
+							  <span class="sl_val" id="blue_val">R</span>
+							</div>
+							<div class="sl_range">
+								<input type="range" class="sl_range update_colors" value="1" id="rng_blue" name="1" min="0" max="255">
+							</div>
+						</div> <!-- Slider stop -->
+											
+					</div>
+					
 			</div>
 		</div>
 		
 		<div class="container mc_pane hide" id="pane2">
 			<div class="section">
-				<div class="row">
-					<form class="col s12">
-						<div class="row">
-							<div class="input-field col s12 l4">
-								<label for="txt_red">Red</label><br/>
-								<p class="range-field"><input type="range" id="rng_red" min="0" max="255" class="update_colors" /></p>
-							</div>
-							<div class="input-field col s12 l4">
-								<label for="txt_green">Green</label><br/>
-								<p class="range-field"><input type="range" id="rng_green" min="0" max="255" class="update_colors" /></p>
-							</div>
-							<div class="input-field col s12 l4">
-								<label for="txt_blue">Blue</label><br/>
-								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_colors" /></p>
-							</div>
-						</div>
-						
-						<div class="row">
-							<div class="input-field col s12">
-								<label for="txt_delay">Speed</label><br/>
-								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="196" class="update_delay" /></p>
-							</div>
-						</div>
-						
-						<div class="row">
-							<div class="input-field col s12">
-								<label for="txt_delay">Brightness</label><br/>
-								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="196" class="update_brightness" /></p>
-							</div>
-						</div>
-					</form>
-				</div>
-				
-				<div class="row">
-					<div class="col s12 m6 l6 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF
-							<i class="material-icons right">send</i>
+	
+				<div class="slider_div"> <!-- Slider start -->
+					<div class="sl_info">
+						<span class="sl_svg">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M990 500c0 126-42 236-127 330a471 471 0 0 1-313 159v-99c96-13 178-56 244-131 66-74 99-161 99-259s-33-185-99-259-148-118-244-131V11c124 13 229 66 313 159 85 94 127 204 127 330zM188 881l69-70c57 43 121 69 194 79v99c-97-9-185-45-263-108zm-79-333c9 73 36 136 79 192l-70 71C55 733 19 645 10 548h99zm79-290c-43 57-70 121-79 194H10c9-97 45-185 108-263l70 69zm262-148c-72 10-136 36-193 79l-70-69C267 57 355 20 451 11v99zm100 282 145 108-295 221 150-329z"/></svg>
+						</span>
+					  <span class="sl_val" id="speed_val">R</span>
+					</div>
+					<div class="sl_range">
+						<input type="range" onchange="speed()" class="sl_range update_delay" value="1" id="rng_delay" name="1" min="0" max="255">
+					</div>
+				</div> <!-- Slider stop -->
+
+				<div class="slider_div"> <!-- Slider start -->
+					<div class="sl_info">
+						<span class="sl_svg">
+							<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 1000 1000"><path d="M998.1 500C998.1 225.3 774.7 1.9 500 1.9S1.9 225.3 1.9 500 225.3 998.1 500 998.1 998.1 774.7 998.1 500zM500 162.5c186 0 337.5 151.5 337.5 337.5S686 837.5 500 837.5v-675z"/></svg>
+						</span>
+					  <span class="sl_val" id="bright_val">R</span>
+					</div>
+					<div class="sl_range">
+						<input type="range" onchange="brightness()" class="sl_range update_brightness" value="1" id="rng_brightness" name="1" min="0" max="255">
+					</div>
+				</div> <!-- Slider stop -->
+
+
+
+					<div class="btn_grid">
+						<a class="btn btn_mode_static" name="action" data-mode="off">OFF
 						</a>
 					</div>
 					
-					<div class="col s12 m6 l6 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV
-							<i class="material-icons right">send</i>
+					<div class="btn_grid">
+						<a class="btn btn_mode_static" name="action" data-mode="tv">TV
 						</a>
 					</div>
 
 					<div id="modes">
-						<div class="input-field col s12">
+						<div class="input-field s12">
 							Loading animations...
 						</div>
 					</div>
-				</div>
 			</div>
 		</div>
-		
-		<footer class="page-footer blue">
-			<div class="footer-copyright">
-				<div class="container">© 2017
-				<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project home</a>
+
+	
+		<div class="container mc_pane hide" id="wf_status">
+					<div id="wfstatus" class="grid"></div>
+		</div>
+
+		<div class="container mc_pane hide" id="esp_status">
+					<div id="espstatus" class="grid"></div>
+		</div>
+
+		<div class="container mc_pane hide" id="m_config">
+					<div id="config" class="grid"></div>
+
+
+			<div class="sub_mod_box">
+				  <label for="ct">Choose number of LEDs:</label>
+				  <input type="number" type="tel" max="2000" id="ct" name="ct" onblur="sendLedNr(this);">
+			<!--  <button class="blue btn" onclick="sendLedNr(this);" >SAVE ledS</button>//-->
+			</div>
+			
+			<div class="sub_mod_box">
+				  <label for="pinnr">Choose PIN number:</label>
+				  <select onchange="sendPinNr()" name="pinnr" id="pinnr">
+					<option value="0">0</option>
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+					<option value="12">12</option>
+					<option value="13">13</option>
+					<option value="14">14</option>
+					<option value="15">15</option>
+					<option value="16">16</option>
+				  </select>
+			<!--  <button class="blue btn" onclick="sendPinNr(this);" >SAVE pin</button>//-->
+			</div>
+
+			<div class="sub_mod_box">
+				  <label for="rgbo">Choose RGB order:</label>
+				  <select onchange="sendRgbOrder()" name="rgbo" id="rgbo">
+					<option name="grb" value="82">GRB</option>
+					<option name="gbr" value="161">GBR</option>
+					<option name="rgb" value="6">RGB</option>
+					<option name="rbg" value="9">RBG</option>
+					<option name="brg" value="88">BRG</option>
+					<option name="bgr" value="164">BGR</option>
+				  </select>
+			<!--  <button class="blue btn" onclick="sendRgbOrder(this);" >SAVE rgb</button>//-->
+			</div>
+			
+			<div class="sub_mod_box">
+				<div class="switch wheel_sw">
+					<label> 
+						Circle<input id="wheel_cfg" onclick="redrawColorPicker()" type="checkbox"><span class="lever"></span>Wheel 
+					</label>
+				</div>
+				<div class="switch wheel_sw_test">
+					<label> 
+						Dark*<input id="wheel_cfg_test" onclick="ThemeSwitch()" type="checkbox"><span class="lever"></span>Light*
+					</label>
 				</div>
 			</div>
-		</footer>
+
+
+			<div class="sub_mod_box">
+			Not final
+			</div>
+			
+			<div class="sub_mod_box">
+			ToDo: GUI save, theme, RGB order, CSS tweak... etc..
+			</div>
+
+
+			<div class="sub_mod_box">
+<!--			  <button class="red btn" onclick="window.location.href='/restart'" >Restart</button>	-->
+			  <button class="red btn" onclick="wsSendCommand('Restart');" >Restart</button>
+			</div>
+
+			<div class="sub_mod_box">
+<!--			  <button class="red btn" onclick="window.location.href='/reset_wlan'" >Reset wlan</button>	-->
+			  <button class="red btn" onclick="resetWLAN();" >Reset WLAN </button>
+			</div>
+			
+			
+
+			<div class="sub_mod_box">
+				<footer class="page-footer blue">
+					<div class="footer-copyright">
+						<div class="foot-wrapper">© 2021
+						<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project Home</a>
+						</div>
+					</div>
+				</footer>
+			</div>
+
+		</div>
 		
-		<style type="text/css">
-			.btn_grid {
-				margin: 7px 0;
-			}
-		</style>
-	
-		<!--Import jQuery before materialize.js-->
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-		<script type="text/javascript">(function($){
-$(function(){
+		<div class="container mc_pane hide" id="s_strips">
+					<div id="strips" class="grid"></div>
+		</div>
+		
+		<div class="container mc_pane hide" id="s_neoconfig">
+					<div id="neoconfig" class="grid"></div>
+		</div>
+
+
+
+	<div class="tab-bar">
+
+	<div class="dropup">
+		  <div class="svg-icon gear dropbtn">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="m44 575 65 1c10 50 29 99 58 143l-46 46a42 42 0 0 0 0 60l50 51c16 16 43 16 60 0l46-46c44 30 93 50 143 60l-1 65c0 24 19 43 43 43h71c23 1 42-18 42-42l1-65c50-10 99-29 143-58l46 46c17 17 43 17 60 0l51-50c16-16 16-43 0-60l-46-46c30-44 50-93 60-143l65 1c24 0 43-19 43-43v-71c1-23-18-42-42-42l-65-1c-10-50-29-99-58-143l46-46c17-17 17-43 0-60l-50-51a42 42 0 0 0-60 0l-46 46c-44-30-93-50-143-60l1-65c0-24-19-43-43-43h-71c-23-1-42 18-42 42l-1 65c-50 10-99 29-143 58l-46-46a42 42 0 0 0-60 0l-51 50a42 42 0 0 0 0 60l46 46c-30 44-50 93-60 143l-65-1c-24 0-43 19-43 43v71c-1 23 18 42 42 42zm322-210a189 189 0 1 1 267 269 189 189 0 0 1-267-269z" id="gear"/></svg>
+		<div class="dropup-content">
+			<a class="link" onclick="openTab(event, 'm_config')">Strip Config</a>
+			<a class="link" onclick="openTab(event, 's_neoconfig')">Neo status</a>
+			<a class="link" onclick="openTab(event, 'wf_status')">Satus</a>
+			<a class="link" onclick="openTab(event, 's_strips')">Strip state</a>
+			<a class="link" onclick="openTab(event, 'esp_status')">ESP Satus</a>
+		</div>
+	</div>
+
+	  </div>
 	  
+	  <div id="spin" class="svg-icon home" onclick="openTab(event, 'pane1')">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><path fill="#fefe33" d="M492 185a239 239 0 0 1 0 130l-25 14-217-79 220-78 22 13z"/><path fill="#fb9902" d="M315 9c44 12 79 32 112 64v25L250 250l43-229 22-12z"/><path fill="#fabc02" d="M427 73a239 239 0 0 1 65 112l-242 65L427 73z"/><path fill="#fe2712" d="M73 73A239 239 0 0 1 185 9l26 16 39 225L73 100V73z"/><path fill="#fd5308" d="M185 9a239 239 0 0 1 130 0l-65 241L185 9z"/><path fill="#8601af" d="M9 315a239 239 0 0 1 0-130l27-18 214 83-214 79-27-14z"/><path fill="#a7194b" d="M9 185c12-44 32-79 64-112l177 177L9 185z"/><path fill="#0247fe" d="M185 492a239 239 0 0 1-112-65l2-28 175-149-39 230-26 12z"/><path fill="#3d01a4" d="M73 427A239 239 0 0 1 9 315l241-65L73 427z"/><path fill="#66b032" d="M427 427a239 239 0 0 1-112 65l-24-16-41-226 176 151 1 26z"/><path fill="#0391ce" d="M315 492a239 239 0 0 1-130 0l65-242 65 242z"/><path fill="#d0ea2b" d="M492 315a239 239 0 0 1-65 112L250 250l242 65z"/><circle cx="250" cy="250" r="153.8" fill="#fff" stroke="#fff" stroke-width="30" id="svg_status_color"/></svg>
+	  </div>
+	  
+	  <div class="svg-icon modes" onclick="openTab(event, 'pane2')">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="red" d="M62 15a57 57 0 0 0-22 110c2-25 20-45 43-51v-2c0-16 7-31 18-42a57 57 0 0 0-39-15"/><path fill="#0F0" d="M140 15c-15 0-29 6-39 15a57 57 0 0 1 18 46c20 9 34 28 35 51a57 57 0 0 0-14-112"/><path fill="#FF0" d="M101 30a57 57 0 0 0-18 44 57 57 0 0 1 36 2v-4c0-16-7-31-18-42"/><path fill="#00F" d="M101 114a57 57 0 0 1-61 11v4a57 57 0 1 0 114-2 57 57 0 0 1-53-13"/><path fill="#F0F" d="M83 74c-23 6-41 26-43 51a57 57 0 0 0 61-11 57 57 0 0 1-18-40"/><path fill="#0FF" d="M119 76c-1 15-8 28-18 38a57 57 0 0 0 53 13c-1-23-15-42-35-51"/><path fill="#FFF" d="m97 72-14 2c0 15 7 30 18 40 10-10 17-23 18-38-7-2-14-4-22-4"/></svg>
+	  </div>
+
+	</div>
+
+
+		
+		<!--pUrE js-->
+<script type="text/javascript">
+//TOAST tooltip	- cssscript.com	
+function placeToast(e){var t=document.querySelector(".toast-container"),o=!!t;t||((t=document.createElement("div")).className="toast-container");var n=document.createElement("div");n.className="toast black",n.innerHTML=e,o||document.body.insertBefore(t,document.body.childNodes[0]),t.insertBefore(n,t.childNodes[0]),setTimeout(function(){n.classList.add("toast-exit"),setTimeout(function(){n.remove(),document.querySelector(".toast-container").childNodes.length||t.remove()},200)},1200)}window.placeToast=placeToast;
+
 	// Settings
 	var host = window.location.hostname;
-	//host = "esp8266_02.local";
-
 	var ws_url = 'ws://' + host + ':81';
 	var connection;
 	var ws_waiting = 0;
 
-	// ******************************************************************
-	// Side navigation
-	// ******************************************************************
-    $('.button-collapse').sideNav();
+//	setInterval(function(){GetNeoConfig();},10000); //every xxxx times
+
+
+GetModes();
+ws();
+GetStatus();
+//GetUiState();
+GetEspStatus();
+GetNeoConfig();
+GetStripState();
+
+
+	function openTab(click, openTab) {
+	  var content = document.getElementsByClassName("mc_pane");
+	  for (var i = 0; i < content.length; i++) {content[i].style.display = "none"; content[i].classList.remove("hide"); }
+	  document.getElementById(openTab).style.display = "block";
+	}
+
+	function setMode(mode, finish_funtion) {
+		console.log("Mode: ", mode);
+		wsSendCommand("/" + mode);
+		finish_funtion();
+	}
+
+	function setMainColor() {
+		var red = document.getElementById("rng_red").value;
+		var green = document.getElementById("rng_green").value;
+		var blue = document.getElementById("rng_blue").value;
+		document.getElementById("red_val").innerText = red ;
+		document.getElementById("green_val").innerText = green ;
+		document.getElementById("blue_val").innerText = blue ;
+
+		var status_color_svg = document.getElementById('svg_status_color');
+		var hexColor = "rgb("+ red +","+ green +","+ blue +")";
+		status_color_svg.style.fill= hexColor;
+	}
+	function sendMainColor() {
+		var red = document.getElementById("rng_red").value;
+		var green = document.getElementById("rng_green").value;
+		var blue = document.getElementById("rng_blue").value;
+			var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+			wsSetMainColor(mainColorHex);
+	}
+
+	var update_clr = document.querySelectorAll(".update_colors");
+	update_clr.forEach(select => {select.addEventListener("input", setMainColor)})
+	update_clr.forEach(select => {select.addEventListener("change", sendMainColor)})
 	
-	// Navlinks
-	$('#mc-nav').on('click', '.mc-navlink', function(){
-		console.log("Navigate to pane: ", $(this).data("pane"));
-		showPane($(this).data("pane"));
-	});
+	// WebSocket commands
+	function wsSendCommand(cmd) {
+		console.log("Send WebSocket command:", cmd);
+		if (ws_waiting == 0)  {connection.send(cmd);ws_waiting++;
+		} else {console.log("++++++++ WS call waiting, skip")}
+	}	
 	
-	function showPane(pane) {
-		$('.mc_pane').addClass('hide');
-		$('#' + pane).removeClass('hide');
-		$('.button-collapse').sideNav('hide');
-		
-		if (pane == "pane2") {
-			setMainColor();
-		}
+	function wsSetAll(hexColor) {console.log("wsSetAll() Set all colors to:", hexColor);
+		wsSendCommand("*" + hexColor);
 	}
 	
+	function wsSetMainColor(hexColor) {console.log("wsSetMainColor() Set main colors to:", hexColor);
+		wsSendCommand("#" + hexColor);
+	}
 	
-	// ******************************************************************
-	// init()
-	// ******************************************************************
-	function init() {
-		console.log("Connection websockets to:", ws_url);
-		connection = new WebSocket(ws_url, ['arduino']);
+/* ColorPicker Code */
+	var canvas = document.getElementById("myCanvas");
+	var context = canvas.getContext('2d');
+
+	var status_svg = document.getElementById('svg_status');
+	var status_color_svg = document.getElementById('svg_status_color');
+	var status = document.getElementById('status');
+	var status_color = document.getElementById('status_color');
+	var status_pos = document.getElementById('status_pos');
+	var rng_red = document.getElementById('rng_red');
+	var rng_green = document.getElementById('rng_green');
+	var rng_blue = document.getElementById('rng_blue');
+	
+		function componentToHex(c) {return  ("0"+(Number(c).toString(16))).slice(-2).toUpperCase();	}
+		//rgb/rgba to Hex
+		function rgbToHex(rgb) {return componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);}
+
+	function onSelectColor(event) {
+		var pos;
+		event.preventDefault();
+
+		if (event.type === "touchmove") {
+			var el = event.target;
+			pos = {
+				x: Math.round(event.targetTouches[0].pageX - el.offsetLeft),
+				y: Math.round(event.targetTouches[0].pageY - el.offsetTop)
+			};
+		//console.log("pos: ", pos);
+		}
+		if (event.type === "click") {
+			pos = {
+				x: Math.round(event.offsetX),
+				y: Math.round(event.offsetY)
+			};
+		}
+
+		var color = context.getImageData(pos.x, pos.y, 1, 1).data;		
+		var hexColor = rgbToHex(color);
 		
-		// Load modes async
-		$.getJSON("http://" + host + "/get_modes", function(data) {
-			//console.log("modes", data);
-			
-			var modes_html = "";
-			data.forEach(function(current_mode){
-				if (current_mode.mode !== undefined) {
-					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
-					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
-					modes_html += '<i class="material-icons right">send</i>';
-					modes_html += '</a>';
-					modes_html += '</div>';
-				}
-			});
-			
-			$('#modes').html(modes_html);
-		});
-				
+		wsSetAll(hexColor);
+		hexColor = "#" + hexColor;
+		status_color_svg.style.fill= hexColor;
+		
+		rng_red.value=(color[0]);
+		rng_green.value=(color[1]);
+		rng_blue.value=(color[2]);
+		document.getElementById("onoff").checked = true;
+	}
+
+	function redrawColorPicker() {
+		if (context) {context.clearRect(0, 0, canvas.width, canvas.height);}
+			var checkBox = document.getElementById("wheel_cfg");
+		if (checkBox.checked == true){drawCircle();} 
+		else {drawWheel();}
+	}
+		/* Draws color ring */
+	function drawWheel() {
+		var centerX = canvas.width / 2;
+		var centerY = canvas.height / 2;
+		// console.log(centerX, centerY, canvas.width, canvas.height);
+		var innerRadius = canvas.width / 8;
+		var outerRadius = (canvas.width - 10) / 2;
+		// outer border
+		context.beginPath();
+		// outer circle
+		context.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI, false);
+		// draw the outer border: (gets drawn around the circle!)
+		context.lineWidth = 4;
+		context.strokeStyle = "#000000";
+		context.stroke();
+		context.closePath();
+
+		// fill with beautiful colors
+		// taken from here: http://stackoverflow.com/questions/18265804/building-a-color-wheel-in-html5
+		for (var angle = 0; angle <= 360; angle += 1) {
+			var startAngle = (angle - 2) * Math.PI / 180;
+			var endAngle = angle * Math.PI / 180;
+			context.beginPath();
+			context.moveTo(centerX, centerY);
+			context.arc(centerX,centerY,outerRadius,startAngle,endAngle,false);
+			context.closePath();
+			context.fillStyle = "hsl(" + angle + ", 100%, 50%)";
+			context.fill();
+			context.closePath();
+		}
+
+		// inner border
+		context.beginPath();
+		// this.context.arc(centerX, centerY, radius, startAngle, endAngle, counterClockwise);
+		context.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, false);
+		// fill the center
+		var my_gradient = context.createLinearGradient(0, 0, 170, 0);
+		my_gradient.addColorStop(0, "black");
+		my_gradient.addColorStop(1, "white");
+
+		context.fillStyle = my_gradient;
+		context.fillStyle = "white";
+		context.fill();
+
+		// draw the inner line
+		context.lineWidth = 2;
+		context.strokeStyle = "#000000";
+		context.stroke();
+		context.closePath();
+	}
+
+/* Draws color circle */
+	function drawCircle() {
+		let radius = canvas.width / 2;
+		let image = context.createImageData(2 * radius, 2 * radius);
+		let idata = image.data;
+
+		for (let x = -radius; x < radius; x++) {
+			for (let y = -radius; y < radius; y++) {
+				let [r, phi] = xy2polar(x, y);
+				if (r > radius) {continue;}
+				let deg = rad2deg(phi);
+				// Figure out the starting index of this pixel in the image data array.
+				let rowLength = 2 * radius;
+				let adjustedX = x + radius; // convert x from [-50, 50] to [0, 100] (the coordinates of the image data array)
+				let adjustedY = y + radius; // convert y from [-50, 50] to [0, 100] (the coordinates of the image data array)
+				let pixelWidth = 4; // each pixel requires 4 slots in the data array
+				let index = (adjustedX + (adjustedY * rowLength)) * pixelWidth;
+
+				let hue = deg;
+				let saturation = r / radius;
+				let value = 1.0;
+
+				let [red, green, blue] = hsv2rgb(hue, saturation, value);
+				let alpha = 255;
+
+				idata[index] = red;
+				idata[index + 1] = green;
+				idata[index + 2] = blue;
+				idata[index + 3] = alpha;
+			}
+		}
+		this.context.putImageData(image, 0, 0);
+	}
+	function xy2polar(x, y) {
+		let r = Math.sqrt(x * x + y * y);
+		let phi = Math.atan2(y, x);
+		return [r, phi];
+	}
+	function rad2deg(rad) {return ((rad + Math.PI) / (2 * Math.PI)) * 360;}
+	function hsv2rgb(hue, saturation, value) {
+		let chroma = value * saturation;
+		let hue1 = hue / 60;
+		let x = chroma * (1 - Math.abs((hue1 % 2) - 1));
+		let r1, g1, b1;
+
+			 if (hue1 >= 0 && hue1 <= 1) {([r1, g1, b1] = [chroma, x, 0]);} 
+		else if (hue1 >= 1 && hue1 <= 2) {([r1, g1, b1] = [x, chroma, 0]);} 
+		else if (hue1 >= 2 && hue1 <= 3) {([r1, g1, b1] = [0, chroma, x]);} 
+		else if (hue1 >= 3 && hue1 <= 4) {([r1, g1, b1] = [0, x, chroma]);} 
+		else if (hue1 >= 4 && hue1 <= 5) {([r1, g1, b1] = [x, 0, chroma]);} 
+		else if (hue1 >= 5 && hue1 <= 6) {([r1, g1, b1] = [chroma, 0, x]);}
+
+		let m = value - chroma;
+		let [r, g, b] = [r1 + m, g1 + m, b1 + m];
+		// Change r,g,b values from [0,1] to [0,255]
+		return [255 * r, 255 * g, 255 * b];
+	}
+ redrawColorPicker(); // i MUST be HERE!!
+
+//WebSockets
+	function ws() {
+		console.log("Connection websockets to:", ws_url);
+		connection = new WebSocket('ws://' + host + ':81/');
 		// When the connection is open, send some data to the server
 		connection.onopen = function () {
 			//connection.send('Ping'); // Send the message 'Ping' to the server
 			console.log('WebSocket Open');
-			showPane('pane1');
+			//showPane('pane1');
+			let cn_wifi = document.querySelectorAll('.wifi_on_svg')[0];
+				cn_wifi.classList.remove('hide');cn_wifi.style.fill='#303030';
+			let cf_wifi = document.querySelectorAll('.wifi_off_svg')[0];
+				cf_wifi.classList.add('hide');
 		};
+		// ws Close
+		connection.onclose = function (close) {
+			console.log('WebSocket closed ');
+			placeToast("OffLinE...");
+			//setInterval(function() {placeToast("OffLinE...");}, 1000);
+			let cn_wifi = document.querySelectorAll('.wifi_on_svg')[0];
+				cn_wifi.classList.add('hide');
+			let cf_wifi = document.querySelectorAll('.wifi_off_svg')[0];
+				cf_wifi.classList.remove('hide');cf_wifi.style.fillL='red';
+			
+			setTimeout(function() {
+				ws();
+				//location.reload(true);
+				}, 4000);
+			};
 
 		// Log errors
 		connection.onerror = function (error) {
-			console.log('WebSocket Error ' + error);
-			$('#mc-wsloader').addClass('hide');
-			$('#mc-wserror').removeClass('hide');
+			console.log('WebSocket Error: ' + error);
+			document.getElementById('mc-wsloader').classList.add('hide');
+			document.getElementById('mc-wserror').classList.remove('hide');
 		};
-
+		
 		// Log messages from the server
 		connection.onmessage = function (e) {
+			    placeToast(e.data);
+			    var edata=(e.data);
 			console.log('WebSocket from server: ' + e.data);
 			ws_waiting = 0;
+		var checkBox = document.getElementById("onoff");
+		if(edata.startsWith('*')) { //fix
+		checkBox.checked = true;}
+	//	if (Mvalues[1] >= 0){checkBox.checked;console.log("CHECKED");} 
+		else {console.log("OfF");} //TO DO
 		};
 	}
 
+	function autoSwitch() {
+		var checkBox = document.getElementById("autoSwitch");
+		if (checkBox.checked == true){	wsSendCommand("start");
+		} else {wsSendCommand("stop");	}
+	}
 	
-	// ******************************************************************
-	// Modes
-	// ******************************************************************	
-	$("#pane2").on("click", ".btn_mode", function() {
-		var mode = $(this).attr("data-mode");
-		last_mode = mode;
-		var btn = $(this);
-		setMode(mode, function() {
-			$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
-			btn.removeClass("blue").addClass("red");
-		});
-	});	
+	function OnOff() {
+		var checkBox = document.getElementById("onoff");
+		if (checkBox.checked == true){	wsSendCommand("/0");
+		} else {wsSendCommand("=off");	}
+	}
 	
-	$("#pane2").on("click", ".btn_mode_static", function() {
-		var mode = $(this).attr("data-mode");
-		var btn = $(this);
-		
-		wsSendCommand("=" + mode);
-		$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
-		btn.removeClass("blue").addClass("red");
-	});
-	
-	$("#pane2").on("change", ".update_colors", setMainColor);	
-	
-	$("#pane2").on("change", ".update_delay", function() {
-		var delay = $("#rng_delay").val();		
-		
-		wsSendCommand("?" + delay);
-	});
-	
-	$("#pane2").on("change", ".update_brightness", function() {
-		var brightness = $("#rng_brightness").val();		
-		
+	function brightness() {
+		var brightness = document.getElementById("rng_brightness").value;
+		var brightTxT = document.getElementById("bright_val").innerText = brightness ;
 		wsSendCommand("%" + brightness);
-	});
+	}
 
-	$("#autoSwitch").on("change", function () {
-		if ($(this).prop('checked')) {
-			wsSendCommand("start");
+	function speed() {
+		var speed = document.getElementById("rng_delay").value;
+		var speedTxT = document.getElementById("speed_val").innerText = speed ;
+		wsSendCommand("?" + speed);
+	}
+
+	function btn() {
+	var cbox = document.querySelectorAll(".btn_mode");
+	 for (let i = 0; i < cbox.length; i++) {
+		 cbox[i].addEventListener("click", function() {
+		 var mode = this.getAttribute('data-mode');
+		 last_mode = mode;
+		var btn = this;
+			setMode(mode, function() {
+				 for (let i = 0; i < cbox.length; i++) {cbox[i].classList.remove("red"); cbox[i].classList.add("blue");				}
+				btn.classList.remove("blue"); btn.classList.add("red");
+			});
+		 });
+	 }
+	 
+	var cboxs = document.querySelectorAll(".btn_mode_static");
+	 for (let i = 0; i < cboxs.length; i++) {
+		 cboxs[i].addEventListener("click", function() {
+			var mode = this.getAttribute('data-mode');
+			var btnst = this;
+			wsSendCommand("=" + mode);
+			for (let i = 0; i < cboxs.length; i++) {cboxs[i].classList.remove("red"); cboxs[i].classList.add("blue");}
+			btnst.classList.remove("blue");	btnst.classList.add("red");
+		});
+	}
+}
+
+	function sendRgbOrder(button) {
+		let e = document.getElementById("rgbo");
+//		let rgboa = e.options[e.selectedIndex].value;
+		let rgboa = e.options[e.selectedIndex].attributes.name.value;
+		let vser = "rgbo="+rgboa ;
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('post', "http://" + host + '/pixelconf' , true);
+		xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		xhr.send(vser);
+	}
+
+	function sendPinNr(button) {
+		let e = document.getElementById("pinnr");
+		let pina = e.options[e.selectedIndex].value;
+		let vsep = "pin="+pina ;
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('post', "http://" + host + '/pixelconf' , true);
+		xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		xhr.send(vsep);
+	}
+
+	function sendLedNr(button) {
+		let e = document.getElementById("ct");
+		let leda = e.value;
+		let vsel = "ct="+leda ;
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('post', "http://" + host + '/pixelconf' , true);
+		xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		xhr.send(vsel);
+	}
+
+
+// Get modes
+	function GetModes(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/get_modes", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+			var myObj = JSON.parse(this.responseText); var keys = Object.keys(myObj); var values = Object.values(myObj);
+				var modes_html = "";
+				myObj.forEach(function(current_mode){
+					if (current_mode.mode !== undefined) {
+						modes_html += '<div class="col btn_grid"><a class="btn btn_mode" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name +'</a></div>'; 
+					}
+				});
+				document.getElementById('modes').innerHTML = modes_html;
+				btn();
+			}
+		}};xhr.send(null);
+	;}
+
+// StripState
+	function GetStripState(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/stripstate.json", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+			var myObj = JSON.parse(this.responseText); var Mkeys = Object.keys(myObj); var Mvalues = Object.values(myObj);
+		document.getElementById("rng_blue").value = Mvalues[6];document.getElementById("blue_val").innerText = Mvalues[6];
+		document.getElementById("rng_green").value = Mvalues[5];document.getElementById("green_val").innerText = Mvalues[5];
+		document.getElementById("rng_red").value = Mvalues[4];document.getElementById("red_val").innerText = Mvalues[4];
+		document.getElementById("rng_delay").value = Mvalues[3]; document.getElementById("speed_val").innerText = Mvalues[3];
+		document.getElementById("rng_brightness").value = Mvalues[2];document.getElementById("bright_val").innerText = Mvalues[2];
+	//	document.getElementById("rng_delay").value = Mvalues[1];
+		
+		var hexColor = "rgb("+ Mvalues[4] +","+ Mvalues[5] +","+ Mvalues[6] +")";
+		var status_color_svg = document.getElementById('svg_status_color');
+		status_color_svg.style.fill= hexColor;
+
+		var checkBox = document.getElementById("onoff");
+		if (Mvalues[1] >= 0){checkBox.checked;} 
+		else {console.log("NOT CHECKEDdd");}
+
+		let OuTxt ="";
+		for (let i = 0; i < Mkeys.length; i++) {OuTxt +="<div class='mod_box'><div class='modName'>" + Mkeys[i] + "</div><div class='modVal'>" + Mvalues[i] + "</div></div>";}
+		document.querySelectorAll("#strips")[0].innerHTML = OuTxt;
+			//ACTIVe saved state
+				var btnM = document.querySelectorAll(".btn_mode");
+				var valM = Mvalues[1];
+				btnM.forEach(select => {
+					var qssDs= select.getAttribute('data-mode');
+					var contains = qssDs.includes(valM);
+					var qt = qssDs.this;
+					if (qssDs.includes(valM)) {btnM[valM].classList.remove("blue"); btnM[valM].classList.add("red");}
+				})
+			}
+		}};xhr.send(null);
+	;}
+
+// neoconfig
+	function GetNeoConfig(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/neoconfig.json", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+			var myObj = JSON.parse(this.responseText); var keys = Object.keys(myObj); var values = Object.values(myObj);
+			console.log("neoConf: ", myObj);
+	   var myObj = JSON.parse(this.responseText);
+		var Mkeys = Object.keys(myObj);	var Mvalues = Object.values(myObj);
+		let OuTxt ="";
+		for (let i = 0; i < Mkeys.length; i++) {OuTxt +="<div class='mod_box'><div class='modName'>" + Mkeys[i] + "</div><div class='modVal'>" + Mvalues[i] + "</div></div>";}
+			document.querySelectorAll("#neoconfig")[0].innerHTML = OuTxt;
+			var ec = document.getElementById("ct");	ec.value = Mvalues[0];
+			var ep = document.getElementById("pinnr");
+			for(var i, j = 0; i = ep.options[j]; j++) {if(i.value == Mvalues[2]) {ep.selectedIndex = j;break;}}
+			var er = document.getElementById("rgbo");
+			for(var i, j = 0; i = er.options[j]; j++) {if(i.value == Mvalues[1]) {er.selectedIndex = j;break;}}
+			}
+		}};xhr.send(null);
+	;}
+
+// Get ESPstatus
+	function GetEspStatus(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/esp_status", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+	   var myObj = JSON.parse(this.responseText);
+		var Mkeys = Object.keys(myObj);	var Mvalues = Object.values(myObj);
+		document.title= myObj.HOSTNAME; document.getElementById("logo-container").innerHTML= myObj.HOSTNAME;
+
+		let OuTxt ="";
+		for (let i = 0; i < Mkeys.length; i++) {OuTxt +="<div class='mod_box'>" + "<div class='modName'>" + Mkeys[i] + "</div>" + "<div class='modVal'>" + Mvalues[i] + "</div>" + "</div>";}
+		document.querySelectorAll("#espstatus")[0].innerHTML = OuTxt;
+			}
+		}};xhr.send(null);
+	;}
+	
+// Get status
+	function GetStatus(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/status", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+			var myObj = JSON.parse(this.responseText); var keys = Object.keys(myObj); var values = Object.values(myObj);
+			
+	   var myObj = JSON.parse(this.responseText);
+		var Mkeys = Object.keys(myObj);	var Mvalues = Object.values(myObj);
+		let OuTxt ="";
+		for (let i = 0; i < Mkeys.length; i++) {OuTxt +="<div class='mod_box'>" + "<div class='modName'>" + Mkeys[i] + "</div>" + "<div class='modVal'>" + Mvalues[i] + "</div>" + "</div>";}
+		document.querySelectorAll("#wfstatus")[0].innerHTML = OuTxt;
+			}
+		}};xhr.send(null);
+	;}
+
+
+
+// Get GetUiState
+	function GetUiState(){
+		var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + host + "/uistate.json", true);
+			xhr.onload = function (e) {if (xhr.readyState === 4) {if (xhr.status === 200) {
+			var myObj = JSON.parse(this.responseText); var Mkeys = Object.Mkeys(myObj); var values = Object.values(myObj);
+		let OuTxt ="";
+		for (let i = 0; i < Mkeys.length; i++) {OuTxt +="<div class='mod_box'><div class='modName'>" + Mkeys[i] + "</div><div class='modVal'>" + Mvalues[i] + "</div></div>";}
+		document.querySelectorAll("#sstngs")[0].innerHTML = OuTxt;
+			}
+		}};xhr.send(null);
+	;}
+	
+// ThemeSwitch
+	function ThemeSwitch(){
+		console.log("Theme: ","NOT yet ReadY");
+	}
+
+// Reset to AP mode
+	function resetWLAN(){
+		var rst = confirm("Reset to AP mode?");
+		if (rst == true) {
+			wsSendCommand('resetWLAN');
 		} else {
-			wsSendCommand("stop");
+			wsSendCommand('ABORT!');
 		}
-	}); 
-	
-	function setMode(mode, finish_funtion) {
-		console.log("Mode: ", mode);
-
-		wsSendCommand("/" + mode);
-		finish_funtion();
 	}
-	
-	function setMainColor() {
-		var red = $("#rng_red").val();
-		var green = $("#rng_green").val();
-		var blue = $("#rng_blue").val();		
-		
-		var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
-		wsSetMainColor(mainColorHex);
-	}
-	
-	
-	// ******************************************************************
-	// WebSocket commands
-	// ******************************************************************
-	function wsSendCommand(cmd) {
-		console.log("Send WebSocket command:", cmd);
-		if (ws_waiting == 0)  {
-			connection.send(cmd);
-			ws_waiting++;
-		} else {
-			console.log("++++++++ WS call waiting, skip")
-		}
-	}	
-	
-	
-	function wsSetAll(hexColor) {
-		console.log("wsSetAll() Set all colors to:", hexColor);
-		wsSendCommand("*" + hexColor);
-	}
-	
-	function wsSetMainColor(hexColor) {
-		console.log("wsSetMainColor() Set main colors to:", hexColor);
-		wsSendCommand("#" + hexColor);
-	}
-	
-	
-	
-	// ******************************************************************
-	// Colorwheel
-	// ******************************************************************
-	// this is supposed to work on mobiles (touch) as well as on a desktop (click)
-	// since we couldn't find a decent one .. this try of writing one by myself
-	// + google. swiping would be really nice - I will possibly implement it with
-	// jquery later - or never.
+</script>
 
-	var canvas = document.getElementById("myCanvas");
-	// FIX: Cancel touch end event and handle click via touchstart
-	// canvas.addEventListener("touchend", function(e) { e.preventDefault(); }, false);
-	canvas.addEventListener("touchmove", doTouch, false);
-	canvas.addEventListener("click", doClick, false);
-	//canvas.addEventListener("mousemove", doClick, false);
-
-	
-	var context = canvas.getContext('2d');
-	var centerX = canvas.width / 2;
-	var centerY = canvas.height / 2;
-	var innerRadius = canvas.width / 4.5;
-	var outerRadius = (canvas.width - 10) / 2
-
-	//outer border
-	context.beginPath();
-	//outer circle
-	context.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI, false);
-	//draw the outer border: (gets drawn around the circle!)
-	context.lineWidth = 4;
-	context.strokeStyle = '#000000';
-	context.stroke();
-	context.closePath();
-
-	//fill with beautiful colors 
-	//taken from here: http://stackoverflow.com/questions/18265804/building-a-color-wheel-in-html5
-	for(var angle=0; angle<=360; angle+=1) {
-		var startAngle = (angle-2)*Math.PI/180;
-		var endAngle = angle * Math.PI/180;
-		context.beginPath();
-		context.moveTo(centerX, centerY);
-		context.arc(centerX, centerY, outerRadius, startAngle, endAngle, false);
-		context.closePath();
-		context.fillStyle = 'hsl('+angle+', 100%, 50%)';
-		context.fill();
-		context.closePath();
-	}
-
-	//inner border
-	context.beginPath();
-	//context.arc(centerX, centerY, radius, startAngle, endAngle, counterClockwise);
-	context.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, false);
-	//fill the center
-	var my_gradient=context.createLinearGradient(0,0,170,0);
-	my_gradient.addColorStop(0,"black");
-	my_gradient.addColorStop(1,"white");
-	
-	context.fillStyle = my_gradient;
-	context.fillStyle = "white";
-	context.fill();
-
-	//draw the inner line
-	context.lineWidth = 2;
-	context.strokeStyle = '#000000';
-	context.stroke();
-	context.closePath();
-
-	//get Mouse x/y canvas position
-	function getMousePos(canvas, evt) {
-		var rect = canvas.getBoundingClientRect();
-		return {
-			x: evt.clientX - rect.left,
-			y: evt.clientY - rect.top
-		};
-	}
-
-	//comp to Hex
-	function componentToHex(c) {
-		//var hex = c.toString(16);
-		//return hex.length == 1 ? "0" + hex : hex;
-		return  ("0"+(Number(c).toString(16))).slice(-2).toUpperCase();
-	}
-
-	//rgb/rgba to Hex
-	function rgbToHex(rgb) {
-		return componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
-	}
-
-	//display the touch/click position and color info
-	function updateStatus(pos, color) {
-		var hexColor = rgbToHex(color);
-		wsSetAll(hexColor);
-		
-		hexColor = "#" + hexColor;
-		
-		$('#status').css("backgroundColor", hexColor);
-		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
-		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
-		
-		$("#rng_red").val(color[0]);
-		$("#rng_green").val(color[1]);
-		$("#rng_blue").val(color[2]);
-	}
-
-	//handle the touch event
-	function doTouch(event) {
-		//to not also fire on click
-		event.preventDefault();
-		var el = event.target;
-		
-		//touch position
-		var pos = {x: Math.round(event.targetTouches[0].pageX - el.offsetLeft),
-				   y: Math.round(event.targetTouches[0].pageY - el.offsetTop)};
-		//color
-		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
-
-		updateStatus(pos, color);
-	}
-
-	function doClick(event) {   
-		//click position   
-		var pos = getMousePos(canvas, event);
-		//color
-		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
-		
-		//console.log("click", pos.x, pos.y, color);
-		updateStatus(pos, color);
-		
-		//now do sth with the color rgbToHex(color);
-		//don't do stuff when #000000 (outside circle and lines
-	}
-
-
-	// ******************************************************************
-	// main
-	// ******************************************************************
-	init();
-	
-}); // end of document ready
-})(jQuery); // end of jQuery name space</script>
 	</body>
 </html>

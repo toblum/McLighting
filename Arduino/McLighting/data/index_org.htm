@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<!--Import Google Icon Font-->
+		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<!--Import materialize.css-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css" media="screen,projection" />
+
+		<!--Let browser know website is optimized for mobile-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta charset="utf-8"/>
+		<title>McLighting v2</title>
+	</head>
+
+	<body>
+		<nav class="blue light-blueXXX lighten-1XXX" role="navigation" id="mc-nav">
+			<div class="nav-wrapper container">
+				<a id="logo-container" href="#" class="brand-logo">Mc Lighting v2</a>
+
+				<ul class="right hide-on-med-and-down">
+					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
+					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
+				</ul>
+
+				<ul id="nav-mobile" class="side-nav">
+					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
+					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
+				</ul>
+				<a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+			</div>
+		</nav>
+		
+		<div class="container mc_pane" id="pane0">
+			<div class="section">
+				<div class="row" id="mc-wsloader">
+					<div class="col">
+						<div class="preloader-wrapper active">
+							<div class="spinner-layer spinner-blue-only">
+								<div class="circle-clipper left">
+									<div class="circle"></div>
+								</div>
+								<div class="gap-patch">
+									<div class="circle"></div>
+								</div>
+								<div class="circle-clipper right">
+									<div class="circle"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row hide" id="mc-wserror">
+					<div class="col">
+						<div>Error on websocket connect.</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="container mc_pane hide" id="pane1">
+			<div class="section">
+				<div class="row">
+					<div class="col s12 m6">
+						<div style="height: 330px; width: 330px;">
+							<canvas id="myCanvas" width="330" height="330" style="-webkit-user-select: none;-webkit-tap-highlight-color: rgba(0,0,0,0);-moz-user-select:none;"></canvas>
+						</div>
+					</div>
+					<div class="col s12 m6">
+						<div class="card-panel" id="status">
+							<div id="status_pos">pick a color</div>
+							<div id="status_color"></div>
+						</div>
+					</div>
+					<div class="col s12 m6">
+						<div class="right switch">Auto:<br>
+							<label>Off 
+								<input id="autoSwitch" type="checkbox"><span class="lever"></span>On 
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="container mc_pane hide" id="pane2">
+			<div class="section">
+				<div class="row">
+					<form class="col s12">
+						<div class="row">
+							<div class="input-field col s12 l4">
+								<label for="txt_red">Red</label><br/>
+								<p class="range-field"><input type="range" id="rng_red" min="0" max="255" class="update_colors" /></p>
+							</div>
+							<div class="input-field col s12 l4">
+								<label for="txt_green">Green</label><br/>
+								<p class="range-field"><input type="range" id="rng_green" min="0" max="255" class="update_colors" /></p>
+							</div>
+							<div class="input-field col s12 l4">
+								<label for="txt_blue">Blue</label><br/>
+								<p class="range-field"><input type="range" id="rng_blue" min="0" max="255" class="update_colors" /></p>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="input-field col s12">
+								<label for="txt_delay">Speed</label><br/>
+								<p class="range-field"><input type="range" id="rng_delay" min="0" max="255" value="196" class="update_delay" /></p>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="input-field col s12">
+								<label for="txt_delay">Brightness</label><br/>
+								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="196" class="update_brightness" /></p>
+							</div>
+						</div>
+					</form>
+				</div>
+				
+				<div class="row">
+					<div class="col s12 m6 l6 btn_grid">
+						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="off">OFF
+							<i class="material-icons right">send</i>
+						</a>
+					</div>
+					
+					<div class="col s12 m6 l6 btn_grid">
+						<a class="btn waves-effect waves-light btn_mode_static blue" name="action" data-mode="tv">TV
+							<i class="material-icons right">send</i>
+						</a>
+					</div>
+
+					<div id="modes">
+						<div class="input-field col s12">
+							Loading animations...
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<footer class="page-footer blue">
+			<div class="footer-copyright">
+				<div class="container">© 2017
+				<a class="grey-text text-lighten-4 right" href="https://github.com/toblum/McLighting">Project home</a>
+				</div>
+			</div>
+		</footer>
+		
+		<style type="text/css">
+			.btn_grid {
+				margin: 7px 0;
+			}
+		</style>
+	
+		<!--Import jQuery before materialize.js-->
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+		<script type="text/javascript">(function($){
+$(function(){
+	  
+	// Settings
+	var host = window.location.hostname;
+	//host = "esp8266_02.local";
+
+	var ws_url = 'ws://' + host + ':81';
+	var connection;
+	var ws_waiting = 0;
+
+	// ******************************************************************
+	// Side navigation
+	// ******************************************************************
+    $('.button-collapse').sideNav();
+	
+	// Navlinks
+	$('#mc-nav').on('click', '.mc-navlink', function(){
+		console.log("Navigate to pane: ", $(this).data("pane"));
+		showPane($(this).data("pane"));
+	});
+	
+	function showPane(pane) {
+		$('.mc_pane').addClass('hide');
+		$('#' + pane).removeClass('hide');
+		$('.button-collapse').sideNav('hide');
+		
+		if (pane == "pane2") {
+			setMainColor();
+		}
+	}
+	
+	
+	// ******************************************************************
+	// init()
+	// ******************************************************************
+	function init() {
+		console.log("Connection websockets to:", ws_url);
+		connection = new WebSocket(ws_url, ['arduino']);
+		
+		// Load modes async
+		$.getJSON("http://" + host + "/get_modes", function(data) {
+			//console.log("modes", data);
+			
+			var modes_html = "";
+			data.forEach(function(current_mode){
+				if (current_mode.mode !== undefined) {
+					modes_html += '<div class="col s12 m6 l6 btn_grid">'; 
+					modes_html += '<a class="btn waves-effect waves-light btn_mode blue" name="action" data-mode="' + current_mode.mode + '">(' + current_mode.mode +') '+ current_mode.name; 
+					modes_html += '<i class="material-icons right">send</i>';
+					modes_html += '</a>';
+					modes_html += '</div>';
+				}
+			});
+			
+			$('#modes').html(modes_html);
+		});
+				
+		// When the connection is open, send some data to the server
+		connection.onopen = function () {
+			//connection.send('Ping'); // Send the message 'Ping' to the server
+			console.log('WebSocket Open');
+			showPane('pane1');
+		};
+
+		// Log errors
+		connection.onerror = function (error) {
+			console.log('WebSocket Error ' + error);
+			$('#mc-wsloader').addClass('hide');
+			$('#mc-wserror').removeClass('hide');
+		};
+
+		// Log messages from the server
+		connection.onmessage = function (e) {
+			console.log('WebSocket from server: ' + e.data);
+			ws_waiting = 0;
+		};
+	}
+
+	
+	// ******************************************************************
+	// Modes
+	// ******************************************************************	
+	$("#pane2").on("click", ".btn_mode", function() {
+		var mode = $(this).attr("data-mode");
+		last_mode = mode;
+		var btn = $(this);
+		setMode(mode, function() {
+			$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
+			btn.removeClass("blue").addClass("red");
+		});
+	});	
+	
+	$("#pane2").on("click", ".btn_mode_static", function() {
+		var mode = $(this).attr("data-mode");
+		var btn = $(this);
+		
+		wsSendCommand("=" + mode);
+		$(".btn_mode, .btn_mode_static").removeClass("red").addClass("blue");
+		btn.removeClass("blue").addClass("red");
+	});
+	
+	$("#pane2").on("change", ".update_colors", setMainColor);	
+	
+	$("#pane2").on("change", ".update_delay", function() {
+		var delay = $("#rng_delay").val();		
+		
+		wsSendCommand("?" + delay);
+	});
+	
+	$("#pane2").on("change", ".update_brightness", function() {
+		var brightness = $("#rng_brightness").val();		
+		
+		wsSendCommand("%" + brightness);
+	});
+
+	$("#autoSwitch").on("change", function () {
+		if ($(this).prop('checked')) {
+			wsSendCommand("start");
+		} else {
+			wsSendCommand("stop");
+		}
+	}); 
+	
+	function setMode(mode, finish_funtion) {
+		console.log("Mode: ", mode);
+
+		wsSendCommand("/" + mode);
+		finish_funtion();
+	}
+	
+	function setMainColor() {
+		var red = $("#rng_red").val();
+		var green = $("#rng_green").val();
+		var blue = $("#rng_blue").val();		
+		
+		var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+		wsSetMainColor(mainColorHex);
+	}
+	
+	
+	// ******************************************************************
+	// WebSocket commands
+	// ******************************************************************
+	function wsSendCommand(cmd) {
+		console.log("Send WebSocket command:", cmd);
+		if (ws_waiting == 0)  {
+			connection.send(cmd);
+			ws_waiting++;
+		} else {
+			console.log("++++++++ WS call waiting, skip")
+		}
+	}	
+	
+	
+	function wsSetAll(hexColor) {
+		console.log("wsSetAll() Set all colors to:", hexColor);
+		wsSendCommand("*" + hexColor);
+	}
+	
+	function wsSetMainColor(hexColor) {
+		console.log("wsSetMainColor() Set main colors to:", hexColor);
+		wsSendCommand("#" + hexColor);
+	}
+	
+	
+	
+	// ******************************************************************
+	// Colorwheel
+	// ******************************************************************
+	// this is supposed to work on mobiles (touch) as well as on a desktop (click)
+	// since we couldn't find a decent one .. this try of writing one by myself
+	// + google. swiping would be really nice - I will possibly implement it with
+	// jquery later - or never.
+
+	var canvas = document.getElementById("myCanvas");
+	// FIX: Cancel touch end event and handle click via touchstart
+	// canvas.addEventListener("touchend", function(e) { e.preventDefault(); }, false);
+	canvas.addEventListener("touchmove", doTouch, false);
+	canvas.addEventListener("click", doClick, false);
+	//canvas.addEventListener("mousemove", doClick, false);
+
+	
+	var context = canvas.getContext('2d');
+	var centerX = canvas.width / 2;
+	var centerY = canvas.height / 2;
+	var innerRadius = canvas.width / 4.5;
+	var outerRadius = (canvas.width - 10) / 2
+
+	//outer border
+	context.beginPath();
+	//outer circle
+	context.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI, false);
+	//draw the outer border: (gets drawn around the circle!)
+	context.lineWidth = 4;
+	context.strokeStyle = '#000000';
+	context.stroke();
+	context.closePath();
+
+	//fill with beautiful colors 
+	//taken from here: http://stackoverflow.com/questions/18265804/building-a-color-wheel-in-html5
+	for(var angle=0; angle<=360; angle+=1) {
+		var startAngle = (angle-2)*Math.PI/180;
+		var endAngle = angle * Math.PI/180;
+		context.beginPath();
+		context.moveTo(centerX, centerY);
+		context.arc(centerX, centerY, outerRadius, startAngle, endAngle, false);
+		context.closePath();
+		context.fillStyle = 'hsl('+angle+', 100%, 50%)';
+		context.fill();
+		context.closePath();
+	}
+
+	//inner border
+	context.beginPath();
+	//context.arc(centerX, centerY, radius, startAngle, endAngle, counterClockwise);
+	context.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, false);
+	//fill the center
+	var my_gradient=context.createLinearGradient(0,0,170,0);
+	my_gradient.addColorStop(0,"black");
+	my_gradient.addColorStop(1,"white");
+	
+	context.fillStyle = my_gradient;
+	context.fillStyle = "white";
+	context.fill();
+
+	//draw the inner line
+	context.lineWidth = 2;
+	context.strokeStyle = '#000000';
+	context.stroke();
+	context.closePath();
+
+	//get Mouse x/y canvas position
+	function getMousePos(canvas, evt) {
+		var rect = canvas.getBoundingClientRect();
+		return {
+			x: evt.clientX - rect.left,
+			y: evt.clientY - rect.top
+		};
+	}
+
+	//comp to Hex
+	function componentToHex(c) {
+		//var hex = c.toString(16);
+		//return hex.length == 1 ? "0" + hex : hex;
+		return  ("0"+(Number(c).toString(16))).slice(-2).toUpperCase();
+	}
+
+	//rgb/rgba to Hex
+	function rgbToHex(rgb) {
+		return componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+	}
+
+	//display the touch/click position and color info
+	function updateStatus(pos, color) {
+		var hexColor = rgbToHex(color);
+		wsSetAll(hexColor);
+		
+		hexColor = "#" + hexColor;
+		
+		$('#status').css("backgroundColor", hexColor);
+		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
+		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
+		
+		$("#rng_red").val(color[0]);
+		$("#rng_green").val(color[1]);
+		$("#rng_blue").val(color[2]);
+	}
+
+	//handle the touch event
+	function doTouch(event) {
+		//to not also fire on click
+		event.preventDefault();
+		var el = event.target;
+		
+		//touch position
+		var pos = {x: Math.round(event.targetTouches[0].pageX - el.offsetLeft),
+				   y: Math.round(event.targetTouches[0].pageY - el.offsetTop)};
+		//color
+		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
+
+		updateStatus(pos, color);
+	}
+
+	function doClick(event) {   
+		//click position   
+		var pos = getMousePos(canvas, event);
+		//color
+		var color = context.getImageData(pos.x, pos.y, 1, 1).data;
+		
+		//console.log("click", pos.x, pos.y, color);
+		updateStatus(pos, color);
+		
+		//now do sth with the color rgbToHex(color);
+		//don't do stuff when #000000 (outside circle and lines
+	}
+
+
+	// ******************************************************************
+	// main
+	// ******************************************************************
+	init();
+	
+}); // end of document ready
+})(jQuery); // end of jQuery name space</script>
+	</body>
+</html>

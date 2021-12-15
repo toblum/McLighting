@@ -12,7 +12,7 @@
 
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <EEPROM.h>
 
 #include <WebSockets.h>           //https://github.com/Links2004/arduinoWebSockets
@@ -307,6 +307,12 @@ void initStrip(uint16_t stripSize = WS2812FXStripSettings.stripSize, neoPixelTyp
   #include "colormodes.h"
 #endif
 
+
+// ***************************************************************************
+// HOSTNAME - Fix for random name in ROUTER.
+// ***************************************************************************
+char hostString[16] = {0};
+
 // ***************************************************************************
 // MAIN
 // ***************************************************************************
@@ -328,9 +334,9 @@ void setup() {
   // ***************************************************************************
   // Setup: SPIFFS
   // ***************************************************************************
-  SPIFFS.begin();
+  LittleFS.begin();
   {
-    Dir dir = SPIFFS.openDir("/");
+    Dir dir = LittleFS.openDir("/");
     while (dir.next()) {
       String fileName = dir.fileName();
       size_t fileSize = dir.fileSize();
@@ -338,7 +344,7 @@ void setup() {
     }
 
     FSInfo fs_info;
-    SPIFFS.info(fs_info);
+    LittleFS.info(fs_info);
     DBG_OUTPUT_PORT.printf("FS Usage: %d/%d bytes\n\n", fs_info.usedBytes, fs_info.totalBytes);
   }
 
@@ -430,6 +436,10 @@ void setup() {
     ESP.reset();  //Will be removed when upgrading to standalone offline McLightingUI version
     delay(1000);  //Will be removed when upgrading to standalone offline McLightingUI version
   }
+
+// friendly name for your ROUTER
+  sprintf(hostString, HOSTNAME, ESP.getChipId());
+  WiFi.hostname(hostString);
 
   #if defined(ENABLE_MQTT) or defined(ENABLE_AMQTT)
     //read updated parameters
@@ -817,6 +827,8 @@ void setup() {
         WS2812FXStripSettings.stripSize = pixelCt;
         updateStrip = true;
         DBG_OUTPUT_PORT.printf("/pixels: Count# %d\n", pixelCt);
+        String wsPinStr = "Pixels count: " + String(pixelCt);
+        webSocket.broadcastTXT(wsPinStr);
       }
     }
     if(server.hasArg("rgbo")){
@@ -848,7 +860,10 @@ void setup() {
         DBG_OUTPUT_PORT.println(RGBOrder);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
+        webSocket.broadcastTXT("invalid RGBO input!");
       }
+      String wsRGBStr = "RGB Order: " + String(RGBOrder);
+      webSocket.broadcastTXT(wsRGBStr);
     }
     if(server.hasArg("pin")){
       uint8_t pin = server.arg("pin").toInt();
@@ -870,7 +885,10 @@ void setup() {
         DBG_OUTPUT_PORT.println(pin);
       } else {
         DBG_OUTPUT_PORT.println("invalid input!");
+        webSocket.broadcastTXT("invalid PIN nr input!");
       }
+        String wsPinNrStr = "PIN nr: " + String(pin);
+        webSocket.broadcastTXT(wsPinNrStr);
       #endif
     }
 
@@ -913,6 +931,7 @@ void setup() {
     #ifdef ENABLE_STATE_SAVE_SPIFFS
       if(!spiffs_save_state.active()) spiffs_save_state.once(3, tickerSpiffsSaveState);
     #endif
+    webSocket.broadcastTXT("Off");
   });
 
   server.on("/all", []() {
